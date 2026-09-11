@@ -110,6 +110,22 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 ```
 
 ---
+
+## 🛠️ Other Projects
+
+**[Free Automation Tools & Utilities](https://ph-cu-s.com/tools)**
+* Free open-source scripts, extensions, and desktop utilities for Adobe Illustrator, InDesign, Photoshop, and Windows performance optimization.
+
+**[ComfyUI Photoshop Plugin (PH-CU-S)](https://github.com/SaidAuita/ComfyUI_PH-CU-S)**
+* A powerful Photoshop plugin powered by ComfyUI, providing direct integration with local generative models.
+
+**[AI Dimension](https://github.com/SaidAuita/AI-Dimension)**
+* Automatic technical dimensioning, bounds, leader lines, and drafting scales extension for Adobe Illustrator.
+
+**[ID Dimension](https://github.com/SaidAuita/ID-Dimension)**
+* Automatic technical dimensioning, bounds, leader lines, and drafting scales for Adobe InDesign.
+
+---
 ---
 
 <a name="русский"></a>
@@ -195,6 +211,22 @@ build.bat
 Исполняемые файлы будут скомпилированы в каталог `build\`:
 * `build\RyzenQuietPro-v2.0.exe` (Standalone)
 * `build\RyzenQuietPro-v2.0-Lite.exe` (Lite)
+
+---
+
+## 🛠️ Мои проекты
+
+**[Каталог бесплатных утилит и инструментов (PH-CU-S Tools)](https://ph-cu-s.com/tools)**
+* Сборник бесплатных скриптов, расширений и системных утилит для Adobe Illustrator, InDesign, Photoshop и оптимизации Windows.
+
+**[ComfyUI Photoshop Plugin (PH-CU-S)](https://github.com/SaidAuita/ComfyUI_PH-CU-S)**
+* Мощный плагин для Photoshop на базе ComfyUI, обеспечивающий прямую интеграцию с локальными генеративными моделями.
+
+**[AI Dimension](https://github.com/SaidAuita/AI-Dimension)**
+* Аналогичное расширение для автоматической расстановки размеров в Adobe Illustrator.
+
+**[ID Dimension](https://github.com/SaidAuita/ID-Dimension)**
+* Расширение и автономный скрипт для автоматической расстановки размеров в Adobe InDesign.
 
 ---
 
