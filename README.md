@@ -1,12 +1,12 @@
 <div align="center">
 
-# ⚡ RyzenQuiet PRO (v2.0)
-**Sleek, lightweight hardware HUD & power-plan optimizer for Windows with AMD Ryzen CPB toggle and real-time GPU power telemetry.**
+# ⚡ RyzenQuiet PRO (v3.0)
+**Sleek, lightweight hardware HUD & power-plan optimizer for Windows with AMD Ryzen CPB toggle, GPU power telemetry, and modular fan speed monitoring.**
 
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011%20(64--bit)-blue.svg)](#)
 [![.NET](https://img.shields.io/badge/.NET-8.0-purple.svg)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/Release-v2.0-orange.svg)](https://github.com/SaidAuita/RyzenQuietPro/releases)
+[![Release](https://img.shields.io/badge/Release-v3.0-orange.svg)](https://github.com/SaidAuita/RyzenQuietPro/releases)
 [![Telemetry](https://img.shields.io/badge/Telemetry-Zero%20%2F%20100%25%20Offline-brightgreen.svg)](#)
 
 <br/>
@@ -46,11 +46,17 @@ Aggressive Precision Boost / CPB algorithms on modern AMD Ryzen CPUs frequently 
 
 ### 2. 📊 Synchronized 60-Second Real-Time Performance Graphs
 All subsystem graphs share a synchronized 60-second historical canvas rendered with crisp anti-aliased vector curves and gradient fills:
-* 🟢 **CPU Monitor:** Total CPU utilization %, dynamic core clock frequency (GHz), per-core thread heatmap matrix (16/32 threads), and live **Top-5 Process** resource consumers.
-* 🔵 **RAM Monitor:** Instant Win32 `GlobalMemoryStatusEx` polling with Used / Total physical memory (e.g., `14.2 / 64.0 GB`) with 0% CPU overhead.
+* 🟢 **CPU Monitor:** CPU model name, dynamic core clock frequency, thread count (e.g., `AMD Ryzen 7 6800H | 4.25 GHz | 16 threads`), thread heatmap matrix (16/32 threads), and live **Top-5 Process** resource consumers.
+* 🔵 **RAM Monitor:** Instant Win32 SMBIOS memory type & speed with Used / Total physical memory (e.g., `DDR5/4800 | 18.5 / 64.0 GB`) with 0% CPU overhead.
 * 🟣 **GPU Monitor:** High-precision GPU core load %, chip temperature (°C) with dashed curve, and real-time **Power Consumption in Watts** (`⚡ 136W`) via official signed NVIDIA NVML (`nvmlDeviceGetPowerUsage`). Supports AMD Radeon (ADL) and Windows GPU Engine fallbacks.
-* 🌸 **VRAM Monitor:** Dedicated video memory load % and live usage (e.g., `2.3 / 12.0 GB`).
+* 🌸 **VRAM Monitor:** Dedicated video memory type, load %, and live usage (e.g., `GDDR6 | 1.5 / 6.0 GB`).
 * 🩵 **DISK Monitor (Smart Auto-Focus):** Unified storage activity graph with Read / Write throughput in MB/s (`R:12.4 W:45.0 MB/s`). Dynamically auto-focuses on whichever drive is currently under heavy load (e.g., `[Z: (games)]` or `[C: (Windows)]`).
+* ❄️ **FAN Speed Monitor (Modular Addon with Dual Visualization):**
+  * **Switchable Modes in Settings:**
+    * **Graph Mode (Default):** Synchronized real-time multi-trace RPM curves.
+    * **Fan Icons Mode:** Dynamic aerodynamic fan impeller cards with blade counts scaling by speed tier (Few blades in Quiet mode < 1200 RPM, 7 blades in Medium mode, 11 blades in Turbo mode > 2200 RPM), rotating impeller animation, speed indicators, and smooth horizontal scrolling (mouse wheel / drag / arrow controls) when multiple coolers are connected.
+    * **Demo Mode:** Built-in fan simulation preview for systems with vendor-locked EC controllers.
+  * **Isolated Plugin Architecture:** Communicates via local Named Pipes with `RyzenQuiet.FanService` to ensure 100% clean antivirus safety.
 
 ### 3. 📌 Detachable Floating HUD / Desktop Widget
 * **Docked Mode:** Anchored next to the Windows system tray; smoothly slides out when clicking the tray icon and auto-hides when clicking away.
@@ -83,6 +89,7 @@ All subsystem graphs share a synchronized 60-second historical canvas rendered w
 |---|---|---|
 | **Standalone** *(Recommended)* | ~70 MB | Single executable with embedded .NET 8 runtime. Runs out-of-the-box on any Windows 10/11 x64 PC with zero dependencies. |
 | **Lite Edition** | ~1.2 MB | Ultra-compact single binary. Requires Microsoft .NET 8 Desktop Runtime installed. |
+| **Fan Service Addon** | ~5 MB | Optional background service (`plugins\FanService\RyzenQuiet.FanService.exe`) for motherboard & CPU fan RPM monitoring with zero AV false positives. |
 
 > Downloads are available directly on [**ph-cu-s.com/tools/ryzenquietpro**](https://ph-cu-s.com/tools/ryzenquietpro) or on the [**GitHub Releases**](https://github.com/SaidAuita/RyzenQuietPro/releases) page.
 
@@ -131,8 +138,8 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 <a name="русский"></a>
 <div align="center">
 
-# ⚡ RyzenQuiet PRO (v2.0) — Описание на русском
-**Стильный, легковесный аппаратный HUD-монитор и менеджер профилей питания для Windows с мгновенным отключением CPB (Core Performance Boost) у процессоров AMD Ryzen.**
+# ⚡ RyzenQuiet PRO (v3.0) — Описание на русском
+**Стильный, легковесный аппаратный HUD-монитор и менеджер профилей питания для Windows с мгновенным отключением CPB (Core Performance Boost) у процессоров AMD Ryzen и модульным мониторингом вентиляторов.**
 
 </div>
 
@@ -154,11 +161,17 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 
 ### 2. 📊 Синхронизированные 60-секундные графики нагрузки
 Все графики системы работают на единой 60-секундной временной шкале с векторными сглаженными кривыми и градиентной заливкой:
-* 🟢 **Монитор CPU:** Общий процент нагрузки, динамическая частота ядер (ГГц), наглядная тепловая карта загрузки всех логических ядер (16/32 потока) и живой список **Top-5 самых ресурсоемких процессов**.
-* 🔵 **Монитор RAM:** Мгновенный опрос Win32 `GlobalMemoryStatusEx` с отображением занятой и общей памяти (например, `14.2 / 64.0 GB`) с 0% нагрузки на процессор.
+* 🟢 **Монитор CPU:** Модель процессора на первом месте, динамическая частота ядер и число потоков (например, `AMD Ryzen 7 6800H | 4.25 GHz | 16 потоков`), наглядная тепловая карта загрузки всех ядер (16/32 потока) и список **Top-5 процессов**.
+* 🔵 **Монитор RAM:** Опрос типа и частоты памяти через Win32 SMBIOS Type 17 с отображением занятой и общей памяти (например, `DDR5/4800 | 18.5 / 64.0 GB`) с 0% нагрузки на CPU.
 * 🟣 **Монитор GPU:** Нагрузка графического чипа в %, температура ядра (°C) с пунктирной линией и **реальное энергопотребление в ваттах** (`⚡ 136W`) через официальный подписанный NVIDIA NVML (`nvmlDeviceGetPowerUsage`). Поддержка AMD Radeon (ADL) и Windows GPU Engine.
-* 🌸 **Монитор VRAM:** Нагрузка и точный объём занятой видеопамяти (например, `2.3 / 12.0 GB`).
-* 🩵 **Монитор накопителей (DISK) с умным фокусом:** Общая дисковая активность и скорость чтения/записи в МБ/с (`R:12.4 W:45.0 MB/s`). Умный алгоритм автоматически фокусируется на том диске, который в данный момент находится под нагрузкой (например, `[Z: (games)]` или `[C: (Windows)]`).
+* 🌸 **Монитор VRAM:** Тип видеопамяти, процент нагрузки и точный объём занятой VRAM (например, `GDDR6 | 1.5 / 6.0 GB`).
+* 🩵 **Монитор накопителей (DISK) с умным фокусом:** Общая дисковая активность и скорость чтения/записи в МБ/с (`R:12.4 W:45.0 MB/s`). Автофокус на самом активном накопителе.
+* ❄️ **Монитор кулеров (Изолированное дополнение с двумя режимами отображения):**
+  * **Переключаемые режимы в настройках:**
+    * **График (по умолчанию):** Синхронизированные кривые RPM в реальном времени.
+    * **Режим иконок (Иконки):** Векторные карточки вентиляторов с динамическим числом аэродинамических лопастей по градациям скорости (мало лопастей в тихом режиме < 1200 RPM, 7 лопастей в среднем режиме, 11 лопастей в режиме турбо > 2200 RPM), плавной анимацией вращения, легендой под каждым кулером и горизонтальной прокруткой (колесом мыши, перетаскиванием или кнопками-стрелками).
+    * **Демо-режим:** Возможность включить визуализацию и оценить интерфейс даже на ноутбуках с заблокированным EC-контроллером.
+  * **Изолированная архитектура:** Работает через локальный именованный канал (Named Pipe) с отдельным процессом `RyzenQuiet.FanService`, исключая ложные срабатывания антивирусов в основной программе.
 
 ### 3. 📌 Плавающий виджет на рабочий стол / HUD
 * **Режим трея (Docked):** Аккуратная всплывающая панель около системного трея, открывающаяся по клику на значок и скрывающаяся при клике в любое другое место.
@@ -209,8 +222,9 @@ build.bat
 ```
 
 Исполняемые файлы будут скомпилированы в каталог `build\`:
-* `build\RyzenQuietPro-v2.0.exe` (Standalone)
-* `build\RyzenQuietPro-v2.0-Lite.exe` (Lite)
+* `build\RyzenQuietPro-v3.0.exe` (Standalone)
+* `build\RyzenQuietPro-v3.0-Lite.exe` (Lite)
+* `build\plugins\FanService\RyzenQuiet.FanService.exe` (Fan Monitor Addon)
 
 ---
 

@@ -3,8 +3,9 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <ApplicationTitle>RyzenQuiet PRO</ApplicationTitle>
-    <ApplicationIcon>Resources\quiet.ico</ApplicationIcon>
+    <ApplicationTitle>RyzenQuiet Fan Service</ApplicationTitle>
+    <ApplicationIcon>Resources\fan.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <PublishSingleFile>true</PublishSingleFile>
@@ -12,22 +13,18 @@
     <EnableCompressionInSingleFile Condition="'$(SelfContained)' == 'true'">true</EnableCompressionInSingleFile>
     <DebugType>None</DebugType>
     <DebugSymbols>false</DebugSymbols>
-    <UseWindowsForms>true</UseWindowsForms>
     <Version>3.0.0</Version>
     <AssemblyVersion>3.0.0.0</AssemblyVersion>
     <FileVersion>3.0.0.0</FileVersion>
-    <InformationalVersion>v3.0 PRO</InformationalVersion>
-    <Product>RyzenQuiet PRO</Product>
+    <InformationalVersion>v3.0 FanService</InformationalVersion>
+    <Product>RyzenQuiet PRO Fan Service</Product>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="RyzenQuiet.FanService\**" />
-    <EmbeddedResource Remove="RyzenQuiet.FanService\**" />
-    <None Remove="RyzenQuiet.FanService\**" />
+    <EmbeddedResource Include="Resources\**\*" />
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Resources\**\*" />
-    <EmbeddedResource Include="ico\**\*" />
+    <PackageReference Include="LibreHardwareMonitorLib" Version="0.9.6" />
   </ItemGroup>
 </Project>

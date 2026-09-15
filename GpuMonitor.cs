@@ -11,6 +11,7 @@ namespace RyzenQuietPro
         public uint Index { get; }
         public IntPtr Handle { get; }
         public string Name { get; set; } = "GPU";
+        public string VramType { get; set; } = "GDDR6";
         public float GpuLoadPercent { get; set; }
         public float VramLoadPercent { get; set; }
         public ulong VramTotalBytes { get; set; }
@@ -35,6 +36,7 @@ namespace RyzenQuietPro
             Index = index;
             Handle = handle;
             Name = name;
+            VramType = DetectVramType(name);
             lock (_lock)
             {
                 for (int i = 0; i < 60; i++)
@@ -44,6 +46,52 @@ namespace RyzenQuietPro
                     _tempHistory.Add(0f);
                 }
             }
+        }
+
+        public static string DetectVramType(string gpuName)
+        {
+            if (string.IsNullOrWhiteSpace(gpuName)) return "GDDR6";
+
+            string upper = gpuName.ToUpperInvariant();
+
+            if (upper.Contains("RADEON(TM) GRAPHICS") || upper.Contains("RADEON GRAPHICS") ||
+                (upper.Contains("VEGA") && (upper.Contains("3") || upper.Contains("6") || upper.Contains("7") || upper.Contains("8") || upper.Contains("11"))) ||
+                upper.Contains("680M") || upper.Contains("780M") || upper.Contains("890M") ||
+                upper.Contains("IRIS") || upper.Contains("UHD GRAPHICS") || upper.Contains("HD GRAPHICS") ||
+                upper.Contains("INTEL GRAPHICS"))
+            {
+                return "Shared";
+            }
+
+            if (upper.Contains("VEGA 56") || upper.Contains("VEGA 64") || upper.Contains("RADEON VII") || upper.Contains("TITAN V"))
+            {
+                return "HBM2";
+            }
+
+            if (!upper.Contains("LAPTOP") && !upper.Contains("MOBILE"))
+            {
+                if (upper.Contains("4090") || upper.Contains("4080") || upper.Contains("4070 TI") || upper.Contains("4070 SUPER") || upper.Contains("RTX 4070") ||
+                    upper.Contains("3090") || upper.Contains("3080") || upper.Contains("3070 TI"))
+                {
+                    return "GDDR6X";
+                }
+            }
+
+            if (upper.Contains("1080 TI") || upper.Contains("GTX 1080") || upper.Contains("TITAN X"))
+            {
+                return "GDDR5X";
+            }
+
+            if (upper.Contains("GTX 1070") || upper.Contains("GTX 1060") || upper.Contains("GTX 1050") ||
+                upper.Contains("GTX 980") || upper.Contains("GTX 970") || upper.Contains("GTX 960") || upper.Contains("GTX 950") ||
+                upper.Contains("GTX 780") || upper.Contains("GTX 770") || upper.Contains("GTX 760") ||
+                upper.Contains("RX 590") || upper.Contains("RX 580") || upper.Contains("RX 570") || upper.Contains("RX 560") || upper.Contains("RX 550") ||
+                upper.Contains("RX 480") || upper.Contains("RX 470") || upper.Contains("RX 460"))
+            {
+                return "GDDR5";
+            }
+
+            return "GDDR6";
         }
 
         public void AddHistory(float gpuLoad, float vramLoad, float temp = 0f)
@@ -104,6 +152,7 @@ namespace RyzenQuietPro
         public uint FanSpeedPercent => _devices.Count > 0 ? _devices[0].FanSpeedPercent : 0;
         public double VramTotalGb => _devices.Count > 0 ? _devices[0].VramTotalGb : 0.0;
         public double VramUsedGb => _devices.Count > 0 ? _devices[0].VramUsedGb : 0.0;
+        public string VramType => _devices.Count > 0 ? _devices[0].VramType : "GDDR6";
 
         public IReadOnlyList<float> GpuHistory => _devices.Count > 0 ? _devices[0].GpuHistory : Array.Empty<float>();
         public IReadOnlyList<float> VramHistory => _devices.Count > 0 ? _devices[0].VramHistory : Array.Empty<float>();

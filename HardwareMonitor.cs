@@ -10,6 +10,7 @@ namespace RyzenQuietPro
         public GpuMonitor Gpu { get; }
         public DiskMonitor Disk { get; }
         public ProcessMonitor Processes { get; }
+        public FanMonitorClient Fans { get; }
 
         private System.Threading.Timer? _timer;
         public event Action? MetricsUpdated;
@@ -21,6 +22,7 @@ namespace RyzenQuietPro
             Gpu = new GpuMonitor();
             Disk = new DiskMonitor();
             Processes = new ProcessMonitor();
+            Fans = new FanMonitorClient();
         }
 
         public void Start(int intervalMs = 1000)
@@ -44,6 +46,7 @@ namespace RyzenQuietPro
                 Gpu.Sample();
                 Disk.Sample();
                 Processes.Sample();
+                Fans.Sample();
 
                 MetricsUpdated?.Invoke();
             }
@@ -60,6 +63,7 @@ namespace RyzenQuietPro
             Gpu.Dispose();
             Disk.Dispose();
             Processes.Dispose();
+            Fans.Dispose();
         }
     }
 }

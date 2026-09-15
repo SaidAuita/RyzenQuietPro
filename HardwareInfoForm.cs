@@ -160,16 +160,18 @@ namespace RyzenQuietPro
 
             string cpuStr = hardware.Cpu.CpuName;
             AddDetectedItem("🔲", Loc.Get("Cpu") + ":", $"{cpuStr} ({hardware.Cpu.CoreCount} {Loc.Get("Threads")})", "Supported ✅", Color.FromArgb(80, 220, 140));
-            AddDetectedItem("🧠", Loc.Get("Ram") + ":", $"{hardware.Ram.TotalGb:F1} GB {Loc.Get("SysMemory")}", "Active ✅", Color.FromArgb(56, 189, 248));
+            string ramDesc = !string.IsNullOrEmpty(hardware.Ram.MemorySpecs) ? $"{hardware.Ram.TotalGb:F1} GB {hardware.Ram.MemorySpecs}" : $"{hardware.Ram.TotalGb:F1} GB";
+            AddDetectedItem("🧠", Loc.Get("Ram") + ":", $"{ramDesc} {Loc.Get("SysMemory")}", "Active ✅", Color.FromArgb(56, 189, 248));
+            string vramTypeDesc = !string.IsNullOrEmpty(hardware.Gpu.VramType) ? $" {hardware.Gpu.VramType}" : "";
             if (hardware.Gpu.GpuCount > 1)
             {
                 AddDetectedItem("🎮", Loc.Get("Gpu") + ":", $"{hardware.Gpu.GpuCount} GPUs ({hardware.Gpu.GpuName})", "NVML ✅", Color.FromArgb(168, 85, 247));
-                AddDetectedItem("📊", Loc.Get("Vram") + ":", $"{hardware.Gpu.VramTotalGb:F1} GB {Loc.Get("DedMemory")}", "Active ✅", Color.FromArgb(236, 72, 153));
+                AddDetectedItem("📊", Loc.Get("Vram") + ":", $"{hardware.Gpu.VramTotalGb:F1} GB{vramTypeDesc} {Loc.Get("DedMemory")}", "Active ✅", Color.FromArgb(236, 72, 153));
             }
             else
             {
                 AddDetectedItem("🎮", Loc.Get("Gpu") + ":", $"{hardware.Gpu.GpuName}", "NVML ✅", Color.FromArgb(168, 85, 247));
-                AddDetectedItem("📊", Loc.Get("Vram") + ":", $"{hardware.Gpu.VramTotalGb:F1} GB {Loc.Get("DedMemory")}", "Active ✅", Color.FromArgb(236, 72, 153));
+                AddDetectedItem("📊", Loc.Get("Vram") + ":", $"{hardware.Gpu.VramTotalGb:F1} GB{vramTypeDesc} {Loc.Get("DedMemory")}", "Active ✅", Color.FromArgb(236, 72, 153));
             }
             AddDetectedItem("💽", Loc.Get("Disk") + ":", $"{hardware.Disk.DriveCount} {Loc.Get("PhysicalDrives")} (SSD/HDD)", "Active ✅", Color.FromArgb(6, 182, 212));
 

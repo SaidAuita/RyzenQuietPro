@@ -43,6 +43,7 @@ namespace RyzenQuietPro
         public float[] CoreUsages { get; private set; }
         public int CoreCount => _processorCount;
         public string CpuName { get; }
+        public string CpuShortName { get; }
 
         public IReadOnlyList<float> History
         {
@@ -60,6 +61,7 @@ namespace RyzenQuietPro
             _processorCount = Environment.ProcessorCount;
             CoreUsages = new float[_processorCount];
             CpuName = QueryCpuName();
+            CpuShortName = CleanCpuName(CpuName);
 
             lock (_lock)
             {
@@ -184,6 +186,17 @@ namespace RyzenQuietPro
             }
             catch { }
             return "Multi-Core Processor";
+        }
+
+        public static string CleanCpuName(string raw)
+        {
+            if (string.IsNullOrWhiteSpace(raw)) return "CPU";
+            string s = raw.Trim();
+            s = s.Replace("(R)", "").Replace("(TM)", "").Replace("Processor", "").Trim();
+            int idx = s.IndexOf("with Radeon", StringComparison.OrdinalIgnoreCase);
+            if (idx > 0) s = s.Substring(0, idx).Trim();
+            while (s.Contains("  ")) s = s.Replace("  ", " ");
+            return s;
         }
 
         public static TimeSpan GetIdleTime()

@@ -13,8 +13,10 @@ namespace RyzenQuietPro
 
         public static Bitmap QuietBitmap { get; private set; } = null!;
         public static Bitmap NormalBitmap { get; private set; } = null!;
+        public static Bitmap FanBitmap { get; private set; } = null!;
         public static Icon QuietIcon { get; private set; } = null!;
         public static Icon NormalIcon { get; private set; } = null!;
+        public static Icon FanIcon { get; private set; } = null!;
 
         private static bool _initialized;
 
@@ -34,6 +36,8 @@ namespace RyzenQuietPro
 
                 QuietIcon = LoadIconInternal(@"Resources\quiet.ico", "quiet.ico") ?? IconFromBitmap(QuietBitmap);
                 NormalIcon = LoadIconInternal(@"Resources\normal.ico", "normal.ico") ?? IconFromBitmap(NormalBitmap);
+                FanIcon = LoadIconInternal(@"Resources\fan.ico", "fan.ico") ?? QuietIcon;
+                FanBitmap = FanIcon.ToBitmap();
             }
             catch (Exception ex)
             {

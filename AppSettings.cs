@@ -22,6 +22,10 @@ namespace RyzenQuietPro
         public bool ShowGpuFanSpeed { get; set; } = true;
         public bool ShowVramGraph { get; set; } = true;
         public bool ShowDiskGraph { get; set; } = true;
+        public bool ShowFanGraph { get; set; } = false;
+        public bool EnableFanAddon { get; set; } = false;
+        public int FanVisualMode { get; set; } = 0; // 0 = Graph (default), 1 = Fan Icons
+        public bool EnableFanDemo { get; set; } = false;
 
         public string Language { get; set; } = "auto";
 

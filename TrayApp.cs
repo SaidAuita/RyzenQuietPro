@@ -120,7 +120,7 @@ namespace RyzenQuietPro
         {
             _contextMenu = new ContextMenuStrip();
 
-            var titleItem = new ToolStripMenuItem("RyzenQuiet PRO v2.0")
+            var titleItem = new ToolStripMenuItem("RyzenQuiet PRO v3.0")
             {
                 Enabled = false,
                 Font = new Font(SystemFonts.DefaultFont, FontStyle.Bold)

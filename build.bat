@@ -1,6 +1,6 @@
 @echo off
 setlocal
-set VERSION=v2.0
+set VERSION=v3.0
 
 rem Clear proxy environment variables to allow direct access
 set "HTTPS_PROXY="
@@ -20,18 +20,23 @@ rem Close running instance if any to allow replacing binary
 taskkill /F /IM RyzenQuietPro.exe >nul 2>&1
 taskkill /F /IM RyzenQuietPro-%VERSION%.exe >nul 2>&1
 taskkill /F /IM RyzenQuietPro-%VERSION%-Lite.exe >nul 2>&1
+taskkill /F /IM RyzenQuiet.FanService.exe >nul 2>&1
+dotnet build-server shutdown >nul 2>&1
 
-dotnet clean -c Release
+dotnet clean RyzenQuietPro.csproj -c Release
 if exist "obj\Release" rd /s /q "obj\Release"
 if exist "build\temp_standalone" rd /s /q "build\temp_standalone"
 if exist "build\temp_lite" rd /s /q "build\temp_lite"
 if exist "build\lite" rd /s /q "build\lite"
 
 rem Standalone edition (Self-contained, ~70 MB)
-dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=None -p:DebugSymbols=false --no-restore -o build\temp_standalone
+dotnet publish RyzenQuietPro.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=None -p:DebugSymbols=false -o build\temp_standalone
 
 rem Lite edition (Framework-dependent, ~1.2 MB)
-dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false --no-restore -o build\temp_lite
+dotnet publish RyzenQuietPro.csproj -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false -o build\temp_lite
+
+rem Addon: RyzenQuiet Fan Service (Isolated Plugin)
+dotnet publish RyzenQuiet.FanService\RyzenQuiet.FanService.csproj -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false -o build\plugins\FanService
 
 if exist "build\temp_standalone\RyzenQuietPro.exe" (
     move /Y "build\temp_standalone\RyzenQuietPro.exe" "build\RyzenQuietPro-%VERSION%.exe" >nul
@@ -56,6 +61,7 @@ if exist "build\temp_standalone\RyzenQuietPro.exe" (
     echo Executables:
     echo   build\RyzenQuietPro-%VERSION%.exe [Standalone with embedded runtime, ~70 MB]
     echo   build\RyzenQuietPro-%VERSION%-Lite.exe [Ultralight .NET 8 dependent, ~1.2 MB]
+    echo   build\plugins\FanService\RyzenQuiet.FanService.exe [Fan Monitor Addon]
     echo ------------------------------------------
 ) else (
     echo.

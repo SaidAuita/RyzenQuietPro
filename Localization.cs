@@ -28,7 +28,7 @@ namespace RyzenQuietPro
         {
             ["ru"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v2.0",
+                ["AppTitle"] = "RyzenQuiet PRO v3.0",
                 ["Silent"] = "Тихий",
                 ["SilentFull"] = "🌿 Тихий (99%)",
                 ["Boost"] = "Турбо",
@@ -45,6 +45,7 @@ namespace RyzenQuietPro
                 ["Gpu"] = "GPU",
                 ["Vram"] = "VRAM",
                 ["Disk"] = "DISK",
+                ["Fans"] = "КУЛЕРЫ",
                 
                 // Tooltips
                 ["TipInfo"] = "Характеристики системы и совместимость",
@@ -65,7 +66,20 @@ namespace RyzenQuietPro
                 ["GpuFan"] = "💨 Обороты кулеров GPU",
                 ["VramGraph"] = "📼 График VRAM (Видеопамять)",
                 ["DiskGraph"] = "💽 График Дисков (SSD/HDD)",
+                ["FanGraph"] = "❄️ График кулеров (RPM) [Дополнение]",
                 ["ShowAllGraphs"] = "Показать все графики",
+                
+                // Fan Plugin
+                ["FanPluginStatus_Connected"] = "🟢 Активно",
+                ["FanPluginStatus_Connecting"] = "🟡 Подключение...",
+                ["FanPluginStatus_NotInstalled"] = "⚪ Дополнение не найдено",
+                ["FanPluginStatus_Disabled"] = "Выключено",
+                ["FanPluginStatus_NeedAdmin"] = "🟡 Требуются права Администратора",
+                ["FanPluginStatus_NoFans"] = "Датчики кулеров не найдены (EC заблокирован)",
+                ["FanPluginFolder"] = "Папка дополнения",
+                ["FanVisualMode_Graph"] = "📈 График",
+                ["FanVisualMode_Icons"] = "🌀 Иконки",
+                ["FanDemoMode"] = "👁️ Демо",
                 
                 // Menu: Settings
                 ["MenuSettings"] = "Настройки системы:",
@@ -96,7 +110,7 @@ namespace RyzenQuietPro
             },
             ["en"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v2.0",
+                ["AppTitle"] = "RyzenQuiet PRO v3.0",
                 ["Silent"] = "Silent",
                 ["SilentFull"] = "🌿 Silent (99%)",
                 ["Boost"] = "Boost",
@@ -112,6 +126,7 @@ namespace RyzenQuietPro
                 ["Gpu"] = "GPU",
                 ["Vram"] = "VRAM",
                 ["Disk"] = "DISK",
+                ["Fans"] = "FANS",
 
                 ["TipInfo"] = "System Specs & Hardware Support",
                 ["TipPinOn"] = "Always On Top (Pinned)",
@@ -130,7 +145,20 @@ namespace RyzenQuietPro
                 ["GpuFan"] = "💨 GPU Fan Speed",
                 ["VramGraph"] = "📼 VRAM Usage Graph",
                 ["DiskGraph"] = "💽 Disk Activity Graph (SSD/HDD)",
+                ["FanGraph"] = "❄️ Fan Speed Graph (RPM) [Addon]",
                 ["ShowAllGraphs"] = "Show All Graphs",
+
+                // Fan Plugin
+                ["FanPluginStatus_Connected"] = "🟢 Active",
+                ["FanPluginStatus_Connecting"] = "🟡 Connecting...",
+                ["FanPluginStatus_NotInstalled"] = "⚪ Addon not found",
+                ["FanPluginStatus_Disabled"] = "Disabled",
+                ["FanPluginStatus_NeedAdmin"] = "🟡 Admin rights required",
+                ["FanPluginStatus_NoFans"] = "No fan sensors found (EC locked by vendor)",
+                ["FanPluginFolder"] = "Addon folder",
+                ["FanVisualMode_Graph"] = "📈 Graph",
+                ["FanVisualMode_Icons"] = "🌀 Icons",
+                ["FanDemoMode"] = "👁️ Demo",
 
                 ["MenuSettings"] = "System Settings:",
                 ["AlwaysOnTop"] = "📌 Always On Top",
@@ -159,7 +187,7 @@ namespace RyzenQuietPro
             },
             ["de"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v2.0",
+                ["AppTitle"] = "RyzenQuiet PRO v3.0",
                 ["Silent"] = "Leise",
                 ["SilentFull"] = "🌿 Leise (99%)",
                 ["Boost"] = "Boost",
@@ -222,7 +250,7 @@ namespace RyzenQuietPro
             },
             ["es"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v2.0",
+                ["AppTitle"] = "RyzenQuiet PRO v3.0",
                 ["Silent"] = "Silencioso",
                 ["SilentFull"] = "🌿 Silencioso (99%)",
                 ["Boost"] = "Turbo",
@@ -285,7 +313,7 @@ namespace RyzenQuietPro
             },
             ["fr"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v2.0",
+                ["AppTitle"] = "RyzenQuiet PRO v3.0",
                 ["Silent"] = "Silencieux",
                 ["SilentFull"] = "🌿 Silencieux (99%)",
                 ["Boost"] = "Turbo",
@@ -348,7 +376,7 @@ namespace RyzenQuietPro
             },
             ["ja"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v2.0",
+                ["AppTitle"] = "RyzenQuiet PRO v3.0",
                 ["Silent"] = "静音",
                 ["SilentFull"] = "🌿 静音モード (99%)",
                 ["Boost"] = "ブースト",
@@ -411,7 +439,7 @@ namespace RyzenQuietPro
             },
             ["pt"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v2.0",
+                ["AppTitle"] = "RyzenQuiet PRO v3.0",
                 ["Silent"] = "Silencioso",
                 ["SilentFull"] = "🌿 Silencioso (99%)",
                 ["Boost"] = "Turbo",
@@ -474,7 +502,7 @@ namespace RyzenQuietPro
             },
             ["zh"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v2.0",
+                ["AppTitle"] = "RyzenQuiet PRO v3.0",
                 ["Silent"] = "静音",
                 ["SilentFull"] = "🌿 静音模式 (99%)",
                 ["Boost"] = "加速",
