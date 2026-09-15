@@ -262,8 +262,8 @@ namespace RyzenQuietPro
                 ForeColor = Color.FromArgb(160, 168, 185),
                 BackColor = Color.FromArgb(28, 30, 38),
                 FlatStyle = FlatStyle.Flat,
-                Size = new Size(106, 28),
-                Location = new Point(cardW - 138, fanY),
+                Size = new Size(106, 30),
+                Location = new Point(cardW - 138, fanY - 1),
                 Cursor = Cursors.Hand,
                 TextAlign = ContentAlignment.MiddleCenter
             };
@@ -295,8 +295,8 @@ namespace RyzenQuietPro
                 ForeColor = Color.FromArgb(170, 170, 185),
                 BackColor = Color.FromArgb(32, 32, 42),
                 FlatStyle = FlatStyle.Flat,
-                Size = new Size(28, 28),
-                Location = new Point(cardW - 30, fanY),
+                Size = new Size(28, 30),
+                Location = new Point(cardW - 30, fanY - 1),
                 Cursor = Cursors.Hand,
                 TextAlign = ContentAlignment.MiddleCenter
             };
@@ -305,7 +305,7 @@ namespace RyzenQuietPro
             _btnFanFolder.Click += (s, e) => FanMonitorClient.OpenPluginFolder();
 
             // Tier 2: 3 segmented mode buttons [ 📈 График ] [ 🌀 В 1 ряд ] [ ▦ Сетка ]
-            int fanModeY = fanY + 34;
+            int fanModeY = fanY + 36;
             int totalBtnSpace = cardW - 28;
             int btnGap = 5;
             int modeBtnW = (totalBtnSpace - (btnGap * 2)) / 3;
@@ -893,7 +893,7 @@ namespace RyzenQuietPro
             {
                 case FanPluginStatus.Connected:
                     string activeText = Loc.Get("FanPluginStatus_Connected");
-                    if (!activeText.StartsWith("🟢")) activeText = "🟢 " + activeText;
+                    if (!activeText.StartsWith("●")) activeText = "● " + activeText;
                     if (_hardware.Fans.FanCount > 0)
                     {
                         activeText = $"{activeText} ({_hardware.Fans.FanCount})";
@@ -908,7 +908,7 @@ namespace RyzenQuietPro
                 case FanPluginStatus.Connecting:
                 case FanPluginStatus.Starting:
                     string connText = Loc.Get("FanPluginStatus_Connecting");
-                    if (!connText.StartsWith("🟡")) connText = "🟡 " + connText;
+                    if (!connText.StartsWith("●")) connText = "● " + connText;
                     _btnFanToggle.Text = connText;
                     _btnFanToggle.ForeColor = Color.FromArgb(250, 204, 21);
                     _btnFanToggle.BackColor = Color.FromArgb(38, 34, 20);

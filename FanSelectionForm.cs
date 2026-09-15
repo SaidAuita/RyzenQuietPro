@@ -146,11 +146,11 @@ namespace RyzenQuietPro
             var btnSelectAll = new Button
             {
                 Text = "✓ " + Loc.Get("FanSelectAll"),
-                Font = new Font("Segoe UI", 8f, FontStyle.Bold),
+                Font = new Font("Segoe UI", 8.25f, FontStyle.Bold),
                 ForeColor = Color.FromArgb(56, 189, 248),
                 BackColor = Color.FromArgb(28, 36, 48),
                 FlatStyle = FlatStyle.Flat,
-                Size = new Size(108, 26),
+                Size = new Size(108, 32),
                 Location = new Point(14, curY),
                 Cursor = Cursors.Hand,
                 TextAlign = ContentAlignment.MiddleCenter,
@@ -163,11 +163,11 @@ namespace RyzenQuietPro
             var btnDeselectAll = new Button
             {
                 Text = "✕ " + Loc.Get("FanDeselectAll"),
-                Font = new Font("Segoe UI", 8f),
+                Font = new Font("Segoe UI", 8.25f),
                 ForeColor = Color.FromArgb(160, 165, 180),
                 BackColor = Color.FromArgb(30, 30, 38),
                 FlatStyle = FlatStyle.Flat,
-                Size = new Size(108, 26),
+                Size = new Size(108, 32),
                 Location = new Point(128, curY),
                 Cursor = Cursors.Hand,
                 TextAlign = ContentAlignment.MiddleCenter,
@@ -180,11 +180,11 @@ namespace RyzenQuietPro
             var btnTestGpu = new Button
             {
                 Text = Loc.Get("FanGpuSpinTest"),
-                Font = new Font("Segoe UI", 7.75f, FontStyle.Bold),
+                Font = new Font("Segoe UI", 8f, FontStyle.Bold),
                 ForeColor = Color.FromArgb(249, 115, 22),
                 BackColor = Color.FromArgb(36, 28, 24),
                 FlatStyle = FlatStyle.Flat,
-                Size = new Size(196, 26),
+                Size = new Size(196, 32),
                 Location = new Point(242, curY),
                 Cursor = Cursors.Hand,
                 TextAlign = ContentAlignment.MiddleCenter,
@@ -206,7 +206,7 @@ namespace RyzenQuietPro
             };
             this.Controls.Add(btnTestGpu);
 
-            curY += 34;
+            curY += 40;
 
             // ================= FAN LIST CONTAINER =================
             int listH = this.ClientSize.Height - curY - 48;

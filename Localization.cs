@@ -70,8 +70,8 @@ namespace RyzenQuietPro
                 ["ShowAllGraphs"] = "Показать все графики",
                 
                 // Fan Plugin
-                ["FanPluginStatus_Connected"] = "🟢 Активно",
-                ["FanPluginStatus_Connecting"] = "🟡 Подключение...",
+                ["FanPluginStatus_Connected"] = "● Активно",
+                ["FanPluginStatus_Connecting"] = "● Подключение...",
                 ["FanPluginStatus_NotInstalled"] = "⚪ Дополнение не найдено",
                 ["FanPluginStatus_Disabled"] = "Выключено",
                 ["FanPluginStatus_NeedAdmin"] = "🟡 Требуются права Администратора",
@@ -163,8 +163,8 @@ namespace RyzenQuietPro
                 ["ShowAllGraphs"] = "Show All Graphs",
 
                 // Fan Plugin
-                ["FanPluginStatus_Connected"] = "🟢 Active",
-                ["FanPluginStatus_Connecting"] = "🟡 Connecting...",
+                ["FanPluginStatus_Connected"] = "● Active",
+                ["FanPluginStatus_Connecting"] = "● Connecting...",
                 ["FanPluginStatus_NotInstalled"] = "⚪ Addon not found",
                 ["FanPluginStatus_Disabled"] = "Disabled",
                 ["FanPluginStatus_NeedAdmin"] = "🟡 Admin rights required",
