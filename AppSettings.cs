@@ -24,8 +24,29 @@ namespace RyzenQuietPro
         public bool ShowDiskGraph { get; set; } = true;
         public bool ShowFanGraph { get; set; } = false;
         public bool EnableFanAddon { get; set; } = false;
-        public int FanVisualMode { get; set; } = 0; // 0 = Graph (default), 1 = Fan Icons
+        public int FanVisualMode { get; set; } = 0; // 0 = Graph (default), 1 = 1 Row (Icons), 2 = Grid (Multi-row)
         public bool EnableFanDemo { get; set; } = false;
+        public System.Collections.Generic.List<string> HiddenFanIds { get; set; } = new();
+
+        public bool IsFanVisible(string fanId, string fanName)
+        {
+            if (HiddenFanIds == null || HiddenFanIds.Count == 0) return true;
+            return !HiddenFanIds.Contains(fanId) && !HiddenFanIds.Contains(fanName);
+        }
+
+        public void SetFanVisibility(string fanId, bool visible)
+        {
+            HiddenFanIds ??= new();
+            if (visible)
+            {
+                HiddenFanIds.Remove(fanId);
+            }
+            else
+            {
+                if (!HiddenFanIds.Contains(fanId))
+                    HiddenFanIds.Add(fanId);
+            }
+        }
 
         public string Language { get; set; } = "auto";
 

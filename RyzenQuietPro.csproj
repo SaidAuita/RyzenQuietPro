@@ -24,6 +24,9 @@
     <Compile Remove="RyzenQuiet.FanService\**" />
     <EmbeddedResource Remove="RyzenQuiet.FanService\**" />
     <None Remove="RyzenQuiet.FanService\**" />
+    <Compile Remove="RyzenQuiet.Mac\**" />
+    <EmbeddedResource Remove="RyzenQuiet.Mac\**" />
+    <None Remove="RyzenQuiet.Mac\**" />
   </ItemGroup>
 
   <ItemGroup>

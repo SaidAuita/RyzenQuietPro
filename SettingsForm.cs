@@ -52,10 +52,13 @@ namespace RyzenQuietPro
         private CheckBox _chkDiskGraph = null!;
         private CheckBox _chkFanGraph = null!;
         private Label _lblFanStatus = null!;
+        private Button _btnFanToggle = null!;
         private Button _btnFanFolder = null!;
         private Button _btnFanModeGraph = null!;
         private Button _btnFanModeIcons = null!;
+        private Button _btnFanModeGrid = null!;
         private CheckBox _chkFanDemo = null!;
+        private Button _btnFanSelect = null!;
         private CheckBox? _chkShowAllGpus;
 
         private Button _btnResetGraphs = null!;
@@ -72,6 +75,7 @@ namespace RyzenQuietPro
         private Button _btnClose = null!;
 
         private HardwareInfoForm? _infoForm;
+        private FanSelectionForm? _fanSelectionForm;
 
         public SettingsForm(
             HardwareMonitor hardware,
@@ -85,7 +89,7 @@ namespace RyzenQuietPro
             _onModeChangeRequested = onModeChangeRequested;
 
             bool multiGpu = _hardware.Gpu.GpuCount > 1;
-            int formH = multiGpu ? 916 : 886;
+            int formH = multiGpu ? 978 : 948;
 
             this.AutoScaleMode = AutoScaleMode.None;
             this.FormBorderStyle = FormBorderStyle.None;
@@ -210,7 +214,7 @@ namespace RyzenQuietPro
 
             // ================= 2. GRAPHS & MODULES CARD =================
             // Single vertical column (1 row per item) - spacious and slender
-            int cardGraphsH = multiGpu ? 418 : 388;
+            int cardGraphsH = multiGpu ? 478 : 448;
             var cardGraphs = CreateCard(14, curY, cardW, cardGraphsH);
             this.Controls.Add(cardGraphs);
 
@@ -234,52 +238,88 @@ namespace RyzenQuietPro
             _chkVramGraph = CreateCheckbox(Loc.Get("VramGraph"), chkX, chkY + (chkGap * 7), _settings.ShowVramGraph, v => _settings.ShowVramGraph = v);
             _chkDiskGraph = CreateCheckbox(Loc.Get("DiskGraph"), chkX, chkY + (chkGap * 8), _settings.ShowDiskGraph, v => _settings.ShowDiskGraph = v);
 
+            // Tier 1: Checkbox on left + Active/Start status button on right + Folder button
             int fanY = chkY + (chkGap * 9);
-            _chkFanGraph = CreateCheckbox(Loc.Get("FanGraph"), chkX, fanY, _settings.ShowFanGraph, v => {
+            _chkFanGraph = CreateCheckbox(Loc.Get("FanGraph"), chkX, fanY + 3, _settings.ShowFanGraph, v => {
                 _settings.ShowFanGraph = v;
                 _settings.EnableFanAddon = v;
                 _hardware.Fans.SetEnabled(v);
                 UpdateFanStatusUI();
             });
+            _chkFanGraph.AutoSize = false;
+            _chkFanGraph.Size = new Size(cardW - 146, 24);
 
             _lblFanStatus = new Label
             {
-                Location = new Point(cardW - 142, fanY + 3),
-                Size = new Size(106, 20),
-                Font = new Font("Segoe UI", 7.5f, FontStyle.Bold),
-                TextAlign = ContentAlignment.MiddleRight,
-                ForeColor = Color.FromArgb(120, 120, 130)
+                Visible = false,
+                Size = Size.Empty
+            };
+
+            _btnFanToggle = new Button
+            {
+                Text = Loc.Get("FanPlugin_Start"),
+                Font = new Font("Segoe UI", 8.25f, FontStyle.Bold),
+                ForeColor = Color.FromArgb(160, 168, 185),
+                BackColor = Color.FromArgb(28, 30, 38),
+                FlatStyle = FlatStyle.Flat,
+                Size = new Size(106, 28),
+                Location = new Point(cardW - 138, fanY),
+                Cursor = Cursors.Hand,
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+            _btnFanToggle.FlatAppearance.BorderSize = 1;
+            _btnFanToggle.FlatAppearance.BorderColor = Color.FromArgb(60, 68, 85);
+            _btnFanToggle.Click += (s, e) => ToggleFanService();
+            _btnFanToggle.MouseEnter += (s, e) => {
+                if (_hardware.Fans.IsRunning && _hardware.Fans.Status == FanPluginStatus.Connected)
+                {
+                    _btnFanToggle.Text = Loc.Get("FanPlugin_Stop");
+                    _btnFanToggle.ForeColor = Color.FromArgb(248, 113, 113);
+                    _btnFanToggle.BackColor = Color.FromArgb(42, 22, 26);
+                    _btnFanToggle.FlatAppearance.BorderColor = Color.FromArgb(120, 45, 55);
+                }
+                else if (_hardware.Fans.Status != FanPluginStatus.Connecting)
+                {
+                    _btnFanToggle.ForeColor = Color.FromArgb(220, 225, 240);
+                    _btnFanToggle.FlatAppearance.BorderColor = Color.FromArgb(56, 189, 248);
+                }
+            };
+            _btnFanToggle.MouseLeave += (s, e) => {
+                UpdateFanStatusUI();
             };
 
             _btnFanFolder = new Button
             {
                 Text = "📁",
-                Font = new Font("Segoe UI", 8.5f),
+                Font = new Font("Segoe UI", 9f),
                 ForeColor = Color.FromArgb(170, 170, 185),
                 BackColor = Color.FromArgb(32, 32, 42),
                 FlatStyle = FlatStyle.Flat,
-                Size = new Size(24, 22),
-                Location = new Point(cardW - 32, fanY + 2),
+                Size = new Size(28, 28),
+                Location = new Point(cardW - 30, fanY),
                 Cursor = Cursors.Hand,
-                TextAlign = ContentAlignment.MiddleCenter,
-                Padding = Padding.Empty
+                TextAlign = ContentAlignment.MiddleCenter
             };
             _btnFanFolder.FlatAppearance.BorderSize = 0;
             _toolTip.SetToolTip(_btnFanFolder, Loc.Get("FanPluginFolder"));
             _btnFanFolder.Click += (s, e) => FanMonitorClient.OpenPluginFolder();
 
-            // Fan visual sub-mode buttons: [ Graph ] [ Icons ] and [✓] Demo
-            int fanModeY = fanY + 25;
+            // Tier 2: 3 segmented mode buttons [ 📈 График ] [ 🌀 В 1 ряд ] [ ▦ Сетка ]
+            int fanModeY = fanY + 34;
+            int totalBtnSpace = cardW - 28;
+            int btnGap = 5;
+            int modeBtnW = (totalBtnSpace - (btnGap * 2)) / 3;
+            int modeBtnH = 32;
+
             _btnFanModeGraph = new Button
             {
                 Text = Loc.Get("FanVisualMode_Graph"),
-                Font = new Font("Segoe UI", 7.75f, FontStyle.Bold),
-                Size = new Size(84, 23),
-                Location = new Point(chkX + 16, fanModeY),
+                Font = new Font("Segoe UI", 8.25f, FontStyle.Bold),
+                Size = new Size(modeBtnW, modeBtnH),
+                Location = new Point(14, fanModeY),
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand,
-                TextAlign = ContentAlignment.MiddleCenter,
-                Padding = Padding.Empty
+                TextAlign = ContentAlignment.MiddleCenter
             };
             _btnFanModeGraph.FlatAppearance.BorderSize = 1;
             _btnFanModeGraph.Click += (s, e) => {
@@ -292,13 +332,12 @@ namespace RyzenQuietPro
             _btnFanModeIcons = new Button
             {
                 Text = Loc.Get("FanVisualMode_Icons"),
-                Font = new Font("Segoe UI", 7.75f, FontStyle.Bold),
-                Size = new Size(84, 23),
-                Location = new Point(chkX + 16 + 84 + 5, fanModeY),
+                Font = new Font("Segoe UI", 8.25f, FontStyle.Bold),
+                Size = new Size(modeBtnW, modeBtnH),
+                Location = new Point(14 + modeBtnW + btnGap, fanModeY),
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand,
-                TextAlign = ContentAlignment.MiddleCenter,
-                Padding = Padding.Empty
+                TextAlign = ContentAlignment.MiddleCenter
             };
             _btnFanModeIcons.FlatAppearance.BorderSize = 1;
             _btnFanModeIcons.Click += (s, e) => {
@@ -308,25 +347,64 @@ namespace RyzenQuietPro
                 _onSettingsUpdated?.Invoke();
             };
 
-            _chkFanDemo = CreateCheckbox(Loc.Get("FanDemoMode"), chkX + 16 + (84 * 2) + 12, fanModeY - 1, _settings.EnableFanDemo, v => {
+            _btnFanModeGrid = new Button
+            {
+                Text = Loc.Get("FanVisualMode_Grid"),
+                Font = new Font("Segoe UI", 8.25f, FontStyle.Bold),
+                Size = new Size(totalBtnSpace - ((modeBtnW + btnGap) * 2), modeBtnH),
+                Location = new Point(14 + (modeBtnW + btnGap) * 2, fanModeY),
+                FlatStyle = FlatStyle.Flat,
+                Cursor = Cursors.Hand,
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+            _btnFanModeGrid.FlatAppearance.BorderSize = 1;
+            _btnFanModeGrid.Click += (s, e) => {
+                _settings.FanVisualMode = 2;
+                UpdateFanModeUI();
+                _settings.Save();
+                _onSettingsUpdated?.Invoke();
+            };
+
+            // Tier 3: [ ⚙ Выбор кулеров ] + [✓] Демо
+            int fanOptY = fanModeY + 38;
+            _btnFanSelect = new Button
+            {
+                Text = Loc.Get("FanSelectFansFull"),
+                Font = new Font("Segoe UI", 8.25f, FontStyle.Bold),
+                ForeColor = Color.FromArgb(56, 189, 248),
+                BackColor = Color.FromArgb(28, 36, 48),
+                FlatStyle = FlatStyle.Flat,
+                Size = new Size(180, 32),
+                Location = new Point(14, fanOptY),
+                Cursor = Cursors.Hand,
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+            _btnFanSelect.FlatAppearance.BorderSize = 1;
+            _btnFanSelect.FlatAppearance.BorderColor = Color.FromArgb(45, 75, 100);
+            _toolTip.SetToolTip(_btnFanSelect, Loc.Get("FanSelectionTitle"));
+            _btnFanSelect.Click += (s, e) => OpenFanSelectionDialog();
+
+            _chkFanDemo = CreateCheckbox(Loc.Get("FanDemoMode"), 206, fanOptY + 4, _settings.EnableFanDemo, v => {
                 _settings.EnableFanDemo = v;
                 _hardware.Fans.DemoMode = v;
                 _settings.Save();
                 UpdateFanStatusUI();
                 _onSettingsUpdated?.Invoke();
             });
-            _chkFanDemo.Font = new Font("Segoe UI", 8f);
+            _chkFanDemo.Font = new Font("Segoe UI", 8.25f);
+            _chkFanDemo.Size = new Size(160, 24);
 
             cardGraphs.Controls.AddRange(new Control[] {
                 _chkCpuGraph, _chkCpuCores, _chkTopProcesses,
                 _chkRamGraph, _chkGpuGraph, _chkGpuTemp, _chkGpuFan,
                 _chkVramGraph, _chkDiskGraph, _chkFanGraph,
-                _lblFanStatus, _btnFanFolder,
-                _btnFanModeGraph, _btnFanModeIcons, _chkFanDemo
+                _lblFanStatus, _btnFanToggle, _btnFanFolder,
+                _btnFanModeGraph, _btnFanModeIcons, _btnFanModeGrid,
+                _btnFanSelect, _chkFanDemo
             });
             UpdateFanModeUI();
 
-            int nextY = fanModeY + 30;
+            int nextY = fanOptY + 40;
 
             if (multiGpu)
             {
@@ -339,14 +417,13 @@ namespace RyzenQuietPro
             _btnResetGraphs = new Button
             {
                 Text = "⚡ " + Loc.Get("ShowAllGraphs"),
-                Font = new Font("Segoe UI", 8.75f, FontStyle.Bold),
+                Font = new Font("Segoe UI", 8.5f, FontStyle.Bold),
                 ForeColor = Color.FromArgb(56, 189, 248),
                 BackColor = Color.FromArgb(34, 34, 44),
                 FlatStyle = FlatStyle.Flat,
-                Size = new Size(cardW - 28, 32),
+                Size = new Size(cardW - 28, 34),
                 Location = new Point(14, nextY + 4),
                 TextAlign = ContentAlignment.MiddleCenter,
-                Padding = Padding.Empty,
                 Cursor = Cursors.Hand
             };
             _btnResetGraphs.FlatAppearance.BorderColor = Color.FromArgb(52, 52, 68);
@@ -717,7 +794,10 @@ namespace RyzenQuietPro
             _chkFanGraph.Text = Loc.Get("FanGraph");
             _btnFanModeGraph.Text = Loc.Get("FanVisualMode_Graph");
             _btnFanModeIcons.Text = Loc.Get("FanVisualMode_Icons");
+            _btnFanModeGrid.Text = Loc.Get("FanVisualMode_Grid");
             _chkFanDemo.Text = Loc.Get("FanDemoMode");
+            _btnFanSelect.Text = Loc.Get("FanSelectFansFull");
+            _toolTip.SetToolTip(_btnFanSelect, Loc.Get("FanSelectionTitle"));
             _toolTip.SetToolTip(_btnFanFolder, Loc.Get("FanPluginFolder"));
             if (_chkShowAllGpus != null) _chkShowAllGpus.Text = Loc.Get("ShowAllGpus");
 
@@ -745,55 +825,122 @@ namespace RyzenQuietPro
 
         private void UpdateFanModeUI()
         {
-            bool isIcons = _settings.FanVisualMode == 1;
+            int mode = _settings.FanVisualMode;
 
-            _btnFanModeGraph.BackColor = !isIcons ? Color.FromArgb(38, 54, 75) : Color.FromArgb(28, 28, 36);
-            _btnFanModeGraph.ForeColor = !isIcons ? Color.FromArgb(56, 189, 248) : Color.FromArgb(140, 140, 155);
-            _btnFanModeGraph.FlatAppearance.BorderColor = !isIcons ? Color.FromArgb(56, 189, 248) : Color.FromArgb(45, 45, 58);
+            // Mode 0: Graph
+            _btnFanModeGraph.BackColor = (mode == 0) ? Color.FromArgb(38, 54, 75) : Color.FromArgb(28, 28, 36);
+            _btnFanModeGraph.ForeColor = (mode == 0) ? Color.FromArgb(56, 189, 248) : Color.FromArgb(140, 140, 155);
+            _btnFanModeGraph.FlatAppearance.BorderColor = (mode == 0) ? Color.FromArgb(56, 189, 248) : Color.FromArgb(45, 45, 58);
 
-            _btnFanModeIcons.BackColor = isIcons ? Color.FromArgb(38, 54, 75) : Color.FromArgb(28, 28, 36);
-            _btnFanModeIcons.ForeColor = isIcons ? Color.FromArgb(56, 189, 248) : Color.FromArgb(140, 140, 155);
-            _btnFanModeIcons.FlatAppearance.BorderColor = isIcons ? Color.FromArgb(56, 189, 248) : Color.FromArgb(45, 45, 58);
+            // Mode 1: 1 Row
+            _btnFanModeIcons.BackColor = (mode == 1) ? Color.FromArgb(38, 54, 75) : Color.FromArgb(28, 28, 36);
+            _btnFanModeIcons.ForeColor = (mode == 1) ? Color.FromArgb(56, 189, 248) : Color.FromArgb(140, 140, 155);
+            _btnFanModeIcons.FlatAppearance.BorderColor = (mode == 1) ? Color.FromArgb(56, 189, 248) : Color.FromArgb(45, 45, 58);
+
+            // Mode 2: Multi-row Grid
+            _btnFanModeGrid.BackColor = (mode == 2) ? Color.FromArgb(38, 54, 75) : Color.FromArgb(28, 28, 36);
+            _btnFanModeGrid.ForeColor = (mode == 2) ? Color.FromArgb(56, 189, 248) : Color.FromArgb(140, 140, 155);
+            _btnFanModeGrid.FlatAppearance.BorderColor = (mode == 2) ? Color.FromArgb(56, 189, 248) : Color.FromArgb(45, 45, 58);
+        }
+
+        private void ToggleFanService()
+        {
+            if (_hardware.Fans.IsRunning)
+            {
+                _hardware.Fans.StopService();
+                UpdateFanStatusUI();
+                _onSettingsUpdated?.Invoke();
+            }
+            else
+            {
+                if (!_settings.ShowFanGraph)
+                {
+                    _settings.ShowFanGraph = true;
+                    _settings.EnableFanAddon = true;
+                    _chkFanGraph.Checked = true;
+                }
+                _hardware.Fans.StartService();
+                UpdateFanStatusUI();
+                _onSettingsUpdated?.Invoke();
+            }
         }
 
         private void UpdateFanStatusUI()
         {
             if (!_settings.ShowFanGraph)
             {
-                _lblFanStatus.Text = Loc.Get("FanPluginStatus_Disabled");
-                _lblFanStatus.ForeColor = Color.FromArgb(120, 120, 130);
+                string startText = Loc.Get("FanPlugin_Start");
+                if (!startText.StartsWith("▶")) startText = "▶ " + startText;
+                _btnFanToggle.Text = startText;
+                _btnFanToggle.ForeColor = Color.FromArgb(140, 145, 160);
+                _btnFanToggle.BackColor = Color.FromArgb(28, 30, 38);
+                _btnFanToggle.FlatAppearance.BorderColor = Color.FromArgb(50, 55, 70);
+                _toolTip.SetToolTip(_btnFanToggle, Loc.Get("FanPlugin_TipToggle"));
                 return;
             }
 
             if (_hardware.Fans.DemoMode)
             {
-                _lblFanStatus.Text = Loc.Get("FanDemoMode");
-                _lblFanStatus.ForeColor = Color.FromArgb(56, 189, 248);
+                _btnFanToggle.Text = "👁️ " + Loc.Get("FanDemoMode");
+                _btnFanToggle.ForeColor = Color.FromArgb(56, 189, 248);
+                _btnFanToggle.BackColor = Color.FromArgb(24, 38, 52);
+                _btnFanToggle.FlatAppearance.BorderColor = Color.FromArgb(56, 189, 248);
+                _toolTip.SetToolTip(_btnFanToggle, Loc.Get("FanPlugin_Stop"));
                 return;
             }
 
             switch (_hardware.Fans.Status)
             {
                 case FanPluginStatus.Connected:
-                    _lblFanStatus.Text = string.Format(Loc.Get("FanPluginStatus_Connected"), _hardware.Fans.FanCount);
-                    _lblFanStatus.ForeColor = Color.FromArgb(74, 222, 128);
+                    string activeText = Loc.Get("FanPluginStatus_Connected");
+                    if (!activeText.StartsWith("🟢")) activeText = "🟢 " + activeText;
+                    if (_hardware.Fans.FanCount > 0)
+                    {
+                        activeText = $"{activeText} ({_hardware.Fans.FanCount})";
+                    }
+                    _btnFanToggle.Text = activeText;
+                    _btnFanToggle.ForeColor = Color.FromArgb(74, 222, 128);
+                    _btnFanToggle.BackColor = Color.FromArgb(20, 38, 26);
+                    _btnFanToggle.FlatAppearance.BorderColor = Color.FromArgb(34, 110, 58);
+                    _toolTip.SetToolTip(_btnFanToggle, Loc.Get("FanPlugin_TipToggle"));
                     break;
+
                 case FanPluginStatus.Connecting:
                 case FanPluginStatus.Starting:
-                    _lblFanStatus.Text = Loc.Get("FanPluginStatus_Connecting");
-                    _lblFanStatus.ForeColor = Color.FromArgb(250, 204, 21);
+                    string connText = Loc.Get("FanPluginStatus_Connecting");
+                    if (!connText.StartsWith("🟡")) connText = "🟡 " + connText;
+                    _btnFanToggle.Text = connText;
+                    _btnFanToggle.ForeColor = Color.FromArgb(250, 204, 21);
+                    _btnFanToggle.BackColor = Color.FromArgb(38, 34, 20);
+                    _btnFanToggle.FlatAppearance.BorderColor = Color.FromArgb(100, 85, 30);
+                    _toolTip.SetToolTip(_btnFanToggle, Loc.Get("FanPluginStatus_Connecting"));
                     break;
+
                 case FanPluginStatus.NotInstalled:
-                    _lblFanStatus.Text = Loc.Get("FanPluginStatus_NotInstalled");
-                    _lblFanStatus.ForeColor = Color.FromArgb(248, 113, 113);
+                    _btnFanToggle.Text = "⚪ " + Loc.Get("FanPlugin_Start");
+                    _btnFanToggle.ForeColor = Color.FromArgb(140, 145, 160);
+                    _btnFanToggle.BackColor = Color.FromArgb(28, 30, 38);
+                    _btnFanToggle.FlatAppearance.BorderColor = Color.FromArgb(50, 55, 70);
+                    _toolTip.SetToolTip(_btnFanToggle, Loc.Get("FanPluginStatus_NotInstalled"));
                     break;
+
                 case FanPluginStatus.Error:
-                    _lblFanStatus.Text = Loc.Get("FanPluginStatus_NeedAdmin");
-                    _lblFanStatus.ForeColor = Color.FromArgb(248, 113, 113);
+                    _btnFanToggle.Text = "⚠️ " + Loc.Get("FanPlugin_Start");
+                    _btnFanToggle.ForeColor = Color.FromArgb(251, 146, 60);
+                    _btnFanToggle.BackColor = Color.FromArgb(36, 26, 20);
+                    _btnFanToggle.FlatAppearance.BorderColor = Color.FromArgb(100, 60, 30);
+                    _toolTip.SetToolTip(_btnFanToggle, Loc.Get("FanPluginStatus_NeedAdmin"));
                     break;
+
                 default:
-                    _lblFanStatus.Text = Loc.Get("FanPluginStatus_Disabled");
-                    _lblFanStatus.ForeColor = Color.FromArgb(120, 120, 130);
+                    // Stopped state - steel color and Start button as requested
+                    string defStart = Loc.Get("FanPlugin_Start");
+                    if (!defStart.StartsWith("▶")) defStart = "▶ " + defStart;
+                    _btnFanToggle.Text = defStart;
+                    _btnFanToggle.ForeColor = Color.FromArgb(160, 168, 185); // Steel color
+                    _btnFanToggle.BackColor = Color.FromArgb(28, 30, 38);   // Dark steel
+                    _btnFanToggle.FlatAppearance.BorderColor = Color.FromArgb(60, 68, 85); // Steel border
+                    _toolTip.SetToolTip(_btnFanToggle, Loc.Get("FanPlugin_TipToggle"));
                     break;
             }
 
@@ -862,6 +1009,36 @@ namespace RyzenQuietPro
             }
             _infoForm.BringToFront();
             _infoForm.Activate();
+        }
+
+        private void OpenFanSelectionDialog()
+        {
+            if (_fanSelectionForm == null || _fanSelectionForm.IsDisposed)
+            {
+                _fanSelectionForm = new FanSelectionForm(_hardware, _settings, () => {
+                    UpdateFanStatusUI();
+                    _onSettingsUpdated?.Invoke();
+                });
+            }
+            _fanSelectionForm.StartPosition = FormStartPosition.Manual;
+            _fanSelectionForm.TopMost = this.TopMost;
+
+            int x = this.Location.X + (this.Width - _fanSelectionForm.Width) / 2;
+            int y = this.Location.Y + (this.Height - _fanSelectionForm.Height) / 2;
+            var screen = Screen.FromPoint(this.Location);
+            x = Math.Clamp(x, screen.WorkingArea.Left + 10, screen.WorkingArea.Right - _fanSelectionForm.Width - 10);
+            y = Math.Clamp(y, screen.WorkingArea.Top + 10, screen.WorkingArea.Bottom - _fanSelectionForm.Height - 10);
+            _fanSelectionForm.Location = new Point(x, y);
+
+            if (!_fanSelectionForm.Visible)
+            {
+                _fanSelectionForm.ShowDialog(this);
+            }
+            else
+            {
+                _fanSelectionForm.BringToFront();
+                _fanSelectionForm.Activate();
+            }
         }
 
         private void OnHeaderDrag(object? sender, MouseEventArgs e)

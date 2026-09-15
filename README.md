@@ -11,9 +11,16 @@
 
 <br/>
 
-<img src="images/RyzenQuietPro-v2_1.png" alt="RyzenQuiet PRO Main HUD & Telemetry Graphs" width="400" />
-&nbsp;&nbsp;
-<img src="images/RyzenQuietPro-v2_2.png" alt="RyzenQuiet PRO Hardware Specifications & Module Customization" width="400" />
+<p align="center">
+  <img src="images/RyzenQuietPro-v3_1.png" alt="RyzenQuiet PRO v3.0 Main Desktop HUD & Multi-Row Fan Grid" width="360" />
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="images/RyzenQuietPro-v3_2.png" alt="RyzenQuiet PRO Settings & Fan Visualization Modes" width="310" />
+</p>
+<p align="center">
+  <img src="images/RyzenQuietPro-v3_3.png" alt="Custom Fan Selection & GPU Spin Test Dialog" width="340" />
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="images/RyzenQuietPro-v3_4.png" alt="Hardware Specifications & System Diagnostics" width="370" />
+</p>
 
 <br/>
 
@@ -51,12 +58,23 @@ All subsystem graphs share a synchronized 60-second historical canvas rendered w
 * 🟣 **GPU Monitor:** High-precision GPU core load %, chip temperature (°C) with dashed curve, and real-time **Power Consumption in Watts** (`⚡ 136W`) via official signed NVIDIA NVML (`nvmlDeviceGetPowerUsage`). Supports AMD Radeon (ADL) and Windows GPU Engine fallbacks.
 * 🌸 **VRAM Monitor:** Dedicated video memory type, load %, and live usage (e.g., `GDDR6 | 1.5 / 6.0 GB`).
 * 🩵 **DISK Monitor (Smart Auto-Focus):** Unified storage activity graph with Read / Write throughput in MB/s (`R:12.4 W:45.0 MB/s`). Dynamically auto-focuses on whichever drive is currently under heavy load (e.g., `[Z: (games)]` or `[C: (Windows)]`).
-* ❄️ **FAN Speed Monitor (Modular Addon with Dual Visualization):**
-  * **Switchable Modes in Settings:**
-    * **Graph Mode (Default):** Synchronized real-time multi-trace RPM curves.
-    * **Fan Icons Mode:** Dynamic aerodynamic fan impeller cards with blade counts scaling by speed tier (Few blades in Quiet mode < 1200 RPM, 7 blades in Medium mode, 11 blades in Turbo mode > 2200 RPM), rotating impeller animation, speed indicators, and smooth horizontal scrolling (mouse wheel / drag / arrow controls) when multiple coolers are connected.
-    * **Demo Mode:** Built-in fan simulation preview for systems with vendor-locked EC controllers.
+* ❄️ **FAN Speed Monitor (Modular Addon with 3 Visualization Modes & Hardware Spin Test):**
+  * **3 Switchable Modes in Settings:**
+    * **Multi-trace Graph (`📈`):** Synchronized real-time RPM history curves.
+    * **1-Row Aerodynamic Icons (`🌀`):** Dynamic impeller cards with speed-tiered blade counts, smooth rotational animation, and horizontal mouse scrolling.
+    * **Multi-Row Adaptive Grid (`▦`):** Compact multi-row card grid to view all active chassis, CPU, and GPU coolers simultaneously.
+  * **Live Fan RPM in Subsystems:**
+    * **CPU Header:** Direct live CPU fan tachometer display (e.g., `AMD Ryzen 9 5950X | 16C 32T | 🌀 1,010 RPM`).
+    * **GPU Header:** Real-time GPU fan speed or silent `💤 0 RPM (0dB)` indicator when running in zero-RPM passive mode.
+  * **⚡ GPU Fan Spin Test (10s):** One-click hardware diagnostic test in the fan selection dialog that spins GPU fans up to 50% PWM via LibreHardwareMonitor driver controls, validating tachometer readout and physical airflow.
+  * **Custom Fan Selection Dialog (`⚙ Fans`):** Select exactly which coolers to display. Hide disconnected headers while keeping semi-passive fans visible.
+  * **Full 3-Fan GPU Support:** Native mapping for 3-fan graphics cards (RTX 3090, 3080, 4090, 4080, MSI Trio, Asus TUF/Strix) where PCBs share 2 tachometer channels.
+  * **Demo Mode:** Built-in fan simulation preview for systems with vendor-locked EC controllers.
   * **Isolated Plugin Architecture:** Communicates via local Named Pipes with `RyzenQuiet.FanService` to ensure 100% clean antivirus safety.
+  * **💡 Motherboard & CPU Fans on Windows 11 (PawnIO Driver):**
+    Windows 11 restricts legacy kernel drivers (such as WinRing0) via Core Isolation & Vulnerable Driver Blocklist. LibreHardwareMonitor 0.9.6 utilizes the modern, secure, and WHQL-compliant open-source kernel driver **[PawnIO](https://pawnio.eu/)** to access motherboard Super I/O chips (Nuvoton, ITE, Fintek).
+    * To read CPU Cooler, AIO Pump, and Chassis fans, download and install PawnIO once: [**pawnio.eu**](https://pawnio.eu/) (or direct installer [**PawnIO_setup.exe**](https://github.com/namazso/PawnIO.Setup/releases/latest/download/PawnIO_setup.exe)).
+    * GPU fans (NVIDIA NVAPI / AMD ADL) work out-of-the-box without requiring any kernel drivers.
 
 ### 3. 📌 Detachable Floating HUD / Desktop Widget
 * **Docked Mode:** Anchored next to the Windows system tray; smoothly slides out when clicking the tray icon and auto-hides when clicking away.
@@ -166,12 +184,23 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 * 🟣 **Монитор GPU:** Нагрузка графического чипа в %, температура ядра (°C) с пунктирной линией и **реальное энергопотребление в ваттах** (`⚡ 136W`) через официальный подписанный NVIDIA NVML (`nvmlDeviceGetPowerUsage`). Поддержка AMD Radeon (ADL) и Windows GPU Engine.
 * 🌸 **Монитор VRAM:** Тип видеопамяти, процент нагрузки и точный объём занятой VRAM (например, `GDDR6 | 1.5 / 6.0 GB`).
 * 🩵 **Монитор накопителей (DISK) с умным фокусом:** Общая дисковая активность и скорость чтения/записи в МБ/с (`R:12.4 W:45.0 MB/s`). Автофокус на самом активном накопителе.
-* ❄️ **Монитор кулеров (Изолированное дополнение с двумя режимами отображения):**
-  * **Переключаемые режимы в настройках:**
-    * **График (по умолчанию):** Синхронизированные кривые RPM в реальном времени.
-    * **Режим иконок (Иконки):** Векторные карточки вентиляторов с динамическим числом аэродинамических лопастей по градациям скорости (мало лопастей в тихом режиме < 1200 RPM, 7 лопастей в среднем режиме, 11 лопастей в режиме турбо > 2200 RPM), плавной анимацией вращения, легендой под каждым кулером и горизонтальной прокруткой (колесом мыши, перетаскиванием или кнопками-стрелками).
-    * **Демо-режим:** Возможность включить визуализацию и оценить интерфейс даже на ноутбуках с заблокированным EC-контроллером.
-  * **Изолированная архитектура:** Работает через локальный именованный канал (Named Pipe) с отдельным процессом `RyzenQuiet.FanService`, исключая ложные срабатывания антивирусов в основной программе.
+* ❄️ **Монитор кулеров (Изолированное дополнение с 3 режимами и тестом кулеров):**
+  * **3 переключаемых режима в настройках:**
+    * **График (`📈`):** Синхронизированные кривые RPM в реальном времени.
+    * **В 1 ряд (`🌀`):** Векторные карточки вентиляторов с динамическим числом лопастей, плавной анимацией вращения и горизонтальной прокруткой.
+    * **Сетка (`▦`):** Компактная адаптивная сетка карточек, позволяющая видеть сразу все кулеры без прокрутки.
+  * **Живые обороты в шапках процессора и видеокарты:**
+    * **CPU:** Прямой вывод оборотов кулера процессора (например, `AMD Ryzen 9 5950X | 16C 32T | 🌀 1,010 RPM`).
+    * **GPU:** Отображение реальных RPM или статуса тишины `💤 0 RPM (0dB)`, когда кулеры видеокарты находятся в полупассивном режиме.
+  * **⚡ Тест раскрутки кулеров GPU (10с):** Кнопка 10-секундного теста в окне выбора кулеров для безопасной раскрутки вентиляторов видеокарты на 50% мощности через ШИМ.
+  * **Окно выбора отображаемых кулеров (`⚙ Выбор`):** Индивидуальная настройка видимости каждого кулера в системе.
+  * **Поддержка 3-кулерных видеокарт:** Автоматическое сопоставление 3 физических вертушек на платах с 2 аппаратными тахометрами (RTX 3090, 3080, 4090, 4080 и др.).
+  * **Демо-режим:** Возможность включить визуализацию и оценить интерфейс даже на ноутбуках с заблокированным EC-контроллером.
+  * **Изолированная архитектура:** Работает через локальный именованный канал (Named Pipe) с отдельным процессом `RyzenQuiet.FanService`.
+  * **💡 Мониторинг кулеров процессора и платы в Windows 11 (Драйвер PawnIO):**
+    В Windows 11 устаревшие драйверы ядра (например, WinRing0) блокируются политиками безопасности ядра (Core Isolation / Список уязвимых драйверов). LibreHardwareMonitor 0.9.6 использует современный, безопасный и подписанный драйвер **[PawnIO](https://pawnio.eu/)** для прямого доступа к контроллерам Super I/O материнских плат (Nuvoton, ITE, Fintek).
+    * Для отображения кулера CPU, помпы СЖО и разъемов корпуса установите PawnIO с официального сайта: [**pawnio.eu**](https://pawnio.eu/) (прямой установщик: [**PawnIO_setup.exe**](https://github.com/namazso/PawnIO.Setup/releases/latest/download/PawnIO_setup.exe)).
+    * Обороты кулеров видеокарты (NVIDIA NVAPI / AMD ADL) считываются сразу из коробки без установки драйверов ядра.
 
 ### 3. 📌 Плавающий виджет на рабочий стол / HUD
 * **Режим трея (Docked):** Аккуратная всплывающая панель около системного трея, открывающаяся по клику на значок и скрывающаяся при клике в любое другое место.

@@ -97,6 +97,22 @@ namespace RyzenQuiet.FanService
 
                 _computer.Open();
                 Log("Computer.Open() succeeded. Enumerating all detected hardware...");
+                try
+                {
+                    var pawnType = typeof(Computer).Assembly.GetType("LibreHardwareMonitor.PawnIo.PawnIo");
+                    bool isPawnInstalled = false;
+                    if (pawnType != null)
+                    {
+                        var prop = pawnType.GetProperty("IsInstalled", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
+                        isPawnInstalled = prop?.GetValue(null) is true;
+                    }
+                    Log($"PawnIO driver installed: {isPawnInstalled}");
+                    if (!isPawnInstalled)
+                    {
+                        Log("NOTE: PawnIO driver is not installed. Motherboard/CPU fans cannot be detected on Windows 11 without PawnIO (https://pawnio.eu/).");
+                    }
+                }
+                catch { }
 
                 int totalSensors = 0;
                 int fanSensors = 0;
@@ -242,6 +258,47 @@ namespace RyzenQuiet.FanService
                                     _cts.Cancel();
                                     break;
                                 }
+                                else if (line.StartsWith("TEST_GPU_FAN", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    _ = Task.Run(async () =>
+                                    {
+                                        Log("Starting GPU fan spin test (50% PWM for 10 seconds)...");
+                                        try
+                                        {
+                                            var activeControls = new List<IControl>();
+                                            if (_computer != null)
+                                            {
+                                                foreach (var hw in _computer.Hardware)
+                                                {
+                                                    if (hw.HardwareType == HardwareType.GpuNvidia || hw.HardwareType == HardwareType.GpuAmd)
+                                                    {
+                                                        foreach (var s in hw.Sensors)
+                                                        {
+                                                            if (s.SensorType == SensorType.Control && s.Control != null)
+                                                            {
+                                                                activeControls.Add(s.Control);
+                                                                s.Control.SetSoftware(50f);
+                                                                Log($"[TEST] Set GPU control '{s.Name}' to 50%");
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+                                            await Task.Delay(10000);
+
+                                            foreach (var c in activeControls)
+                                            {
+                                                try { c.SetDefault(); } catch { }
+                                            }
+                                            Log("[TEST] GPU fan spin test completed. Restored default BIOS curves.");
+                                        }
+                                        catch (Exception testEx)
+                                        {
+                                            Log($"[TEST] Spin test error: {testEx.Message}");
+                                        }
+                                    });
+                                }
                             }
                         }
                         catch { }
@@ -306,9 +363,59 @@ namespace RyzenQuiet.FanService
 
         private static void CollectSensors(IHardware hardware, List<FanMetricItem> fans)
         {
+            var fanSensors = new List<ISensor>();
             foreach (var sensor in hardware.Sensors)
             {
                 if (sensor.SensorType == SensorType.Fan)
+                {
+                    fanSensors.Add(sensor);
+                }
+            }
+
+            // Special handling for NVIDIA 3-fan graphics cards (e.g. RTX 3090, 3080, 4090, 4080, Trio, TUF, Strix):
+            // Hardware PCBs have only 2 tachometer headers (Header 1 drives Fans 1 & 2, Header 2 drives Fan 3).
+            // When 2 fan sensors are reported on a 3-fan GPU, expand to 3 fans matching physical cooler reality.
+            if (hardware.HardwareType == HardwareType.GpuNvidia && fanSensors.Count == 2 &&
+                (hardware.Name.Contains("3090") || hardware.Name.Contains("3080") ||
+                 hardware.Name.Contains("4090") || hardware.Name.Contains("4080") ||
+                 hardware.Name.Contains("Trio", StringComparison.OrdinalIgnoreCase) ||
+                 hardware.Name.Contains("Trinity", StringComparison.OrdinalIgnoreCase) ||
+                 hardware.Name.Contains("Strix", StringComparison.OrdinalIgnoreCase) ||
+                 hardware.Name.Contains("TUF", StringComparison.OrdinalIgnoreCase)))
+            {
+                float val1 = fanSensors[0].Value ?? 0f;
+                float val2 = fanSensors[1].Value ?? 0f;
+                int rpm1 = Math.Max(0, (int)Math.Round(val1));
+                int rpm2 = Math.Max(0, (int)Math.Round(val2));
+
+                fans.Add(new FanMetricItem
+                {
+                    Id = fanSensors[0].Identifier.ToString() + "_1",
+                    Name = "GPU Fan 1",
+                    Hardware = hardware.Name,
+                    HardwareType = hardware.HardwareType.ToString(),
+                    Rpm = rpm1
+                });
+                fans.Add(new FanMetricItem
+                {
+                    Id = fanSensors[0].Identifier.ToString() + "_2",
+                    Name = "GPU Fan 2",
+                    Hardware = hardware.Name,
+                    HardwareType = hardware.HardwareType.ToString(),
+                    Rpm = rpm1
+                });
+                fans.Add(new FanMetricItem
+                {
+                    Id = fanSensors[1].Identifier.ToString() + "_3",
+                    Name = "GPU Fan 3",
+                    Hardware = hardware.Name,
+                    HardwareType = hardware.HardwareType.ToString(),
+                    Rpm = rpm2
+                });
+            }
+            else
+            {
+                foreach (var sensor in fanSensors)
                 {
                     float val = sensor.Value ?? 0f;
                     int rpm = (int)Math.Round(val);
@@ -326,18 +433,6 @@ namespace RyzenQuiet.FanService
                         Hardware = hardware.Name,
                         HardwareType = hardware.HardwareType.ToString(),
                         Rpm = Math.Max(0, rpm)
-                    });
-                }
-                else if (sensor.SensorType == SensorType.Control && sensor.Name.Contains("Fan", StringComparison.OrdinalIgnoreCase))
-                {
-                    float val = sensor.Value ?? 0f;
-                    fans.Add(new FanMetricItem
-                    {
-                        Id = sensor.Identifier.ToString(),
-                        Name = $"{sensor.Name} (%)",
-                        Hardware = hardware.Name,
-                        HardwareType = hardware.HardwareType.ToString(),
-                        Rpm = (int)Math.Round(val)
                     });
                 }
             }

@@ -97,6 +97,7 @@ namespace RyzenQuietPro
         private CancellationTokenSource? _cts;
         private Task? _workerTask;
         private Process? _serviceProcess;
+        private StreamWriter? _pipeWriter;
 
         public FanPluginStatus Status { get; private set; } = FanPluginStatus.Disabled;
         public string StatusMessage { get; private set; } = string.Empty;
@@ -233,6 +234,35 @@ namespace RyzenQuietPro
             }
         }
 
+        public bool IsRunning => Status == FanPluginStatus.Connected || Status == FanPluginStatus.Connecting || Status == FanPluginStatus.Starting;
+
+        public void StartService()
+        {
+            SetEnabled(true);
+        }
+
+        public async Task SendCommandAsync(string command)
+        {
+            var writer = _pipeWriter;
+            if (writer != null)
+            {
+                try
+                {
+                    await writer.WriteLineAsync(command);
+                    await writer.FlushAsync();
+                }
+                catch (Exception ex)
+                {
+                    Logger.Log($"FanMonitorClient SendCommand error: {ex.Message}");
+                }
+            }
+        }
+
+        public void TriggerGpuFanTest()
+        {
+            _ = SendCommandAsync("TEST_GPU_FAN");
+        }
+
         public void SetEnabled(bool enabled)
         {
             if (enabled)
@@ -253,7 +283,6 @@ namespace RyzenQuietPro
             else
             {
                 StopService();
-                SetStatus(FanPluginStatus.Disabled, Loc.Get("FanPluginStatus_Disabled"));
             }
         }
 
@@ -297,13 +326,22 @@ namespace RyzenQuietPro
                     SetStatus(FanPluginStatus.Connected, Loc.Get("FanPluginStatus_Connected"));
 
                     using var reader = new StreamReader(pipeClient, Encoding.UTF8, false, 1024, leaveOpen: true);
+                    using var writer = new StreamWriter(pipeClient, Encoding.UTF8, 1024, leaveOpen: true) { AutoFlush = true };
+                    _pipeWriter = writer;
 
-                    while (!ct.IsCancellationRequested && pipeClient.IsConnected)
+                    try
                     {
-                        string? line = await reader.ReadLineAsync(ct);
-                        if (line == null) break;
+                        while (!ct.IsCancellationRequested && pipeClient.IsConnected)
+                        {
+                            string? line = await reader.ReadLineAsync(ct);
+                            if (line == null) break;
 
-                        ProcessSnapshotJson(line);
+                            ProcessSnapshotJson(line);
+                        }
+                    }
+                    finally
+                    {
+                        _pipeWriter = null;
                     }
                 }
                 catch (OperationCanceledException)
@@ -429,7 +467,7 @@ namespace RyzenQuietPro
             }
         }
 
-        private void StopService()
+        public void StopService()
         {
             try
             {
@@ -440,15 +478,41 @@ namespace RyzenQuietPro
             try
             {
                 using var client = new NamedPipeClientStream(".", PipeName, PipeDirection.InOut);
-                client.Connect(200);
+                client.Connect(300);
                 using var writer = new StreamWriter(client, Encoding.UTF8) { AutoFlush = true };
                 writer.WriteLine("QUIT");
             }
             catch { }
 
+            try
+            {
+                var procs = Process.GetProcessesByName("RyzenQuiet.FanService");
+                foreach (var p in procs)
+                {
+                    try
+                    {
+                        if (!p.WaitForExit(500))
+                        {
+                            p.Kill();
+                        }
+                    }
+                    catch { }
+                }
+            }
+            catch { }
+
+            _serviceProcess = null;
             _cts?.Dispose();
             _cts = null;
             _workerTask = null;
+
+            lock (_fansLock)
+            {
+                _fans.Clear();
+            }
+
+            SetStatus(FanPluginStatus.Disabled, Loc.Get("FanPluginStatus_Disabled"));
+            FansUpdated?.Invoke();
         }
 
         public void Dispose()
