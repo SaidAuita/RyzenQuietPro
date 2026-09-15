@@ -58,6 +58,8 @@ namespace RyzenQuietPro
         private Button _btnFanModeIcons = null!;
         private Button _btnFanModeGrid = null!;
         private CheckBox _chkFanDemo = null!;
+        private Label _lblFanScale = null!;
+        private TrackBar _tbFanScale = null!;
         private Button _btnFanSelect = null!;
         private CheckBox? _chkShowAllGpus;
 
@@ -89,7 +91,7 @@ namespace RyzenQuietPro
             _onModeChangeRequested = onModeChangeRequested;
 
             bool multiGpu = _hardware.Gpu.GpuCount > 1;
-            int formH = multiGpu ? 978 : 948;
+            int formH = multiGpu ? 1000 : 970;
 
             this.AutoScaleMode = AutoScaleMode.None;
             this.FormBorderStyle = FormBorderStyle.None;
@@ -214,7 +216,7 @@ namespace RyzenQuietPro
 
             // ================= 2. GRAPHS & MODULES CARD =================
             // Single vertical column (1 row per item) - spacious and slender
-            int cardGraphsH = multiGpu ? 478 : 448;
+            int cardGraphsH = multiGpu ? 500 : 470;
             var cardGraphs = CreateCard(14, curY, cardW, cardGraphsH);
             this.Controls.Add(cardGraphs);
 
@@ -365,16 +367,16 @@ namespace RyzenQuietPro
                 _onSettingsUpdated?.Invoke();
             };
 
-            // Tier 3: [ ⚙ Выбор кулеров ] + [✓] Демо
+            // Tier 3: [ ⚙ Выбор ] + [✓] Демо
             int fanOptY = fanModeY + 38;
             _btnFanSelect = new Button
             {
-                Text = Loc.Get("FanSelectFansFull"),
+                Text = Loc.Get("FanSelectFans"),
                 Font = new Font("Segoe UI", 8.25f, FontStyle.Bold),
                 ForeColor = Color.FromArgb(56, 189, 248),
                 BackColor = Color.FromArgb(28, 36, 48),
                 FlatStyle = FlatStyle.Flat,
-                Size = new Size(180, 32),
+                Size = new Size(130, 30),
                 Location = new Point(14, fanOptY),
                 Cursor = Cursors.Hand,
                 TextAlign = ContentAlignment.MiddleCenter
@@ -384,7 +386,7 @@ namespace RyzenQuietPro
             _toolTip.SetToolTip(_btnFanSelect, Loc.Get("FanSelectionTitle"));
             _btnFanSelect.Click += (s, e) => OpenFanSelectionDialog();
 
-            _chkFanDemo = CreateCheckbox(Loc.Get("FanDemoMode"), 206, fanOptY + 4, _settings.EnableFanDemo, v => {
+            _chkFanDemo = CreateCheckbox(Loc.Get("FanDemoMode"), 154, fanOptY + 3, _settings.EnableFanDemo, v => {
                 _settings.EnableFanDemo = v;
                 _hardware.Fans.DemoMode = v;
                 _settings.Save();
@@ -392,7 +394,41 @@ namespace RyzenQuietPro
                 _onSettingsUpdated?.Invoke();
             });
             _chkFanDemo.Font = new Font("Segoe UI", 8.25f);
-            _chkFanDemo.Size = new Size(160, 24);
+            _chkFanDemo.Size = new Size(110, 24);
+
+            // Tier 4: Fan Spinner Scale Slider [ Размер: 100% ] [--------O--------]
+            int fanScaleY = fanOptY + 36;
+            _lblFanScale = new Label
+            {
+                Text = $"{Loc.Get("FanScale")}: {_settings.FanScalePercent}%",
+                Font = new Font("Segoe UI", 8.25f, FontStyle.Bold),
+                ForeColor = Color.FromArgb(200, 205, 220),
+                Location = new Point(14, fanScaleY + 2),
+                Size = new Size(130, 22),
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+
+            _tbFanScale = new TrackBar
+            {
+                AutoSize = false,
+                Location = new Point(148, fanScaleY),
+                Size = new Size(cardW - 148 - 14, 24),
+                Minimum = 100,
+                Maximum = 200,
+                TickStyle = TickStyle.None,
+                SmallChange = 5,
+                LargeChange = 25,
+                Value = Math.Clamp(_settings.FanScalePercent, 100, 200),
+                Cursor = Cursors.Hand
+            };
+            _tbFanScale.ValueChanged += (s, e) => {
+                _settings.FanScalePercent = _tbFanScale.Value;
+                _lblFanScale.Text = $"{Loc.Get("FanScale")}: {_tbFanScale.Value}%";
+                _settings.Save();
+                _onSettingsUpdated?.Invoke();
+            };
+            _toolTip.SetToolTip(_tbFanScale, Loc.Get("FanScaleTip"));
+            _toolTip.SetToolTip(_lblFanScale, Loc.Get("FanScaleTip"));
 
             cardGraphs.Controls.AddRange(new Control[] {
                 _chkCpuGraph, _chkCpuCores, _chkTopProcesses,
@@ -400,11 +436,12 @@ namespace RyzenQuietPro
                 _chkVramGraph, _chkDiskGraph, _chkFanGraph,
                 _lblFanStatus, _btnFanToggle, _btnFanFolder,
                 _btnFanModeGraph, _btnFanModeIcons, _btnFanModeGrid,
-                _btnFanSelect, _chkFanDemo
+                _btnFanSelect, _chkFanDemo,
+                _lblFanScale, _tbFanScale
             });
             UpdateFanModeUI();
 
-            int nextY = fanOptY + 40;
+            int nextY = fanScaleY + 44;
 
             if (multiGpu)
             {
@@ -422,7 +459,7 @@ namespace RyzenQuietPro
                 BackColor = Color.FromArgb(34, 34, 44),
                 FlatStyle = FlatStyle.Flat,
                 Size = new Size(cardW - 28, 34),
-                Location = new Point(14, nextY + 4),
+                Location = new Point(14, nextY + 2),
                 TextAlign = ContentAlignment.MiddleCenter,
                 Cursor = Cursors.Hand
             };
@@ -452,6 +489,9 @@ namespace RyzenQuietPro
                 _settings.ShowFanGraph = true;
                 _settings.EnableFanAddon = true;
                 _settings.FanVisualMode = 0;
+                _settings.FanScalePercent = 100;
+                if (_tbFanScale != null) _tbFanScale.Value = 100;
+                if (_lblFanScale != null) _lblFanScale.Text = $"{Loc.Get("FanScale")}: 100%";
                 UpdateFanModeUI();
                 _hardware.Fans.SetEnabled(true);
                 UpdateFanStatusUI();
@@ -460,6 +500,7 @@ namespace RyzenQuietPro
                 _onSettingsUpdated?.Invoke();
             };
             cardGraphs.Controls.Add(_btnResetGraphs);
+            _btnResetGraphs.BringToFront();
 
             curY += cardGraphsH + 8;
 
@@ -796,7 +837,10 @@ namespace RyzenQuietPro
             _btnFanModeIcons.Text = Loc.Get("FanVisualMode_Icons");
             _btnFanModeGrid.Text = Loc.Get("FanVisualMode_Grid");
             _chkFanDemo.Text = Loc.Get("FanDemoMode");
-            _btnFanSelect.Text = Loc.Get("FanSelectFansFull");
+            _lblFanScale.Text = $"{Loc.Get("FanScale")}: {_settings.FanScalePercent}%";
+            _toolTip.SetToolTip(_tbFanScale, Loc.Get("FanScaleTip"));
+            _toolTip.SetToolTip(_lblFanScale, Loc.Get("FanScaleTip"));
+            _btnFanSelect.Text = Loc.Get("FanSelectFans");
             _toolTip.SetToolTip(_btnFanSelect, Loc.Get("FanSelectionTitle"));
             _toolTip.SetToolTip(_btnFanFolder, Loc.Get("FanPluginFolder"));
             if (_chkShowAllGpus != null) _chkShowAllGpus.Text = Loc.Get("ShowAllGpus");
@@ -841,6 +885,11 @@ namespace RyzenQuietPro
             _btnFanModeGrid.BackColor = (mode == 2) ? Color.FromArgb(38, 54, 75) : Color.FromArgb(28, 28, 36);
             _btnFanModeGrid.ForeColor = (mode == 2) ? Color.FromArgb(56, 189, 248) : Color.FromArgb(140, 140, 155);
             _btnFanModeGrid.FlatAppearance.BorderColor = (mode == 2) ? Color.FromArgb(56, 189, 248) : Color.FromArgb(45, 45, 58);
+
+            // Enable slider only for icon/grid modes
+            bool isIconMode = (mode == 1 || mode == 2);
+            _tbFanScale.Enabled = isIconMode;
+            _lblFanScale.ForeColor = isIconMode ? Color.FromArgb(200, 205, 220) : Color.FromArgb(90, 95, 110);
         }
 
         private void ToggleFanService()

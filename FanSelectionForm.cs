@@ -227,6 +227,37 @@ namespace RyzenQuietPro
 
             // ================= FOOTER =================
             int footerY = this.ClientSize.Height - 40;
+            var lblScale = new Label
+            {
+                Text = $"{Loc.Get("FanScale")}: {_settings.FanScalePercent}%",
+                Font = new Font("Segoe UI", 8.25f, FontStyle.Bold),
+                ForeColor = Color.FromArgb(200, 205, 220),
+                Location = new Point(14, footerY + 3),
+                Size = new Size(115, 24),
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+            this.Controls.Add(lblScale);
+
+            var tbScale = new TrackBar
+            {
+                Location = new Point(132, footerY - 2),
+                Size = new Size(155, 24),
+                Minimum = 100,
+                Maximum = 200,
+                TickStyle = TickStyle.None,
+                SmallChange = 5,
+                LargeChange = 25,
+                Value = Math.Clamp(_settings.FanScalePercent, 100, 200),
+                Cursor = Cursors.Hand
+            };
+            tbScale.ValueChanged += (s, e) => {
+                _settings.FanScalePercent = tbScale.Value;
+                lblScale.Text = $"{Loc.Get("FanScale")}: {tbScale.Value}%";
+                _settings.Save();
+                _onSettingsUpdated?.Invoke();
+            };
+            this.Controls.Add(tbScale);
+
             var btnDone = new Button
             {
                 Text = Loc.Get("InfoClose"),
@@ -234,8 +265,8 @@ namespace RyzenQuietPro
                 ForeColor = Color.White,
                 BackColor = Color.FromArgb(14, 165, 233),
                 FlatStyle = FlatStyle.Flat,
-                Size = new Size(cardW, 30),
-                Location = new Point(14, footerY),
+                Size = new Size(cardW - 280, 30),
+                Location = new Point(14 + 280, footerY),
                 Cursor = Cursors.Hand,
                 TextAlign = ContentAlignment.MiddleCenter,
                 Padding = Padding.Empty

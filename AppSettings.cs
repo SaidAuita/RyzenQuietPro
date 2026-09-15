@@ -25,6 +25,19 @@ namespace RyzenQuietPro
         public bool ShowFanGraph { get; set; } = false;
         public bool EnableFanAddon { get; set; } = false;
         public int FanVisualMode { get; set; } = 0; // 0 = Graph (default), 1 = 1 Row (Icons), 2 = Grid (Multi-row)
+        public int FanScalePercent { get; set; } = 100; // 100% to 200%
+        public bool FanLargeIcons
+        {
+            get => FanScalePercent >= 150;
+            set
+            {
+                if (value && FanScalePercent < 150) FanScalePercent = 200;
+                else if (!value && FanScalePercent >= 150) FanScalePercent = 100;
+            }
+        }
+        [System.Text.Json.Serialization.JsonIgnore]
+        public float FanScale => Math.Clamp(FanScalePercent, 80, 250) / 100f;
+        public int LastKnownFanCount { get; set; } = 0;
         public bool EnableFanDemo { get; set; } = false;
         public System.Collections.Generic.List<string> HiddenFanIds { get; set; } = new();
 

@@ -149,7 +149,12 @@ namespace RyzenQuietPro
             _hardware.Fans.FansUpdated += () => {
                 if (this.IsHandleCreated && !this.IsDisposed)
                 {
-                    try { this.BeginInvoke((Action)UpdateMetricsUI); } catch { }
+                    try { 
+                        this.BeginInvoke((Action)(() => {
+                            EnsureFanLayout();
+                            UpdateMetricsUI();
+                        })); 
+                    } catch { }
                 }
             };
 
@@ -180,6 +185,45 @@ namespace RyzenQuietPro
             _fanAnimTimer.Start();
         }
 
+        private int _lastLayoutFanCount = -1;
+        private int _lastLayoutFanRows = -1;
+        private int _lastLayoutFanScale = -1;
+        private int _lastLayoutVisualMode = -1;
+
+        private void EnsureFanLayout()
+        {
+            if (!_settings.ShowFanGraph) return;
+
+            var allFans = _hardware.Fans.Fans;
+            if (allFans.Count > 0 && _settings.LastKnownFanCount != allFans.Count)
+            {
+                _settings.LastKnownFanCount = allFans.Count;
+                _settings.Save();
+            }
+
+            int visibleFanCount = allFans.Count(f => _settings.IsFanVisible(f.Id, f.Name));
+            int contentW = Math.Max(200, this.ClientSize.Width - 28);
+            float fanScale = _settings.FanScale;
+            int targetCardW = (int)(92 * fanScale);
+            int cols = Math.Max(2, (contentW - 4) / targetCardW);
+            if (fanScale >= 1.6f && cols > 2) cols = 2;
+            else if (fanScale >= 1.25f && cols > 3) cols = 3;
+            else if (contentW < 360 && cols > 3) cols = 3;
+
+            int rows = (int)Math.Ceiling((double)Math.Max(1, visibleFanCount) / cols);
+
+            if (_lastLayoutFanCount != visibleFanCount || _lastLayoutFanRows != rows || 
+                _lastLayoutFanScale != _settings.FanScalePercent || _lastLayoutVisualMode != _settings.FanVisualMode)
+            {
+                _lastLayoutFanCount = visibleFanCount;
+                _lastLayoutFanRows = rows;
+                _lastLayoutFanScale = _settings.FanScalePercent;
+                _lastLayoutVisualMode = _settings.FanVisualMode;
+                LayoutComponents();
+                this.Invalidate();
+            }
+        }
+
         private void InitializeComponents()
         {
             this.AutoScaleMode = AutoScaleMode.None;
@@ -197,8 +241,36 @@ namespace RyzenQuietPro
             int defaultH = _settings.ShowTopProcesses ? 590 : 495;
             if (_settings.ShowFanGraph)
             {
-                if (_settings.FanVisualMode == 1) defaultH += 88;
-                else if (_settings.FanVisualMode == 2) defaultH += 136;
+                float fanScale = _settings.FanScale;
+                if (_settings.FanVisualMode == 1)
+                {
+                    defaultH += (int)Math.Round(72 * fanScale) + 16;
+                }
+                else if (_settings.FanVisualMode == 2)
+                {
+                    int cols;
+                    if (fanScale >= 1.40f)
+                    {
+                        cols = Math.Max(2, (initW - 28 - 4) / (int)(95 * fanScale));
+                        if ((initW - 28) < 460) cols = 2;
+                    }
+                    else
+                    {
+                        cols = Math.Max(2, (initW - 28 - 4) / 115);
+                        if ((initW - 28) < 460) cols = 3;
+                        if ((initW - 28) < 320) cols = 2;
+                    }
+
+                    int fanCount = _settings.LastKnownFanCount > 0 ? _settings.LastKnownFanCount : 4;
+                    int expectedRows = (int)Math.Ceiling((double)fanCount / cols);
+                    if (expectedRows < 1) expectedRows = 1;
+                    int testCardW = (initW - 28 - 4 - (5 * (cols - 1))) / cols;
+                    bool isWideCard = (testCardW >= 140);
+                    int cardH = isWideCard 
+                        ? (int)Math.Round(48 + 20 * fanScale) 
+                        : (int)Math.Round(42 + 10 * fanScale);
+                    defaultH += (expectedRows * (cardH + 5)) + 40;
+                }
                 else defaultH += 60;
             }
             int initH = Math.Max(420, _settings.WindowHeight > 0 ? _settings.WindowHeight : defaultH);
@@ -565,13 +637,14 @@ namespace RyzenQuietPro
             if (showGpu) fixedH += 3 + 5 + 20 + 6;
             if (showVram) fixedH += 3 + 5 + 20 + (showDisk || showFans ? 6 : 0);
             if (showDisk) fixedH += 3 + 5 + 20 + (showFans ? 6 : 0);
-            if (showFans) fixedH += 3 + 5 + 20;
+            if (showFans) fixedH += 3 + 6 + 24;
 
             int fanH;
             int graphH;
             if (showFans && _settings.FanVisualMode == 1)
             {
-                fanH = 76;
+                float fanScale = _settings.FanScale;
+                fanH = (int)Math.Round(72 * fanScale) + 4;
                 fixedH += fanH;
                 int nonFanGraphs = activeGraphCount - 1;
                 if (nonFanGraphs <= 0) nonFanGraphs = 1;
@@ -583,12 +656,29 @@ namespace RyzenQuietPro
                 var allFans = _hardware.Fans.Fans;
                 int visibleFanCount = allFans.Count(f => _settings.IsFanVisible(f.Id, f.Name));
                 if (visibleFanCount == 0) visibleFanCount = 1;
-                int cols = (contentW < 360) ? 3 : 4;
+                float fanScale = _settings.FanScale;
+                int cols;
+                if (fanScale >= 1.40f)
+                {
+                    cols = Math.Max(2, (contentW - 4) / (int)(95 * fanScale));
+                    if (contentW < 460) cols = 2;
+                }
+                else
+                {
+                    cols = Math.Max(2, (contentW - 4) / 115);
+                    if (contentW < 460) cols = 3;
+                    if (contentW < 320) cols = 2;
+                }
+
                 int rows = (int)Math.Ceiling((double)visibleFanCount / cols);
                 if (rows < 1) rows = 1;
-                int cardH = 56;
+                int cardW = (contentW - 4 - (5 * (cols - 1))) / cols;
+                bool isWideCard = (cardW >= 140);
+                int cardH = isWideCard 
+                    ? (int)Math.Round(48 + 20 * fanScale) 
+                    : (int)Math.Round(42 + 10 * fanScale);
                 int gapY = 5;
-                fanH = (rows * cardH) + ((rows - 1) * gapY) + 4;
+                fanH = (rows * cardH) + ((rows - 1) * gapY) + 8;
                 fixedH += fanH;
                 int nonFanGraphs = activeGraphCount - 1;
                 if (nonFanGraphs <= 0) nonFanGraphs = 1;
@@ -766,12 +856,12 @@ namespace RyzenQuietPro
             {
                 _sepFans.Location = new Point(0, curY);
                 _sepFans.Size = new Size(w, 3);
-                curY += 5;
+                curY += 6;
 
                 _lblFans.Location = new Point(marginX, curY);
                 _lblFansSub.Location = new Point(marginX + 95, curY);
-                _lblFansSub.Size = new Size(contentW - 95, 20);
-                curY += 20;
+                _lblFansSub.Size = new Size(contentW - 95, 18);
+                curY += 24;
 
                 _pnlFansGraph.Location = new Point(marginX, curY);
                 _pnlFansGraph.Size = new Size(contentW, fanH);
@@ -1404,15 +1494,8 @@ namespace RyzenQuietPro
                 var fans = _hardware.Fans.Fans;
                 if (_hardware.Fans.IsConnected && fans.Count > 0)
                 {
-                    var primary = fans[0];
-                    _lblFans.Text = $"{Loc.Get("Fans")}: {primary.CurrentRpm} RPM";
-                    var parts = new List<string>();
-                    for (int i = 0; i < Math.Min(4, fans.Count); i++)
-                    {
-                        string shortName = FormatFanName(fans[i].Name);
-                        parts.Add($"{shortName}: {fans[i].CurrentRpm}");
-                    }
-                    _lblFansSub.Text = string.Join(" | ", parts);
+                    _lblFans.Text = Loc.Get("Fans");
+                    _lblFansSub.Text = "";
                 }
                 else
                 {
@@ -1683,9 +1766,10 @@ namespace RyzenQuietPro
                 return;
             }
 
-            int cardW = 84;
-            int cardH = Math.Min(h - 4, 72);
-            int gap = 8;
+            float fanScale = _settings.FanScale;
+            int cardW = (int)Math.Round(76 + 32 * (fanScale - 1f));
+            int cardH = Math.Min(h - 4, (int)Math.Round(72 * fanScale));
+            int gap = Math.Max(5, (int)Math.Round(6 * fanScale));
             int padX = 6;
             int totalW = padX + (fans.Count * cardW) + (Math.Max(0, fans.Count - 1) * gap) + padX;
 
@@ -1704,8 +1788,10 @@ namespace RyzenQuietPro
             g.SetClip(new Rectangle(0, 0, w, h));
 
             int startX = padX - _fanScrollX;
-            using var fontName = new Font("Segoe UI", 7.5f, FontStyle.Bold);
-            using var fontRpm = new Font("Segoe UI", 7f, FontStyle.Regular);
+            float fontSizeName = Math.Clamp(7.5f * (float)Math.Sqrt(fanScale), 7.5f, 11f);
+            float fontSizeRpm = Math.Clamp(7f * (float)Math.Sqrt(fanScale), 7f, 10f);
+            using var fontName = new Font("Segoe UI", fontSizeName, FontStyle.Bold);
+            using var fontRpm = new Font("Segoe UI", fontSizeRpm, FontStyle.Regular);
 
             for (int i = 0; i < fans.Count; i++)
             {
@@ -1754,58 +1840,61 @@ namespace RyzenQuietPro
                 // Accent top line if running
                 if (rpm > 0)
                 {
-                    using var accentPen = new Pen(Color.FromArgb(180, tierColor.R, tierColor.G, tierColor.B), 2f);
+                    using var accentPen = new Pen(Color.FromArgb(180, tierColor.R, tierColor.G, tierColor.B), Math.Max(2f, 2f * fanScale));
                     g.DrawLine(accentPen, cardX + 4, cardY + 1, cardX + cardW - 4, cardY + 1);
                 }
 
                 // Fan geometry
                 float cx = cardX + (cardW / 2f);
-                float cy = cardY + 22f;
-                float fanRadius = 16f;
+                float fanRadius = Math.Clamp((cardH - 30f) * 0.46f, 16f, 36f);
+                float cy = cardY + 4f + fanRadius;
 
                 // Outer shroud
                 using (var shroudBg = new SolidBrush(Color.FromArgb(18, 19, 24)))
                 {
                     g.FillEllipse(shroudBg, cx - fanRadius, cy - fanRadius, fanRadius * 2, fanRadius * 2);
                 }
-                using (var shroudPen = new Pen(Color.FromArgb(46, 48, 60), 1f))
+                using (var shroudPen = new Pen(Color.FromArgb(46, 48, 60), Math.Max(1f, 1f * fanScale)))
                 {
                     g.DrawEllipse(shroudPen, cx - fanRadius, cy - fanRadius, fanRadius * 2, fanRadius * 2);
                 }
 
                 // Rotating blades
                 _fanAngles.TryGetValue(f.Id, out float curAngle);
-                DrawFanBlades(g, cx, cy, fanRadius, bladeCount, curAngle, tierColor, rpm > 0);
+                DrawFanBlades(g, cx, cy, fanRadius, bladeCount, curAngle, tierColor, rpm > 0, fanScale);
 
                 // Central hub cap
-                float hubR = 5f;
+                float hubR = 5f * fanScale;
                 using (var hubBrush = new SolidBrush(Color.FromArgb(32, 34, 44)))
                 {
                     g.FillEllipse(hubBrush, cx - hubR, cy - hubR, hubR * 2, hubR * 2);
                 }
-                using (var hubBorder = new Pen(Color.FromArgb(60, 64, 80), 1f))
+                using (var hubBorder = new Pen(Color.FromArgb(60, 64, 80), Math.Max(1f, 1f * fanScale)))
                 {
                     g.DrawEllipse(hubBorder, cx - hubR, cy - hubR, hubR * 2, hubR * 2);
                 }
+                float dotR = 1.5f * fanScale;
                 using (var dotBrush = new SolidBrush(tierColor))
                 {
-                    g.FillEllipse(dotBrush, cx - 1.5f, cy - 1.5f, 3f, 3f);
+                    g.FillEllipse(dotBrush, cx - dotR, cy - dotR, dotR * 2, dotR * 2);
                 }
 
                 // Legend: Fan Name
                 string dispName = FormatFanName(f.Name);
                 var szName = g.MeasureString(dispName, fontName);
+                float textNameY = cy + fanRadius + 3f * fanScale;
                 using (var nameBrush = new SolidBrush(Color.FromArgb(235, 235, 245)))
                 {
-                    g.DrawString(dispName, fontName, nameBrush, cx - (szName.Width / 2f), cardY + 41);
+                    g.DrawString(dispName, fontName, nameBrush, cx - (szName.Width / 2f), textNameY);
                 }
 
                 // Legend: RPM
                 string rpmText = rpm > 0 ? $"{rpm:N0} RPM" : "0 RPM (0dB)";
                 var szRpm = g.MeasureString(rpmText, fontRpm);
+                float textRpmY = textNameY + szName.Height + 1f;
                 using (var rpmBrush = new SolidBrush(tierColor))
                 {
-                    g.DrawString(rpmText, fontRpm, rpmBrush, cx - (szRpm.Width / 2f), cardY + 54);
+                    g.DrawString(rpmText, fontRpm, rpmBrush, cx - (szRpm.Width / 2f), textRpmY);
                 }
             }
 
@@ -1875,7 +1964,20 @@ namespace RyzenQuietPro
                 return;
             }
 
-            int cols = (w < 360) ? 3 : 4;
+            float fanScale = _settings.FanScale;
+            int cols;
+            if (fanScale >= 1.40f)
+            {
+                cols = Math.Max(2, (w - 4) / (int)(95 * fanScale));
+                if (w < 460) cols = 2;
+            }
+            else
+            {
+                cols = Math.Max(2, (w - 4) / 115);
+                if (w < 460) cols = 3;
+                if (w < 320) cols = 2;
+            }
+
             int rows = (int)Math.Ceiling((double)fans.Count / cols);
             if (rows < 1) rows = 1;
 
@@ -1883,10 +1985,19 @@ namespace RyzenQuietPro
             int gapY = 5;
             int padX = 2;
             int cardW = (w - (padX * 2) - (gapX * (cols - 1))) / cols;
-            int cardH = 56;
+            bool isWideCard = (cardW >= 140);
+            int cardH = isWideCard 
+                ? (int)Math.Round(48 + 20 * fanScale) 
+                : (int)Math.Round(42 + 10 * fanScale);
 
-            using var fontName = new Font("Segoe UI", 7.25f, FontStyle.Bold);
-            using var fontRpm = new Font("Segoe UI", 6.75f, FontStyle.Regular);
+            float fontSizeName = isWideCard 
+                ? Math.Clamp(8.25f + 1.25f * (fanScale - 1f), 8.0f, 9.5f)
+                : 7.25f;
+            float fontSizeRpm = isWideCard
+                ? Math.Clamp(7.75f + 1.25f * (fanScale - 1f), 7.5f, 9.0f)
+                : 6.75f;
+            using var fontName = new Font("Segoe UI", fontSizeName, FontStyle.Bold);
+            using var fontRpm = new Font("Segoe UI", fontSizeRpm, FontStyle.Bold);
 
             for (int i = 0; i < fans.Count; i++)
             {
@@ -1895,7 +2006,7 @@ namespace RyzenQuietPro
                 int row = i / cols;
 
                 int cardX = padX + col * (cardW + gapX);
-                int cardY = 2 + row * (cardH + gapY);
+                int cardY = 4 + row * (cardH + gapY);
 
                 if (cardY + cardH > h + 20) break;
 
@@ -1910,18 +2021,18 @@ namespace RyzenQuietPro
                 }
                 else if (rpm < 1200)
                 {
-                    bladeCount = 4;
-                    tierColor = Color.FromArgb(56, 189, 248); // Sky blue
+                    bladeCount = 4; // Sky blue
+                    tierColor = Color.FromArgb(56, 189, 248);
                 }
                 else if (rpm < 2200)
                 {
-                    bladeCount = 7;
-                    tierColor = Color.FromArgb(249, 115, 22); // Amber orange
+                    bladeCount = 7; // Amber orange
+                    tierColor = Color.FromArgb(249, 115, 22);
                 }
                 else
                 {
-                    bladeCount = 11;
-                    tierColor = Color.FromArgb(239, 68, 68); // Coral red
+                    bladeCount = 11; // Coral red
+                    tierColor = Color.FromArgb(239, 68, 68);
                 }
 
                 // Card background & border
@@ -1938,66 +2049,140 @@ namespace RyzenQuietPro
                 // Accent top stripe when spinning
                 if (rpm > 0)
                 {
-                    using var accentPen = new Pen(Color.FromArgb(180, tierColor.R, tierColor.G, tierColor.B), 2f);
+                    using var accentPen = new Pen(Color.FromArgb(180, tierColor.R, tierColor.G, tierColor.B), Math.Max(2f, 2f * fanScale));
                     g.DrawLine(accentPen, cardX + 3, cardY + 1, cardX + cardW - 3, cardY + 1);
                 }
 
-                // Fan geometry
-                float cx = cardX + (cardW / 2f);
-                float cy = cardY + 16f;
-                float fanRadius = 11.5f;
+                _fanAngles.TryGetValue(f.Id, out float curAngle);
+                string dispName = FormatFanName(f.Name);
+                string rpmText = rpm > 0 ? $"{rpm:N0} RPM" : "0 RPM";
+
+                string subInfo = f.Name?.Trim() ?? "";
+                if (string.Equals(subInfo, dispName, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(f.Hardware))
+                {
+                    subInfo = f.Hardware.Trim();
+                }
+
+                // SIDE-BY-SIDE LAYOUT FOR ALL SCALES:
+                // Animated spinner on the left, fan name + RPM text on the right
+                float fanRadius = isWideCard 
+                    ? Math.Clamp((cardH - 18f) / 2f, 20f, 34f)
+                    : Math.Clamp((cardH - 14f) / 2f, 15f, 20f);
+
+                float padLeft = isWideCard ? Math.Clamp(8f * fanScale, 8f, 14f) : 6f;
+                float cx = cardX + padLeft + fanRadius;
+                float cy = cardY + (cardH / 2f);
 
                 // Outer shroud
                 using (var shroudBg = new SolidBrush(Color.FromArgb(18, 19, 24)))
                 {
                     g.FillEllipse(shroudBg, cx - fanRadius, cy - fanRadius, fanRadius * 2, fanRadius * 2);
                 }
-                using (var shroudPen = new Pen(Color.FromArgb(46, 48, 60), 1f))
+                using (var shroudPen = new Pen(Color.FromArgb(46, 48, 60), Math.Max(1.1f, 1.1f * fanScale)))
                 {
                     g.DrawEllipse(shroudPen, cx - fanRadius, cy - fanRadius, fanRadius * 2, fanRadius * 2);
                 }
 
                 // Rotating blades
-                _fanAngles.TryGetValue(f.Id, out float curAngle);
-                DrawFanBlades(g, cx, cy, fanRadius, bladeCount, curAngle, tierColor, rpm > 0);
+                DrawFanBlades(g, cx, cy, fanRadius, bladeCount, curAngle, tierColor, rpm > 0, fanScale);
 
                 // Central hub cap
-                float hubR = 3.5f;
+                float hubR = fanRadius * 0.30f;
                 using (var hubBrush = new SolidBrush(Color.FromArgb(32, 34, 44)))
                 {
                     g.FillEllipse(hubBrush, cx - hubR, cy - hubR, hubR * 2, hubR * 2);
                 }
-                using (var hubBorder = new Pen(Color.FromArgb(60, 64, 80), 1f))
+                using (var hubBorder = new Pen(Color.FromArgb(60, 64, 80), Math.Max(1f, 1f * fanScale)))
                 {
                     g.DrawEllipse(hubBorder, cx - hubR, cy - hubR, hubR * 2, hubR * 2);
                 }
+                float dotR = Math.Max(1.5f, hubR * 0.35f);
                 using (var dotBrush = new SolidBrush(tierColor))
                 {
-                    g.FillEllipse(dotBrush, cx - 1f, cy - 1f, 2f, 2f);
+                    g.FillEllipse(dotBrush, cx - dotR, cy - dotR, dotR * 2, dotR * 2);
                 }
 
-                // Fan Name
-                string dispName = FormatFanName(f.Name);
-                var szName = g.MeasureString(dispName, fontName);
-                using (var nameBrush = new SolidBrush(Color.FromArgb(235, 235, 245)))
-                {
-                    g.DrawString(dispName, fontName, nameBrush, cx - (szName.Width / 2f), cardY + 30);
-                }
+                // Text block on the right
+                float gapSpinnerToText = isWideCard ? Math.Clamp(8f * fanScale, 8f, 12f) : 6f;
+                float textLeft = cx + fanRadius + gapSpinnerToText;
+                float availTextW = Math.Max(30f, (cardX + cardW - 3f) - textLeft);
 
-                // Live RPM
-                string rpmText = rpm > 0 ? $"{rpm:N0}" : "0dB";
-                var szRpm = g.MeasureString(rpmText, fontRpm);
-                using (var rpmBrush = new SolidBrush(tierColor))
+                using var sf = new StringFormat
                 {
-                    g.DrawString(rpmText, fontRpm, rpmBrush, cx - (szRpm.Width / 2f), cardY + 42);
+                    Trimming = StringTrimming.EllipsisCharacter,
+                    FormatFlags = StringFormatFlags.NoWrap
+                };
+
+                bool showSubInfo = isWideCard && fanScale >= 1.35f && !string.IsNullOrWhiteSpace(subInfo);
+
+                if (showSubInfo)
+                {
+                    // 3-line layout for large magnification: Name (bold) + Sensor breakdown (small) + RPM (bold)
+                    float fontSizeSub = Math.Clamp(fontSizeName - 1.75f, 6.5f, 7.5f);
+                    using var fontSub = new Font("Segoe UI", fontSizeSub, FontStyle.Regular);
+
+                    var szName = g.MeasureString(dispName, fontName);
+                    var szSub = g.MeasureString(subInfo, fontSub);
+                    var szRpm = g.MeasureString(rpmText, fontRpm);
+
+                    float spacing1 = Math.Clamp(2f * fanScale, 2f, 3.5f);
+                    float spacing2 = Math.Clamp(3.5f * fanScale, 3f, 5.5f);
+
+                    float totalTextH = szName.Height + spacing1 + szSub.Height + spacing2 + szRpm.Height;
+                    float textTopY = cy - (totalTextH / 2f);
+
+                    var rectName = new RectangleF(textLeft, textTopY, availTextW, szName.Height + 2);
+                    using (var nameBrush = new SolidBrush(Color.FromArgb(235, 235, 245)))
+                    {
+                        g.DrawString(dispName, fontName, nameBrush, rectName, sf);
+                    }
+
+                    float subY = textTopY + szName.Height + spacing1;
+                    var rectSub = new RectangleF(textLeft, subY, availTextW, szSub.Height + 2);
+                    using (var subBrush = new SolidBrush(Color.FromArgb(140, 148, 168)))
+                    {
+                        g.DrawString(subInfo, fontSub, subBrush, rectSub, sf);
+                    }
+
+                    float rpmY = subY + szSub.Height + spacing2;
+                    var rectRpm = new RectangleF(textLeft, rpmY, availTextW, szRpm.Height + 2);
+                    using (var rpmBrush = new SolidBrush(tierColor))
+                    {
+                        g.DrawString(rpmText, fontRpm, rpmBrush, rectRpm, sf);
+                    }
+                }
+                else
+                {
+                    // 2-line layout for compact scale (3 columns or small magnification)
+                    float lineSpacing = isWideCard
+                        ? Math.Clamp(5f * fanScale, 4f, 9f)
+                        : 3f;
+
+                    var szName = g.MeasureString(dispName, fontName);
+                    var szRpm = g.MeasureString(rpmText, fontRpm);
+
+                    float totalTextH = szName.Height + lineSpacing + szRpm.Height;
+                    float textTopY = cy - (totalTextH / 2f);
+
+                    var rectName = new RectangleF(textLeft, textTopY, availTextW, szName.Height + 2);
+                    using (var nameBrush = new SolidBrush(Color.FromArgb(235, 235, 245)))
+                    {
+                        g.DrawString(dispName, fontName, nameBrush, rectName, sf);
+                    }
+
+                    var rectRpm = new RectangleF(textLeft, textTopY + szName.Height + lineSpacing, availTextW, szRpm.Height + 2);
+                    using (var rpmBrush = new SolidBrush(tierColor))
+                    {
+                        g.DrawString(rpmText, fontRpm, rpmBrush, rectRpm, sf);
+                    }
                 }
             }
         }
 
-        private static void DrawFanBlades(Graphics g, float cx, float cy, float fanRadius, int bladeCount, float angle, Color tierColor, bool isRunning)
+        private static void DrawFanBlades(Graphics g, float cx, float cy, float fanRadius, int bladeCount, float angle, Color tierColor, bool isRunning, float fanScale = 1f)
         {
-            float r0 = Math.Max(2.5f, fanRadius * 0.28f);
-            float r1 = fanRadius - 1.5f;
+            float r0 = Math.Max(2.5f * fanScale, fanRadius * 0.28f);
+            float r1 = fanRadius - (1.5f * fanScale);
             float wHub = Math.Clamp(180f / bladeCount, 12f, 24f);
             float wTip = Math.Clamp(240f / bladeCount, 16f, 32f);
             float curve = 14f;
@@ -2006,7 +2191,7 @@ namespace RyzenQuietPro
                 ? Color.FromArgb(195, tierColor.R, tierColor.G, tierColor.B)
                 : Color.FromArgb(100, tierColor.R, tierColor.G, tierColor.B);
             using var bladeBrush = new SolidBrush(fillCol);
-            using var bladePen = new Pen(Color.FromArgb(isRunning ? 230 : 120, tierColor.R, tierColor.G, tierColor.B), 0.8f);
+            using var bladePen = new Pen(Color.FromArgb(isRunning ? 230 : 120, tierColor.R, tierColor.G, tierColor.B), Math.Max(0.8f, 0.8f * fanScale));
 
             for (int b = 0; b < bladeCount; b++)
             {
@@ -2114,7 +2299,7 @@ namespace RyzenQuietPro
         private void OnFansPanelMouseWheel(object? sender, MouseEventArgs e)
         {
             if (_settings.FanVisualMode != 1 || _maxFanScroll <= 0) return;
-            int step = 45;
+            int step = (int)Math.Round(45 * _settings.FanScale);
             _fanScrollX = Math.Clamp(_fanScrollX - Math.Sign(e.Delta) * step, 0, _maxFanScroll);
             _pnlFansGraph.Invalidate();
         }
@@ -2151,14 +2336,15 @@ namespace RyzenQuietPro
             if (_settings.FanVisualMode != 1 || _maxFanScroll <= 0) return;
 
             int w = _pnlFansGraph.Width;
+            int step = (int)Math.Round(92 * _settings.FanScale);
             if (_fanScrollX > 0 && e.X <= 26)
             {
-                _fanScrollX = Math.Max(0, _fanScrollX - 92);
+                _fanScrollX = Math.Max(0, _fanScrollX - step);
                 _pnlFansGraph.Invalidate();
             }
             else if (_fanScrollX < _maxFanScroll && e.X >= w - 26)
             {
-                _fanScrollX = Math.Min(_maxFanScroll, _fanScrollX + 92);
+                _fanScrollX = Math.Min(_maxFanScroll, _fanScrollX + step);
                 _pnlFansGraph.Invalidate();
             }
         }
