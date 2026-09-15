@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Net;
 using System.Text;
@@ -41,8 +41,8 @@ namespace RyzenQuiet.Mac
             try
             {
                 _listener = new HttpListener();
-                _listener.Prefixes.Add($"http://*:{Port}/");
                 _listener.Prefixes.Add($"http://localhost:{Port}/");
+                _listener.Prefixes.Add($"http://127.0.0.1:{Port}/");
                 _listener.Start();
 
                 _ = Task.Run(() => ListenLoop(ct), ct);
@@ -52,7 +52,7 @@ namespace RyzenQuiet.Mac
                 try
                 {
                     _listener = new HttpListener();
-                    _listener.Prefixes.Add($"http://localhost:{Port}/");
+                    _listener.Prefixes.Add($"http://127.0.0.1:{Port}/");
                     _listener.Start();
                     _ = Task.Run(() => ListenLoop(ct), ct);
                 }

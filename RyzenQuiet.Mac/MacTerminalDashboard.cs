@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -35,8 +35,8 @@ namespace RyzenQuiet.Mac
 
         public async Task RunAsync(CancellationToken ct)
         {
-            Console.OutputEncoding = Encoding.UTF8;
-            Console.CursorVisible = false;
+            try { Console.OutputEncoding = Encoding.UTF8; } catch { }
+            try { Console.CursorVisible = false; } catch { }
 
             // Start keyboard input loop
             _ = Task.Run(() => ReadKeyboardLoop(ct), ct);
@@ -57,8 +57,8 @@ namespace RyzenQuiet.Mac
             }
             finally
             {
-                Console.CursorVisible = true;
-                Console.ResetColor();
+                try { Console.CursorVisible = true; } catch { }
+                try { Console.ResetColor(); } catch { }
             }
         }
 
@@ -66,29 +66,38 @@ namespace RyzenQuiet.Mac
         {
             while (!ct.IsCancellationRequested && _isRunning)
             {
-                if (Console.KeyAvailable)
+                try
                 {
-                    var key = Console.ReadKey(true);
-                    switch (key.Key)
+                    if (Console.KeyAvailable)
                     {
-                        case ConsoleKey.Q:
-                        case ConsoleKey.S:
-                            _power.SetMode(MacPowerManager.Mode.Quiet);
-                            break;
-                        case ConsoleKey.B:
-                            _power.SetMode(MacPowerManager.Mode.Boost);
-                            break;
-                        case ConsoleKey.F:
-                            _fanIconsMode = !_fanIconsMode;
-                            break;
-                        case ConsoleKey.D:
-                            _fans.DemoMode = !_fans.DemoMode;
-                            break;
-                        case ConsoleKey.Escape:
-                        case ConsoleKey.X:
-                            _isRunning = false;
-                            break;
+                        var key = Console.ReadKey(true);
+                        switch (key.Key)
+                        {
+                            case ConsoleKey.Q:
+                            case ConsoleKey.S:
+                                _power.SetMode(MacPowerManager.Mode.Quiet);
+                                break;
+                            case ConsoleKey.B:
+                                _power.SetMode(MacPowerManager.Mode.Boost);
+                                break;
+                            case ConsoleKey.F:
+                                _fanIconsMode = !_fanIconsMode;
+                                break;
+                            case ConsoleKey.D:
+                                _fans.DemoMode = !_fans.DemoMode;
+                                break;
+                            case ConsoleKey.Escape:
+                            case ConsoleKey.X:
+                                _isRunning = false;
+                                break;
+                        }
                     }
+                }
+                catch
+                {
+                    // Non-interactive or redirected terminal (e.g. background run or pipe)
+                    Thread.Sleep(500);
+                    continue;
                 }
                 Thread.Sleep(50);
             }
@@ -99,7 +108,15 @@ namespace RyzenQuiet.Mac
             var sb = new StringBuilder();
             sb.Append("\x1b[H"); // Move cursor home
 
-            int termW = Math.Max(70, Math.Min(100, Console.WindowWidth));
+            int termW = 80;
+            try
+            {
+                termW = Math.Max(70, Math.Min(100, Console.WindowWidth));
+            }
+            catch
+            {
+                termW = 80;
+            }
 
             // 1. Header & Branding
             sb.AppendLine("\x1b[38;2;56;189;248m╔" + new string('═', termW - 2) + "╗\x1b[0m");

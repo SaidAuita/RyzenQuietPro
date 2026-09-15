@@ -2,6 +2,8 @@
 bin/
 obj/
 build/
+dist/
+*.zip
 *.user
 *.suo
 *.userosscache

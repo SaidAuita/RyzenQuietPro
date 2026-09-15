@@ -1,30 +1,42 @@
-﻿# ⚡ RyzenQuiet PRO for macOS (v3.0)
+# ⚡ RyzenQuiet PRO for macOS (v3.0)
 
 **Акустический оптимизатор и аппаратный монитор для macOS (10.15 Catalina и новее), оптимизированный для ThinkPad x230 (Хакинтош), AMD/Intel Hackintosh и виртуальных машин.**
 
 ---
 
 ## 🎯 Поддерживаемые конфигурации
-* **macOS 10.15 Catalina** (и выше: Big Sur, Monterey, Ventura, Sonoma).
-* **Архитектура:** `osx-x64` (Intel 64-bit Core i3/i5/i7, AMD Ryzen Hackintosh, виртуальные машины VMware/VirtualBox/Proxmox).
-* **Тестовый стенд:** ThinkPad x230 (Intel Core i5-3320M / i7-3520M, Intel HD Graphics 4000, VirtualSMC / FakeSMC).
-* **Автономность:** Исполняемый файл полностью самодостаточен (**Self-Contained Single-File Mach-O 64-bit**). **Не требует установки .NET SDK на macOS!**
+* **macOS 10.15 Catalina** (и выше: Big Sur, Monterey, Ventura, Sonoma, Sequoia / Tahoe).
+* **Архитектуры:**
+  * `osx-x64` (Intel 64-bit Core i3/i5/i7, AMD Ryzen Hackintosh, виртуальные машины VMware/VirtualBox/Proxmox, ThinkPad x230).
+  * `osx-arm64` (Apple Silicon M1, M2, M3, M4, UTM / Parallels VM).
+* **Автономность:** Исполняемые файлы полностью самодостаточны (**Self-Contained Mach-O 64-bit**). **Не требуют установки .NET SDK или рантайма на macOS!**
 
 ---
 
-## 🚀 Быстрый запуск на macOS
+## 🚀 Способы запуска на macOS
 
-### Способ 1: Двойной клик в Finder (через .command)
-1. Скопируйте папку `build/mac` на ваш Mac (на x230 или в виртуальную машину).
-2. Сделайте двойной клик на файле **`RyzenQuiet-Mac.command`**.
-   *(При первом открытии macOS может спросить подтверждение запуска; откройте через Правый клик -> Открыть).*
+### Способ 1: Установка в Программы в 1 клик (Рекомендуется)
+1. Распакуйте архив `RyzenQuietPro-v3.0-macOS.zip` (или скопируйте папку на Mac).
+2. Сделайте двойной клик по **`Install.command`**.
+3. Выберите `[1]` (`/Applications`) или `[2]` (`~/Applications`).
+4. Скрипт автоматически:
+   - Снимет блокировки Gatekeeper (`xattr -cr`).
+   - Настроит права выполнения (`chmod -R 755`).
+   - Автоматически выберет нужный бинарник (`x86_64` или `arm64`) для вашего процессора.
+   - Зарегистрирует нативный бандл **`RyzenQuiet PRO.app`** в macOS LaunchServices.
+5. Запускайте прямо из Launchpad, Spotlight или папки «Программы»!
 
-### Способ 2: Запуск через Terminal
-```bash
-cd /путь/к/папке/build/mac
-chmod +x ./RyzenQuiet.Mac
-./RyzenQuiet.Mac
-```
+### Способ 2: Быстрый портативный запуск (без установки в систему)
+* **`Run.command`** — двойной клик запускает полнофункциональный интерактивный HUD в Terminal.
+* **`Run-WebHUD.command`** — запускает утилиту и автоматически открывает Safari на `http://localhost:5050`.
+
+### ⚠️ Если macOS блокирует запуск («Не удается открыть»):
+1. **Через контекстное меню:** Нажмите правой кнопкой мыши (или Control + клик) по `Install.command` (или `Run.command`) и выберите **«Открыть»** -> подтвердите **«Открыть»**.
+2. **Или через Терминал в 1 команду:**
+   ```bash
+   cd /путь/к/папке
+   chmod +x *.command && xattr -cr .
+   ```
 
 ---
 
