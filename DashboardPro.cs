@@ -311,7 +311,7 @@ namespace RyzenQuietPro
 
             _lblTitle = new Label
             {
-                Text = "RyzenQuiet PRO v3.0",
+                Text = "RyzenQuiet PRO v4.0",
                 Font = new Font("Segoe UI", 10f, FontStyle.Bold),
                 ForeColor = Color.FromArgb(240, 240, 245),
                 Location = new Point(36, 8),
