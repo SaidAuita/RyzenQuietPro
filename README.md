@@ -1,30 +1,30 @@
 <div align="center">
 
-# ⚡ RyzenQuiet PRO (v3.0)
-**Sleek, lightweight hardware HUD & power-plan optimizer for Windows with AMD Ryzen CPB toggle, GPU power telemetry, and modular fan speed monitoring.**
+# ⚡ RyzenQuiet PRO (v4.0)
+**Sleek, lightweight hardware HUD & power-plan optimizer for Windows with AMD Ryzen CPB toggle, GPU power limiting & acoustic tuning, and modular fan monitoring.**
 
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011%20(64--bit)-blue.svg)](#)
 [![.NET](https://img.shields.io/badge/.NET-8.0-purple.svg)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/Release-v3.0-orange.svg)](https://github.com/SaidAuita/RyzenQuietPro/releases)
+[![Release](https://img.shields.io/badge/Release-v4.0-orange.svg)](https://github.com/SaidAuita/RyzenQuietPro/releases)
 [![Telemetry](https://img.shields.io/badge/Telemetry-Zero%20%2F%20100%25%20Offline-brightgreen.svg)](#)
 
 <br/>
 
 <p align="center">
-  <img src="images/RyzenQuietPro-v3_1.png" alt="RyzenQuiet PRO v3.0 Main Desktop HUD & Multi-Row Fan Grid" width="360" />
+  <img src="images/RyzenQuietPro-v4_1.png" alt="RyzenQuiet PRO v4.0 Main Desktop HUD & Real-Time Telemetry" width="360" />
   &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="images/RyzenQuietPro-v3_2.png" alt="RyzenQuiet PRO Settings & Fan Visualization Modes" width="310" />
+  <img src="images/RyzenQuietPro-v4_1pl.png" alt="GPU Power Limit & Real-Time Fan Tachometer Telemetry" width="360" />
 </p>
 <p align="center">
-  <img src="images/RyzenQuietPro-v3_3.png" alt="Custom Fan Selection & GPU Spin Test Dialog" width="340" />
+  <img src="images/RyzenQuietPro-v4_2.png" alt="GPU Acoustic & Power Tuning Settings Dialog with Background Dimming" width="330" />
   &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="images/RyzenQuietPro-v3_4.png" alt="Hardware Specifications & System Diagnostics" width="370" />
+  <img src="images/RyzenQuietPro-v4_3.png" alt="Hardware Specifications & System Diagnostics" width="370" />
 </p>
 
 <br/>
 
-[**Download Standalone (~70 MB)**](https://ph-cu-s.com/tools/ryzenquietpro) &bull; [**Download Lite (~1.2 MB)**](https://ph-cu-s.com/tools/ryzenquietpro) &bull; [**Official Website**](https://ph-cu-s.com/tools/ryzenquietpro)
+[**Download Standalone (~72 MB)**](https://ph-cu-s.com/tools/ryzenquietpro) &bull; [**Download Lite (~1.4 MB)**](https://ph-cu-s.com/tools/ryzenquietpro) &bull; [**Official Website**](https://ph-cu-s.com/tools/ryzenquietpro)
 
 <br/>
 
@@ -37,9 +37,9 @@
 <a name="english"></a>
 ## 📖 Overview
 
-**RyzenQuiet PRO** is a zero-dependency, ultra-low-overhead Windows utility combining an acoustic silencer for AMD Ryzen processors with a synchronized 60-second hardware telemetry HUD. It gives creators, audio engineers, developers, and gamers instant control over CPU thermals without sacrificing peak multi-core performance when needed.
+**RyzenQuiet PRO** is a zero-dependency, ultra-low-overhead Windows utility combining an acoustic silencer for AMD Ryzen processors and graphics cards with a synchronized 60-second hardware telemetry HUD. It gives creators, audio engineers, developers, and gamers instant control over CPU & GPU thermals without sacrificing peak multi-core performance when needed.
 
-Aggressive Precision Boost / CPB algorithms on modern AMD Ryzen CPUs frequently cause high voltage spikes and sudden temperature jumps during mundane background tasks, triggering loud fan ramp-ups. **RyzenQuiet PRO** fixes this with a single hotkey (`Ctrl + Alt + Q`), capping the Windows power profile to 99% to lock base clock speeds, dropping temperatures by 15–25°C and immediately silencing fans.
+Aggressive Precision Boost / CPB algorithms on modern AMD Ryzen CPUs frequently cause high voltage spikes and sudden temperature jumps during mundane background tasks, triggering loud fan ramp-ups. **RyzenQuiet PRO** fixes this with a single hotkey (`Ctrl + Alt + Q`) or one-click toggle, capping the Windows power profile to 99% to lock base clock speeds, dropping temperatures by 15–25°C and immediately silencing fans. In version 4.0, GPU acoustic and power limit tuning brings the same quiet efficiency to your graphics card.
 
 ---
 
@@ -51,11 +51,17 @@ Aggressive Precision Boost / CPB algorithms on modern AMD Ryzen CPUs frequently 
 * **Global Hotkey (`Ctrl + Alt + Q`):** Seamlessly toggle modes from any full-screen app or game without opening the UI.
 * **Auto-Quiet on Idle:** Automatically switches to Quiet Mode when no keyboard or mouse activity is detected for > 5 minutes.
 
-### 2. 📊 Synchronized 60-Second Real-Time Performance Graphs
+### 2. ⚡ GPU Power Limiting & Acoustic Tuning (Afterburner Alternative)
+* **Real-time Watt Power Limiter:** Limit maximum GPU power consumption (W) directly in Silent Mode to reduce fan speed under load while keeping gaming or rendering stable.
+* **Acoustic Fan Speed Target:** Set maximum fan RPM limit for ultra-quiet operation.
+* **Separate CPU & GPU Silent Control:** Independent one-click toggle rows for CPU (Quiet 99% / Boost 100%) and GPU (Quiet / Stock Watts) with real-time HUD status indicators.
+* **Thermal Fail-Safe Guard:** Automatic power restore if GPU temperature reaches 83°C to prevent thermal throttling or overheating.
+
+### 3. 📊 Synchronized 60-Second Real-Time Performance Graphs
 All subsystem graphs share a synchronized 60-second historical canvas rendered with crisp anti-aliased vector curves and gradient fills:
 * 🟢 **CPU Monitor:** CPU model name, dynamic core clock frequency, thread count (e.g., `AMD Ryzen 7 6800H | 4.25 GHz | 16 threads`), thread heatmap matrix (16/32 threads), and live **Top-5 Process** resource consumers.
 * 🔵 **RAM Monitor:** Instant Win32 SMBIOS memory type & speed with Used / Total physical memory (e.g., `DDR5/4800 | 18.5 / 64.0 GB`) with 0% CPU overhead.
-* 🟣 **GPU Monitor:** High-precision GPU core load %, chip temperature (°C) with dashed curve, and real-time **Power Consumption in Watts** (`⚡ 136W`) via official signed NVIDIA NVML (`nvmlDeviceGetPowerUsage`). Supports AMD Radeon (ADL) and Windows GPU Engine fallbacks.
+* 🟣 **GPU Monitor:** High-precision GPU core load %, chip temperature (°C) with dashed curve, live **Power Limit & Fan RPM telemetry**, and real-time **Power Consumption in Watts** (`⚡ 136W`) via official signed NVIDIA NVML (`nvmlDeviceGetPowerUsage`). Supports AMD Radeon (ADL) and Windows GPU Engine fallbacks.
 * 🌸 **VRAM Monitor:** Dedicated video memory type, load %, and live usage (e.g., `GDDR6 | 1.5 / 6.0 GB`).
 * 🩵 **DISK Monitor (Smart Auto-Focus):** Unified storage activity graph with Read / Write throughput in MB/s (`R:12.4 W:45.0 MB/s`). Dynamically auto-focuses on whichever drive is currently under heavy load (e.g., `[Z: (games)]` or `[C: (Windows)]`).
 * ❄️ **FAN Speed Monitor (Modular Addon with 3 Visualization Modes & Hardware Spin Test):**
@@ -76,14 +82,15 @@ All subsystem graphs share a synchronized 60-second historical canvas rendered w
     * To read CPU Cooler, AIO Pump, and Chassis fans, download and install PawnIO once: [**pawnio.eu**](https://pawnio.eu/) (or direct installer [**PawnIO_setup.exe**](https://github.com/namazso/PawnIO.Setup/releases/latest/download/PawnIO_setup.exe)).
     * GPU fans (NVIDIA NVAPI / AMD ADL) work out-of-the-box without requiring any kernel drivers.
 
-### 3. 📌 Detachable Floating HUD / Desktop Widget
+### 4. 📌 Detachable Floating HUD / Desktop Widget
 * **Docked Mode:** Anchored next to the Windows system tray; smoothly slides out when clicking the tray icon and auto-hides when clicking away.
 * **Detached Widget (`⤢`):** Undock into an independent desktop widget with free mouse dragging, **Always-On-Top** (`📌`), adjustable opacity slider (40% to 100%), and persistent position/size memory across reboots.
 
-### 4. ⚙ Dynamic Tray Badge & Complete Visibility Control
+### 5. ⚙ Dynamic Tray Badge & Complete Visibility Control
 * **Dynamic Tray Icon:** Live percentage badge rendered directly onto the system tray icon (choose between CPU %, GPU %, or RAM %).
 * **Smart Tooltip:** Multi-line status tooltip showing current power mode and all subsystem stats at a glance.
-* **Gear Menu (`⚙`):** Toggle visibility of any module or graph independently.
+* **Modernized Settings Dialog:** Expanded height without vertical scrollbars, native Windows drop shadow (`CS_DROPSHADOW`), high-contrast card separation, and background dashboard dimming ("в дымке") for focused tuning.
+* **Single Centered Vector Gear:** Clean 6-tooth vector settings cog centered right between CPU and GPU controls.
 * **Zero Telemetry & Portable:** Pure Win32 / NVML / PDH APIs, no third-party kernel drivers, no background network calls. Preferences stored in `%LOCALAPPDATA%\RyzenQuietPro\settings.json`.
 
 ---
@@ -156,16 +163,16 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 <a name="русский"></a>
 <div align="center">
 
-# ⚡ RyzenQuiet PRO (v3.0) — Описание на русском
-**Стильный, легковесный аппаратный HUD-монитор и менеджер профилей питания для Windows с мгновенным отключением CPB (Core Performance Boost) у процессоров AMD Ryzen и модульным мониторингом вентиляторов.**
+# ⚡ RyzenQuiet PRO (v4.0) — Описание на русском
+**Стильный, легковесный аппаратный HUD-монитор и менеджер профилей питания для Windows с мгновенным отключением CPB у процессоров AMD Ryzen, акустическим контролем и ограничением мощности видеокарт (GPU Power Limiting) и модульным мониторингом вентиляторов.**
 
 </div>
 
 ## 📖 Описание проекта
 
-**RyzenQuiet PRO** решает одну из самых наболевших проблем современных процессоров AMD Ryzen — внезапные резкие скачки температур и назойливый вой вентиляторов кулера при банальном серфинге в браузере, офисной работе, написании кода или работе со звуком. 
+**RyzenQuiet PRO** решает одну из самых наболевших проблем современных процессоров AMD Ryzen и мощных видеокарт — внезапные резкие скачки температур и назойливый вой вентиляторов кулера при банальном серфинге в браузере, офисной работе, написании кода, играх или работе со звуком. 
 
-Утилита объединяет в себе акустический глушитель процессора и высокоточный оверлей аппаратного мониторинга с синхронизированной 60-секундной историей всех графиков. По нажатию одной кнопки или глобального хоткея (`Ctrl + Alt + Q`) утилита переключает профиль питания процессора на 99%, что аппаратно блокирует алгоритм Precision Boost / CPB на базовой частоте (~3.4 ГГц), сбрасывает напряжение на ядрах, снижает температуру на 15–25°C и делает компьютер абсолютно бесшумным. При старте 3D-рендеринга или запуске игры режим Boost мгновенно возвращает максимальные 4.9+ ГГц на всех ядрах.
+Утилита объединяет в себе акустический глушитель процессора и видеокарты с высокоточным оверлеем аппаратного мониторинга на синхронизированной 60-секундной истории всех графиков. По нажатию одной кнопки или глобального хоткея (`Ctrl + Alt + Q`) утилита переключает профиль питания процессора на 99%, что аппаратно блокирует алгоритм Precision Boost / CPB на базовой частоте (~3.4 ГГц), сбрасывает напряжение на ядрах, снижает температуру на 15–25°C и делает компьютер абсолютно бесшумным. В версии 4.0 встроен модуль тюнинга мощности и акустики GPU (альтернатива MSI Afterburner), позволяющий программно ограничить лимит мощности и шум кулеров под нагрузкой.
 
 ---
 
@@ -177,11 +184,16 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 * **Глобальный хоткей (`Ctrl + Alt + Q`):** Переключение режима из любого приложения или игры без сворачивания окон.
 * **Авто-тишина при простое (Auto-Quiet):** Автоматический переход в тихий режим при отсутствии активности пользователя более 5 минут.
 
-### 2. 📊 Синхронизированные 60-секундные графики нагрузки
+### 2. ⚡ Ограничение мощности и акустический тюнинг GPU (Аналог Afterburner)
+* **Программный лимит мощности (Ватты):** Удобная настройка максимального энергопотребления видеокарты в тихом режиме для предотвращения раскрутки вентиляторов до максимальных оборотов.
+* **Раздельное управление CPU и GPU:** Отдельные независимые кнопки переключения тихих и производительных режимов для процессора и видеокарты прямо в интерфейсе.
+* **Аварийная защита от перегрева (Fail-Safe 83°C):** Автоматический сброс лимита при достижении критической температуры для гарантии безопасности оборудования.
+
+### 3. 📊 Синхронизированные 60-секундные графики нагрузки
 Все графики системы работают на единой 60-секундной временной шкале с векторными сглаженными кривыми и градиентной заливкой:
 * 🟢 **Монитор CPU:** Модель процессора на первом месте, динамическая частота ядер и число потоков (например, `AMD Ryzen 7 6800H | 4.25 GHz | 16 потоков`), наглядная тепловая карта загрузки всех ядер (16/32 потока) и список **Top-5 процессов**.
 * 🔵 **Монитор RAM:** Опрос типа и частоты памяти через Win32 SMBIOS Type 17 с отображением занятой и общей памяти (например, `DDR5/4800 | 18.5 / 64.0 GB`) с 0% нагрузки на CPU.
-* 🟣 **Монитор GPU:** Нагрузка графического чипа в %, температура ядра (°C) с пунктирной линией и **реальное энергопотребление в ваттах** (`⚡ 136W`) через официальный подписанный NVIDIA NVML (`nvmlDeviceGetPowerUsage`). Поддержка AMD Radeon (ADL) и Windows GPU Engine.
+* 🟣 **Монитор GPU:** Нагрузка графического чипа в %, температура ядра (°C) с пунктирной линией, статус **Power Limit & Fan RPM** и **реальное энергопотребление в ваттах** (`⚡ 136W`) через официальный подписанный NVIDIA NVML (`nvmlDeviceGetPowerUsage`). Поддержка AMD Radeon (ADL) и Windows GPU Engine.
 * 🌸 **Монитор VRAM:** Тип видеопамяти, процент нагрузки и точный объём занятой VRAM (например, `GDDR6 | 1.5 / 6.0 GB`).
 * 🩵 **Монитор накопителей (DISK) с умным фокусом:** Общая дисковая активность и скорость чтения/записи в МБ/с (`R:12.4 W:45.0 MB/s`). Автофокус на самом активном накопителе.
 * ❄️ **Монитор кулеров (Изолированное дополнение с 3 режимами и тестом кулеров):**
@@ -202,14 +214,15 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
     * Для отображения кулера CPU, помпы СЖО и разъемов корпуса установите PawnIO с официального сайта: [**pawnio.eu**](https://pawnio.eu/) (прямой установщик: [**PawnIO_setup.exe**](https://github.com/namazso/PawnIO.Setup/releases/latest/download/PawnIO_setup.exe)).
     * Обороты кулеров видеокарты (NVIDIA NVAPI / AMD ADL) считываются сразу из коробки без установки драйверов ядра.
 
-### 3. 📌 Плавающий виджет на рабочий стол / HUD
+### 4. 📌 Плавающий виджет на рабочий стол / HUD
 * **Режим трея (Docked):** Аккуратная всплывающая панель около системного трея, открывающаяся по клику на значок и скрывающаяся при клике в любое другое место.
 * **Плавающий виджет (`⤢`):** Открепление в независимое окно с плавным перетаскиванием мышью, режимом **Поверх всех окон** (`📌`), ползунком прозрачности (от 40% до 100%) и сохранением координат и размеров на экране.
 
-### 4. ⚙ Динамический бейдж в трее и гибкая настройка
+### 5. ⚙ Динамический бейдж в трее и гибкая настройка
 * **Живой значок в трее:** Отображение процента загрузки (CPU %, GPU % или RAM %) прямо на иконке в трее (32×32 px).
 * **Информативная подсказка:** Многострочный тултип при наведении со всеми показателями системы.
-* **Шестеренка настроек (`⚙`):** Независимое включение/выключение отображения любого модуля и графиков.
+* **Современное окно настроек:** Полная высота без полос прокрутки, нативная тень Windows (`CS_DROPSHADOW`), акцентные карточки и мягкое затемнение фонового окна («в дымке»).
+* **Векторная шестеренка:** Центрированная кнопка настроек в правом блоке режимов.
 * **100% оффлайн и чистый код:** Никаких драйверов уровня ядра, никакой фоновой аналитики и телеметрии, настройки сохраняются локально в `%LOCALAPPDATA%\RyzenQuietPro\settings.json`.
 
 ---
@@ -221,7 +234,7 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 | <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Q</kbd> | Переключение между **Тихим режимом (99%)** и **Boost (100%)** |
 | `⤢` / `⤡` | Открепить в плавающий виджет на рабочий стол / Прикрепить к трею |
 | `📌` | Закрепить оверлей поверх всех окон (Always-On-Top) |
-| `⚙` | Меню видимости графиков и списка процессов |
+| `⚙` | Меню видимости графиков, тюнинга GPU и списка процессов |
 | `ℹ` | Диалоговое окно информации об оборудовании |
 | **Ползунок прозрачности** | Регулировка прозрачности виджета от 40% до 100% |
 
@@ -231,8 +244,8 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 
 | Редакция | Размер | Описание |
 |---|---|---|
-| **Standalone** *(Рекомендуется)* | ~70 МБ | Единый исполняемый файл со встроенной сжатой средой .NET 8. Работает из коробки на любой Windows 10/11 x64 без установки дополнительного ПО. |
-| **Lite Edition** | ~1.2 МБ | Ультралегкий компактный файл. Требует установленного в системе Microsoft .NET 8 Desktop Runtime. |
+| **Standalone** *(Рекомендуется)* | ~72 МБ | Единый исполняемый файл со встроенной сжатой средой .NET 8. Работает из коробки на любой Windows 10/11 x64 без установки дополнительного ПО. |
+| **Lite Edition** | ~1.4 МБ | Ультралегкий компактный файл. Требует установленного в системе Microsoft .NET 8 Desktop Runtime. |
 
 > Скачать сборки можно на странице [**ph-cu-s.com/tools/ryzenquietpro**](https://ph-cu-s.com/tools/ryzenquietpro) или в разделе [**GitHub Releases**](https://github.com/SaidAuita/RyzenQuietPro/releases).
 
@@ -251,8 +264,8 @@ build.bat
 ```
 
 Исполняемые файлы будут скомпилированы в каталог `build\`:
-* `build\RyzenQuietPro-v3.0.exe` (Standalone)
-* `build\RyzenQuietPro-v3.0-Lite.exe` (Lite)
+* `build\RyzenQuietPro-v4.0.exe` (Standalone)
+* `build\RyzenQuietPro-v4.0-Lite.exe` (Lite)
 * `build\plugins\FanService\RyzenQuiet.FanService.exe` (Fan Monitor Addon)
 
 ---
