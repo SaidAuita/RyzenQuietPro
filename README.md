@@ -82,14 +82,23 @@ All subsystem graphs share a synchronized 60-second historical canvas rendered w
     * To read CPU Cooler, AIO Pump, and Chassis fans, download and install PawnIO once: [**pawnio.eu**](https://pawnio.eu/) (or direct installer [**PawnIO_setup.exe**](https://github.com/namazso/PawnIO.Setup/releases/latest/download/PawnIO_setup.exe)).
     * GPU fans (NVIDIA NVAPI / AMD ADL) work out-of-the-box without requiring any kernel drivers.
 
-### 4. 📌 Detachable Floating HUD / Desktop Widget
+### 4. ⏱️ Hardware Stopwatch & Benchmark Timer (v4.0)
+* **High-Precision Telemetry Stopwatch:** Microsecond-accurate hardware timer (`hh:mm:ss.f`) anchored at the top of the HUD for timing gaming benchmarks, 3D rendering jobs, shader compiles, and encode passes.
+* **Full Manual Controls:** Large high-contrast digits with instantaneous Start (`▶`), Pause/Stop (`⏸`), Reset (`↺`), and Armed Auto-Start (`⚡`).
+* **Power-Triggered Auto-Start & Auto-Stop:** Automatically starts timing when system power consumption crosses a target wattage threshold [W], and automatically pauses when power drops below cutoff [W].
+* **Anti-Fluctuation Hysteresis Filter:** Configurable delay (1–10 seconds) prevents premature stopping during brief momentary dips in load (such as game level loading or render pass transitions).
+* **Multi-Source Criteria Switcher:** Select whether power triggers listen to `CPU`, `GPU`, `CPU + GPU` (combined load), or `Any (Max)` (whichever component spikes first).
+* **Full Modular Control:** Easily hide or show the stopwatch card via the Settings dialog without affecting monitoring performance.
+
+### 5. 📌 Detachable Floating HUD / Desktop Widget
 * **Docked Mode:** Anchored next to the Windows system tray; smoothly slides out when clicking the tray icon and auto-hides when clicking away.
 * **Detached Widget (`⤢`):** Undock into an independent desktop widget with free mouse dragging, **Always-On-Top** (`📌`), adjustable opacity slider (40% to 100%), and persistent position/size memory across reboots.
 
-### 5. ⚙ Dynamic Tray Badge & Complete Visibility Control
+### 6. ⚙ Dynamic Tray Badge, Resizable Settings & Fan Management
 * **Dynamic Tray Icon:** Live percentage badge rendered directly onto the system tray icon (choose between CPU %, GPU %, or RAM %).
 * **Smart Tooltip:** Multi-line status tooltip showing current power mode and all subsystem stats at a glance.
-* **Modernized Settings Dialog:** Expanded height without vertical scrollbars, native Windows drop shadow (`CS_DROPSHADOW`), high-contrast card separation, and background dashboard dimming ("в дымке") for focused tuning.
+* **Resizable Settings Dialog:** Smooth interactive edge/corner resizing and bottom-right `◢` grip handle, widened to 500px to eliminate horizontal scrollbars, auto-saving your preferred dialog width to `settings.json`.
+* **Fan Service Status & Controls:** Restored `• Active` green badge with hover-to-stop interaction, clean service toggling, and isolated test/demo mode.
 * **Single Centered Vector Gear:** Clean 6-tooth vector settings cog centered right between CPU and GPU controls.
 * **Zero Telemetry & Portable:** Pure Win32 / NVML / PDH APIs, no third-party kernel drivers, no background network calls. Preferences stored in `%LOCALAPPDATA%\RyzenQuietPro\settings.json`.
 
@@ -100,6 +109,7 @@ All subsystem graphs share a synchronized 60-second historical canvas rendered w
 | Shortcut / Button | Action |
 |---|---|
 | <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Q</kbd> | Toggle **Quiet Mode (99%)** / **Boost Mode (100%)** |
+| `⏱` **Stopwatch** | Start (`▶`), pause (`⏸`), reset (`↺`), or arm auto-start (`⚡`) by CPU/GPU power load |
 | `⤢` / `⤡` | Detach into floating desktop widget / Dock to tray flyout |
 | `📌` | Toggle **Always-On-Top** over full-screen games & windows |
 | `⚙` | Open visibility menu to show/hide individual modules & graphs |
@@ -214,16 +224,25 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
     * Для отображения кулера CPU, помпы СЖО и разъемов корпуса установите PawnIO с официального сайта: [**pawnio.eu**](https://pawnio.eu/) (прямой установщик: [**PawnIO_setup.exe**](https://github.com/namazso/PawnIO.Setup/releases/latest/download/PawnIO_setup.exe)).
     * Обороты кулеров видеокарты (NVIDIA NVAPI / AMD ADL) считываются сразу из коробки без установки драйверов ядра.
 
-### 4. 📌 Плавающий виджет на рабочий стол / HUD
+### 4. ⏱️ Аппаратный секундомер и таймер бенчмарков (v4.0)
+* **Высокоточный таймер телеметрии:** Аппаратный таймер с миллисекундной точностью (`чч:мм:сс.д`), расположенный в верхней части оверлея над графиком процессора для замера времени рендеринга, компиляции шейдеров, экспорта видео или игровых сессий.
+* **Полное ручное управление:** Крупные контрастные цифры в стиле HUD с кнопками мгновенного запуска (`▶`), паузы/остановки (`⏸`), сброса (`↺`) и взвода автостарта (`⚡`).
+* **Автостарт и автостоп по мощности (Ватты):** Автоматический старт отсчета при превышении заданной мощности [W] и остановка при снижении нагрузки ниже порога [W].
+* **Защита от ложных остановок (Гистерезис):** Настраиваемая задержка (1–10 секунд) предотвращает преждевременную остановку таймера при кратковременных просадках нагрузки (например, во время смены сцен в бенчмарках или экранов загрузки в играх).
+* **Гибкий выбор критерия нагрузки:** Переключатель источника мощности автостарта — `CPU`, `GPU`, `CPU + GPU` (суммарная мощность системы) или `Любой (Max)` (по первому превысившему порог компоненту).
+* **Модульное отключение:** Возможность скрыть или показать панель секундомера в любой момент в окне настроек.
+
+### 5. 📌 Плавающий виджет на рабочий стол / HUD
 * **Режим трея (Docked):** Аккуратная всплывающая панель около системного трея, открывающаяся по клику на значок и скрывающаяся при клике в любое другое место.
 * **Плавающий виджет (`⤢`):** Открепление в независимое окно с плавным перетаскиванием мышью, режимом **Поверх всех окон** (`📌`), ползунком прозрачности (от 40% до 100%) и сохранением координат и размеров на экране.
 
-### 5. ⚙ Динамический бейдж в трее и гибкая настройка
+### 6. ⚙ Динамический бейдж в трее, масштабируемые настройки и управление службой
 * **Живой значок в трее:** Отображение процента загрузки (CPU %, GPU % или RAM %) прямо на иконке в трее (32×32 px).
 * **Информативная подсказка:** Многострочный тултип при наведении со всеми показателями системы.
-* **Современное окно настроек:** Полная высота без полос прокрутки, нативная тень Windows (`CS_DROPSHADOW`), акцентные карточки и мягкое затемнение фонового окна («в дымке»).
+* **Масштабируемое окно настроек:** Свободное изменение размеров окна мышью за края, углы или за маркер `◢` в правом нижнем углу, увеличенная ширина (500px) без горизонтальных полос прокрутки и сохранение выбранных размеров в `settings.json`.
+* **Индикация и управление службой кулеров:** Понятный статус `• Active` с зеленой подсветкой и возможностью мягкой остановки при наведении, разделение реального мониторинга и симуляции/демо-режима.
 * **Векторная шестеренка:** Центрированная кнопка настроек в правом блоке режимов.
-* **100% оффлайн и чистый код:** Никаких драйверов уровня ядра, никакой фоновой аналитики и телеметрии, настройки сохраняются локально в `%LOCALAPPDATA%\RyzenQuietPro\settings.json`.
+* **100% оффлайн и чистый код:** Никаких сторонних драйверов уровня ядра, никакой фоновой аналитики и телеметрии, настройки сохраняются локально в `%LOCALAPPDATA%\RyzenQuietPro\settings.json`.
 
 ---
 
@@ -232,6 +251,7 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 | Сочетание / Кнопка | Действие |
 |---|---|
 | <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Q</kbd> | Переключение между **Тихим режимом (99%)** и **Boost (100%)** |
+| `⏱` **Секундомер** | Старт (`▶`), пауза (`⏸`), сброс (`↺`) или взвод автостарта (`⚡`) по мощности CPU/GPU |
 | `⤢` / `⤡` | Открепить в плавающий виджет на рабочий стол / Прикрепить к трею |
 | `📌` | Закрепить оверлей поверх всех окон (Always-On-Top) |
 | `⚙` | Меню видимости графиков, тюнинга GPU и списка процессов |

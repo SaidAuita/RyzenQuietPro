@@ -116,7 +116,10 @@ namespace RyzenQuietPro
                 return;
             }
 
-            _hardware.Fans.SetEnabled(true);
+            if (_settings.EnableFanAddon)
+            {
+                _hardware.Fans.SetEnabled(true);
+            }
 
             if (quiet)
             {

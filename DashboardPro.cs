@@ -51,6 +51,17 @@ namespace RyzenQuietPro
         private Label _btnClose = null!;
 
         // Module Separators
+        private static readonly Color StopwatchAccentColor = Color.FromArgb(245, 158, 11); // Amber/Gold
+        private ModuleSeparator _sepStopwatch = null!;
+        private Label _lblStopwatch = null!;
+        private Label _lblStopwatchSub = null!;
+        private SmoothPanel _pnlStopwatch = null!;
+        private Button _btnSwStart = null!;
+        private Button _btnSwAuto = null!;
+        private Button _btnSwStop = null!;
+        private Button _btnSwReset = null!;
+        private System.Windows.Forms.Timer? _stopwatchTimer;
+
         private ModuleSeparator _sepCpu = null!;
         private ModuleSeparator _sepRam = null!;
         private ModuleSeparator _sepGpu = null!;
@@ -148,7 +159,7 @@ namespace RyzenQuietPro
 
             _hardware.Processes.IsEnabled = _settings.ShowTopProcesses;
             _hardware.Fans.DemoMode = _settings.EnableFanDemo;
-            _hardware.Fans.SetEnabled((_settings.ShowFanGraph && _settings.EnableFanAddon) || _settings.GpuTuningEnabled);
+            _hardware.Fans.SetEnabled(_settings.EnableFanAddon);
             _hardware.Fans.FansUpdated += () => {
                 if (this.IsHandleCreated && !this.IsDisposed)
                 {
@@ -193,6 +204,26 @@ namespace RyzenQuietPro
                 }
             };
             _fanAnimTimer.Start();
+
+            _hardware.Stopwatch.StateChanged += () => {
+                if (this.IsHandleCreated && !this.IsDisposed)
+                {
+                    try { this.BeginInvoke((Action)UpdateStopwatchUI); } catch { }
+                }
+            };
+
+            _stopwatchTimer = new System.Windows.Forms.Timer { Interval = 100 };
+            _stopwatchTimer.Tick += (s, e) => {
+                if (this.Visible && _settings.ShowStopwatch)
+                {
+                    if (_hardware.Stopwatch.IsRunning)
+                    {
+                        _pnlStopwatch.Invalidate();
+                    }
+                    UpdateStopwatchSubHeader();
+                }
+            };
+            _stopwatchTimer.Start();
         }
 
         private int _lastLayoutFanCount = -1;
@@ -249,6 +280,7 @@ namespace RyzenQuietPro
 
             int initW = Math.Max(380, _settings.WindowWidth > 0 ? _settings.WindowWidth : 420);
             int defaultH = _settings.ShowTopProcesses ? 590 : 495;
+            if (_settings.ShowStopwatch) defaultH += 75;
             if (_settings.ShowFanGraph)
             {
                 float fanScale = _settings.FanScale;
@@ -381,6 +413,54 @@ namespace RyzenQuietPro
 
             // 2. Metric Labels & Panels (Graphs)
             Color cpuColor = _isQuietMode ? Color.FromArgb(80, 220, 140) : Color.FromArgb(250, 180, 80);
+
+            // Stopwatch Module
+            _sepStopwatch = new ModuleSeparator(StopwatchAccentColor);
+            this.Controls.Add(_sepStopwatch);
+
+            _lblStopwatch = CreateMetricHeader("⏱ " + Loc.Get("Stopwatch"), StopwatchAccentColor);
+            _lblStopwatchSub = CreateMetricSubHeader(Loc.Get("StopwatchStopped"));
+            this.Controls.Add(_lblStopwatch);
+            this.Controls.Add(_lblStopwatchSub);
+
+            _pnlStopwatch = new SmoothPanel
+            {
+                BackColor = Color.FromArgb(16, 16, 20)
+            };
+            _pnlStopwatch.Paint += DrawStopwatchCard;
+            this.Controls.Add(_pnlStopwatch);
+
+            _btnSwStart = CreateStopwatchButton(Loc.Get("StopwatchStart"), Color.FromArgb(80, 220, 140));
+            _btnSwStart.Click += (s, e) => {
+                _hardware.Stopwatch.Start();
+                UpdateStopwatchUI();
+            };
+            _pnlStopwatch.Controls.Add(_btnSwStart);
+
+            _btnSwAuto = CreateStopwatchButton(Loc.Get("StopwatchAuto"), Color.FromArgb(245, 158, 11));
+            _btnSwAuto.Click += (s, e) => {
+                _hardware.Stopwatch.ToggleAuto();
+                _settings.StopwatchAutoStartEnabled = _hardware.Stopwatch.IsAutoArmed;
+                _settings.Save();
+                UpdateStopwatchUI();
+            };
+            _pnlStopwatch.Controls.Add(_btnSwAuto);
+
+            _btnSwStop = CreateStopwatchButton(Loc.Get("StopwatchStop"), Color.FromArgb(244, 63, 94));
+            _btnSwStop.Click += (s, e) => {
+                _hardware.Stopwatch.Stop();
+                UpdateStopwatchUI();
+            };
+            _pnlStopwatch.Controls.Add(_btnSwStop);
+
+            _btnSwReset = CreateStopwatchButton(Loc.Get("StopwatchReset"), Color.FromArgb(160, 160, 175));
+            _btnSwReset.Click += (s, e) => {
+                _hardware.Stopwatch.Reset();
+                UpdateStopwatchUI();
+            };
+            _pnlStopwatch.Controls.Add(_btnSwReset);
+
+            UpdateStopwatchUI();
 
             // CPU Module
             _sepCpu = new ModuleSeparator(cpuColor);
@@ -690,6 +770,10 @@ namespace RyzenQuietPro
             if (activeGraphCount == 0) activeGraphCount = 1;
 
             int fixedH = 0;
+            if (_settings.ShowStopwatch)
+            {
+                fixedH += 3 + 5 + 20 + 44 + 6; // separator + header + stopwatch card + gap
+            }
             if (showCpu)
             {
                 fixedH += 3 + 5 + 20; // separator + header
@@ -756,6 +840,31 @@ namespace RyzenQuietPro
             }
 
             int curY = topY;
+
+            // --- STOPWATCH ---
+            bool showStopwatch = _settings.ShowStopwatch;
+            _sepStopwatch.Visible = showStopwatch;
+            _lblStopwatch.Visible = showStopwatch;
+            _lblStopwatchSub.Visible = showStopwatch;
+            _pnlStopwatch.Visible = showStopwatch;
+
+            if (showStopwatch)
+            {
+                _sepStopwatch.Location = new Point(0, curY);
+                _sepStopwatch.Size = new Size(w, 3);
+                curY += 5;
+
+                _lblStopwatch.Location = new Point(marginX, curY);
+                _lblStopwatchSub.Location = new Point(marginX + 110, curY);
+                _lblStopwatchSub.Size = new Size(contentW - 110, 20);
+                curY += 20;
+
+                int swCardH = 44;
+                _pnlStopwatch.Location = new Point(marginX, curY);
+                _pnlStopwatch.Size = new Size(contentW, swCardH);
+                LayoutStopwatchButtons(contentW, swCardH);
+                curY += swCardH + 6;
+            }
 
             // --- CPU ---
             _sepCpu.Visible = showCpu;
@@ -960,7 +1069,7 @@ namespace RyzenQuietPro
             {
                 _settingsForm = new SettingsForm(_hardware, _settings, () => {
                     _hardware.Fans.DemoMode = _settings.EnableFanDemo;
-                    _hardware.Fans.SetEnabled((_settings.ShowFanGraph && _settings.EnableFanAddon) || _settings.GpuTuningEnabled);
+                    _hardware.Fans.SetEnabled(_settings.EnableFanAddon);
                     LayoutComponents();
                     this.Invalidate();
                     _onSettingsChanged?.Invoke();
@@ -1070,6 +1179,164 @@ namespace RyzenQuietPro
                 TextAlign = ContentAlignment.MiddleRight,
                 AutoEllipsis = true
             };
+        }
+
+        private Button CreateStopwatchButton(string text, Color foreColor)
+        {
+            var btn = new Button
+            {
+                Text = text,
+                Font = new Font("Segoe UI", 7.5f, FontStyle.Bold),
+                ForeColor = foreColor,
+                BackColor = Color.FromArgb(28, 28, 36),
+                FlatStyle = FlatStyle.Flat,
+                Cursor = Cursors.Hand,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Padding = Padding.Empty
+            };
+            btn.FlatAppearance.BorderSize = 1;
+            btn.FlatAppearance.BorderColor = Color.FromArgb(44, 44, 56);
+            return btn;
+        }
+
+        private void LayoutStopwatchButtons(int panelW, int panelH)
+        {
+            if (_btnSwStart == null) return;
+
+            int btnCount = 4;
+            int gap = 4;
+            int startX = Math.Max(148, panelW - 220);
+            int availableW = panelW - startX - 8;
+            int btnW = Math.Max(42, (availableW - (gap * (btnCount - 1))) / btnCount);
+            int btnH = 26;
+            int btnY = (panelH - btnH) / 2;
+
+            _btnSwStart.Location = new Point(startX, btnY);
+            _btnSwStart.Size = new Size(btnW, btnH);
+
+            _btnSwAuto.Location = new Point(startX + btnW + gap, btnY);
+            _btnSwAuto.Size = new Size(btnW, btnH);
+
+            _btnSwStop.Location = new Point(startX + (btnW + gap) * 2, btnY);
+            _btnSwStop.Size = new Size(btnW, btnH);
+
+            _btnSwReset.Location = new Point(startX + (btnW + gap) * 3, btnY);
+            _btnSwReset.Size = new Size(btnW, btnH);
+        }
+
+        private void UpdateStopwatchUI()
+        {
+            if (_btnSwStart == null) return;
+
+            bool running = _hardware.Stopwatch.IsRunning;
+            bool auto = _hardware.Stopwatch.IsAutoArmed;
+
+            if (running)
+            {
+                _btnSwStart.BackColor = Color.FromArgb(34, 197, 94);
+                _btnSwStart.ForeColor = Color.FromArgb(18, 18, 22);
+                _btnSwStart.FlatAppearance.BorderColor = Color.FromArgb(34, 197, 94);
+            }
+            else
+            {
+                _btnSwStart.BackColor = Color.FromArgb(28, 28, 36);
+                _btnSwStart.ForeColor = Color.FromArgb(80, 220, 140);
+                _btnSwStart.FlatAppearance.BorderColor = Color.FromArgb(44, 44, 56);
+            }
+
+            if (auto)
+            {
+                _btnSwAuto.BackColor = Color.FromArgb(245, 158, 11);
+                _btnSwAuto.ForeColor = Color.FromArgb(18, 18, 22);
+                _btnSwAuto.FlatAppearance.BorderColor = Color.FromArgb(245, 158, 11);
+            }
+            else
+            {
+                _btnSwAuto.BackColor = Color.FromArgb(28, 28, 36);
+                _btnSwAuto.ForeColor = Color.FromArgb(245, 158, 11);
+                _btnSwAuto.FlatAppearance.BorderColor = Color.FromArgb(44, 44, 56);
+            }
+
+            UpdateStopwatchSubHeader();
+            _pnlStopwatch?.Invalidate();
+        }
+
+        private void UpdateStopwatchSubHeader()
+        {
+            if (!_settings.ShowStopwatch || _lblStopwatchSub == null) return;
+
+            float pwr = _hardware.GetTriggerPowerWatts(_settings.StopwatchTriggerSource);
+            string pwrText = $"{pwr:F0}W";
+            string sourceName = _settings.StopwatchTriggerSource switch
+            {
+                1 => "CPU",
+                2 => "GPU",
+                3 => "Total",
+                _ => "Max"
+            };
+
+            if (_hardware.Stopwatch.IsRunning)
+            {
+                _lblStopwatchSub.Text = $"⚡ {Loc.Get("StopwatchRunning")} | {sourceName}: {pwrText}";
+                _lblStopwatchSub.ForeColor = Color.FromArgb(52, 211, 153);
+            }
+            else if (_hardware.Stopwatch.IsAutoArmed)
+            {
+                _lblStopwatchSub.Text = $"⚡ {Loc.Get("StopwatchArmed")} (> {_settings.StopwatchAutoStartWatts}W) | {sourceName}: {pwrText}";
+                _lblStopwatchSub.ForeColor = Color.FromArgb(245, 158, 11);
+            }
+            else
+            {
+                _lblStopwatchSub.Text = $"{Loc.Get("StopwatchStopped")} | {sourceName}: {pwrText}";
+                _lblStopwatchSub.ForeColor = Color.FromArgb(165, 165, 180);
+            }
+        }
+
+        private void DrawStopwatchCard(object? sender, PaintEventArgs e)
+        {
+            var g = e.Graphics;
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
+
+            int w = _pnlStopwatch.Width;
+            int h = _pnlStopwatch.Height;
+            if (w <= 10 || h <= 10) return;
+
+            using (var borderPen = new Pen(Color.FromArgb(36, 36, 46), 1f))
+            {
+                g.DrawRectangle(borderPen, 0, 0, w - 1, h - 1);
+            }
+
+            string timeStr = _hardware.Stopwatch.FormattedTime;
+
+            Color digitColor;
+            if (_hardware.Stopwatch.IsRunning)
+            {
+                digitColor = Color.FromArgb(52, 211, 153); // Emerald
+            }
+            else if (_hardware.Stopwatch.IsAutoArmed)
+            {
+                digitColor = Color.FromArgb(245, 158, 11); // Amber
+            }
+            else if (_hardware.Stopwatch.Elapsed > TimeSpan.Zero)
+            {
+                digitColor = Color.FromArgb(240, 240, 248); // Crisp white
+            }
+            else
+            {
+                digitColor = Color.FromArgb(145, 145, 160); // Muted silver
+            }
+
+            using var font = new Font("Consolas", 17f, FontStyle.Bold);
+            using var brush = new SolidBrush(digitColor);
+
+            if (_hardware.Stopwatch.IsRunning)
+            {
+                using var glowBrush = new SolidBrush(Color.FromArgb(40, 52, 211, 153));
+                g.DrawString(timeStr, font, glowBrush, 11, 9);
+            }
+
+            g.DrawString(timeStr, font, brush, 10, 8);
         }
 
         private class GpuSubHeaderPanel : Control
@@ -1459,6 +1726,10 @@ namespace RyzenQuietPro
             _toolTip.SetToolTip(_btnDetach, _isDetached ? Loc.Get("TipDock") : Loc.Get("TipDetach"));
             _toolTip.SetToolTip(_btnClose, Loc.Get("TipClose"));
             if (_btnGear != null) _toolTip.SetToolTip(_btnGear, Loc.Get("MenuSettings"));
+            if (_btnSwStart != null) _toolTip.SetToolTip(_btnSwStart, Loc.Get("StopwatchStart"));
+            if (_btnSwAuto != null) _toolTip.SetToolTip(_btnSwAuto, Loc.Get("StopwatchAutoStartEnable"));
+            if (_btnSwStop != null) _toolTip.SetToolTip(_btnSwStop, Loc.Get("StopwatchStop"));
+            if (_btnSwReset != null) _toolTip.SetToolTip(_btnSwReset, Loc.Get("StopwatchReset"));
         }
 
         private void OnLanguageChanged()
@@ -1471,6 +1742,12 @@ namespace RyzenQuietPro
             UpdateTooltips();
             UpdateModeUI();
             if (_chkShowAllGpus != null) _chkShowAllGpus.Text = Loc.Get("ShowAllGpus");
+            if (_lblStopwatch != null) _lblStopwatch.Text = "⏱ " + Loc.Get("Stopwatch");
+            if (_btnSwStart != null) _btnSwStart.Text = Loc.Get("StopwatchStart");
+            if (_btnSwAuto != null) _btnSwAuto.Text = Loc.Get("StopwatchAuto");
+            if (_btnSwStop != null) _btnSwStop.Text = Loc.Get("StopwatchStop");
+            if (_btnSwReset != null) _btnSwReset.Text = Loc.Get("StopwatchReset");
+            UpdateStopwatchSubHeader();
             UpdateMetricsUI();
             LayoutComponents();
         }
@@ -1505,6 +1782,13 @@ namespace RyzenQuietPro
 
         private void UpdateMetricsUI()
         {
+            // 0. Stopwatch
+            if (_settings.ShowStopwatch)
+            {
+                UpdateStopwatchSubHeader();
+                _pnlStopwatch?.Invalidate();
+            }
+
             // 1. CPU
             float cpuUsage = _hardware.Cpu.TotalCpuUsage;
             float freqGhz = _hardware.Cpu.CurrentFrequencyMHz / 1000f;
@@ -2888,6 +3172,7 @@ namespace RyzenQuietPro
                 Loc.LanguageChanged -= OnLanguageChanged;
                 _uiRefreshTimer?.Dispose();
                 _fanAnimTimer?.Dispose();
+                _stopwatchTimer?.Dispose();
                 _infoForm?.Dispose();
                 _settingsForm?.Dispose();
                 _toolTip?.Dispose();

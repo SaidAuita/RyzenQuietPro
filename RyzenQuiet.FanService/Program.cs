@@ -25,6 +25,7 @@ namespace RyzenQuiet.FanService
     {
         public string Status { get; set; } = "ok";
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+        public float CpuPower { get; set; } = 0f;
         public List<FanMetricItem> Fans { get; set; } = new();
     }
 
@@ -372,6 +373,22 @@ namespace RyzenQuiet.FanService
                 {
                     UpdateHardwareTree(hw);
                     CollectSensors(hw, snapshot.Fans);
+
+                    if (hw.HardwareType == HardwareType.Cpu)
+                    {
+                        foreach (var s in hw.Sensors)
+                        {
+                            if (s.SensorType == SensorType.Power && s.Value.HasValue && s.Value.Value > 0)
+                            {
+                                if (s.Name.Contains("Package", StringComparison.OrdinalIgnoreCase) ||
+                                    s.Name.Contains("Total", StringComparison.OrdinalIgnoreCase) ||
+                                    snapshot.CpuPower == 0)
+                                {
+                                    snapshot.CpuPower = s.Value.Value;
+                                }
+                            }
+                        }
+                    }
                 }
             }
             catch (Exception ex)

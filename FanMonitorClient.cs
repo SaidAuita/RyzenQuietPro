@@ -103,6 +103,7 @@ namespace RyzenQuietPro
 
         public FanPluginStatus Status { get; private set; } = FanPluginStatus.Disabled;
         public string StatusMessage { get; private set; } = string.Empty;
+        public float CpuPowerWatts { get; private set; } = 0f;
 
         public bool DemoMode
         {
@@ -115,14 +116,6 @@ namespace RyzenQuietPro
                     if (_demoMode)
                     {
                         InitDemoFans();
-                        SetStatus(FanPluginStatus.Connected, Loc.Get("FanPluginStatus_Connected"));
-                    }
-                    else
-                    {
-                        if (Status != FanPluginStatus.Connected)
-                        {
-                            SetStatus(FanPluginStatus.Disabled, Loc.Get("FanPluginStatus_Disabled"));
-                        }
                     }
                     FansUpdated?.Invoke();
                     StatusChanged?.Invoke();
@@ -453,6 +446,7 @@ namespace RyzenQuietPro
         {
             public string? Status { get; set; }
             public DateTime Timestamp { get; set; }
+            public float CpuPower { get; set; }
             public List<FanMetricDto>? Fans { get; set; }
         }
 
@@ -461,7 +455,12 @@ namespace RyzenQuietPro
             try
             {
                 var snapshot = JsonSerializer.Deserialize<FanSnapshotDto>(json);
-                if (snapshot?.Fans == null) return;
+                if (snapshot == null) return;
+                if (snapshot.CpuPower > 0)
+                {
+                    CpuPowerWatts = snapshot.CpuPower;
+                }
+                if (snapshot.Fans == null) return;
 
                 lock (_fansLock)
                 {

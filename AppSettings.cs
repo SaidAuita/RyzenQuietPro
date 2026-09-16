@@ -24,6 +24,14 @@ namespace RyzenQuietPro
         public int GpuTargetTempC { get; set; } = 75;
         public int GpuFailSafeTempC { get; set; } = 83;
 
+        // Stopwatch Module Settings
+        public bool ShowStopwatch { get; set; } = true;
+        public bool StopwatchAutoStartEnabled { get; set; } = false;
+        public int StopwatchTriggerSource { get; set; } = 0; // 0 = Max(CPU, GPU), 1 = CPU, 2 = GPU, 3 = Total (CPU + GPU)
+        public int StopwatchAutoStartWatts { get; set; } = 50;
+        public int StopwatchAutoStopWatts { get; set; } = 30;
+        public int StopwatchHysteresisSeconds { get; set; } = 3;
+
         // Visible Modules & Graphs
         public bool ShowCpuGraph { get; set; } = true;
         public bool ShowCpuCores { get; set; } = true;
@@ -82,6 +90,8 @@ namespace RyzenQuietPro
         public int WindowHeight { get; set; } = 530;
         public bool AlwaysOnTop { get; set; } = true;
         public double WidgetOpacity { get; set; } = 0.96;
+        public int SettingsWidth { get; set; } = 500;
+        public int SettingsHeight { get; set; } = 0;
 
         private static readonly string SettingsFolder = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),

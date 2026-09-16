@@ -41,6 +41,15 @@ namespace RyzenQuietPro
         public float TotalCpuUsage { get; private set; }
         public float CurrentFrequencyMHz { get; private set; }
         public float[] CoreUsages { get; private set; }
+        public float EstimatedPowerWatts
+        {
+            get
+            {
+                float usageRatio = Math.Clamp(TotalCpuUsage / 100f, 0f, 1f);
+                float freqRatio = CurrentFrequencyMHz > 1000 ? Math.Clamp(CurrentFrequencyMHz / 3500f, 0.6f, 1.4f) : 1.0f;
+                return (14f + (75f * usageRatio * freqRatio));
+            }
+        }
         public int CoreCount => _processorCount;
         public string CpuName { get; }
         public string CpuShortName { get; }
