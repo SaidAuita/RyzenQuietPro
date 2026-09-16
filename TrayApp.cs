@@ -63,7 +63,7 @@ namespace RyzenQuietPro
             this.FormBorderStyle = FormBorderStyle.None;
 
             _settings = AppSettings.Load();
-            _hardware = new HardwareMonitor();
+            _hardware = new HardwareMonitor(_settings);
 
             Loc.Initialize(_settings.Language);
             Loc.LanguageChanged += OnLanguageChanged;
@@ -90,6 +90,12 @@ namespace RyzenQuietPro
 
             _hardware.MetricsUpdated += OnMetricsUpdated;
             _hardware.Start(1000);
+
+            if (_settings.GpuTuningEnabled)
+            {
+                bool gpuQuiet = _settings.SeparateCpuGpuControl ? _settings.GpuIsQuietMode : _isQuietMode;
+                _hardware.GpuTuning.ApplyMode(gpuQuiet);
+            }
 
             UpdateTrayState();
 
@@ -120,7 +126,7 @@ namespace RyzenQuietPro
         {
             _contextMenu = new ContextMenuStrip();
 
-            var titleItem = new ToolStripMenuItem("RyzenQuiet PRO v3.0")
+            var titleItem = new ToolStripMenuItem("RyzenQuiet PRO v4.0")
             {
                 Enabled = false,
                 Font = new Font(SystemFonts.DefaultFont, FontStyle.Bold)
@@ -345,6 +351,10 @@ namespace RyzenQuietPro
             if (PowerPlanManager.SetMode(targetMode))
             {
                 _isQuietMode = (targetMode == PowerPlanManager.Mode.Quiet);
+                if (!_settings.SeparateCpuGpuControl && _settings.GpuTuningEnabled)
+                {
+                    _hardware.GpuTuning.ApplyMode(_isQuietMode);
+                }
                 UpdateTrayState();
                 _dashboard?.SetModeState(_isQuietMode);
                 ShowNotification(targetMode);

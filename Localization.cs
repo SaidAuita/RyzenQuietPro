@@ -28,7 +28,7 @@ namespace RyzenQuietPro
         {
             ["ru"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v3.0",
+                ["AppTitle"] = "RyzenQuiet PRO v4.0",
                 ["Silent"] = "Тихий",
                 ["SilentFull"] = "🌿 Тихий (99%)",
                 ["Boost"] = "Турбо",
@@ -124,11 +124,35 @@ namespace RyzenQuietPro
                 ["InfoClose"] = "Закрыть",
                 ["SysMemory"] = "Системная память",
                 ["DedMemory"] = "Выделенная видеопамять",
-                ["PhysicalDrives"] = "Физических накопителей"
+                ["PhysicalDrives"] = "Физических накопителей",
+
+                // GPU Tuning & Separate Controls
+                ["CpuSilentFull"] = "CPU: 🌿 Тихий (99%)",
+                ["CpuSilent"] = "CPU: 🌿 Тихий",
+                ["CpuBoostActive"] = "CPU: ⚡ Турбо (100%)",
+                ["CpuBoost"] = "CPU: ⚡ Турбо",
+                ["GpuSilentFull"] = "GPU: 🌿 Тихий ({0}W)",
+                ["GpuSilent"] = "GPU: 🌿 Тихий",
+                ["GpuBoostActive"] = "GPU: ⚡ Турбо ({0}W)",
+                ["GpuBoost"] = "GPU: ⚡ Турбо ({0}W)",
+                ["TipGpuTuning"] = "Настройка мощности и кулеров GPU",
+                ["GpuTuningTitle"] = "Тюнинг GPU (Акустика и мощность)",
+                ["GpuTuningEnable"] = "Включить тюнинг GPU",
+                ["SeparateCpuGpu"] = "Раздельное управление тишиной CPU и GPU",
+                ["GpuPowerLimit"] = "Лимит мощности в тихом режиме",
+                ["GpuPowerLimitTip"] = "Ограничение TDP видеокарты для снижения нагрева и шума кулеров под нагрузкой",
+                ["GpuFanCapEnable"] = "Акустический лимит кулеров GPU",
+                ["GpuFanCap"] = "Макс. обороты кулеров в тихом режиме",
+                ["GpuFanCapTip"] = "Ограничение максимальной скорости вентиляторов GPU",
+                ["GpuFailSafeInfo"] = "🛡 Защита: авто-сброс лимита кулеров при {0}°C",
+                ["GpuPresetEco"] = "Эко",
+                ["GpuPresetQuiet"] = "Тихий",
+                ["GpuPresetBalanced"] = "Баланс",
+                ["GpuPresetStock"] = "Стандарт"
             },
             ["en"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v3.0",
+                ["AppTitle"] = "RyzenQuiet PRO v4.0",
                 ["Silent"] = "Silent",
                 ["SilentFull"] = "🌿 Silent (99%)",
                 ["Boost"] = "Boost",
@@ -219,11 +243,35 @@ namespace RyzenQuietPro
                 ["InfoClose"] = "Close",
                 ["SysMemory"] = "System Memory",
                 ["DedMemory"] = "Dedicated Video Memory",
-                ["PhysicalDrives"] = "Physical Drives"
+                ["PhysicalDrives"] = "Physical Drives",
+
+                // GPU Tuning & Separate Controls
+                ["CpuSilentFull"] = "CPU: 🌿 Silent (99%)",
+                ["CpuSilent"] = "CPU: 🌿 Silent",
+                ["CpuBoostActive"] = "CPU: ⚡ Boost (100%)",
+                ["CpuBoost"] = "CPU: ⚡ Boost",
+                ["GpuSilentFull"] = "GPU: 🌿 Silent ({0}W)",
+                ["GpuSilent"] = "GPU: 🌿 Silent",
+                ["GpuBoostActive"] = "GPU: ⚡ Boost ({0}W)",
+                ["GpuBoost"] = "GPU: ⚡ Boost ({0}W)",
+                ["TipGpuTuning"] = "GPU Power & Acoustic Tuning",
+                ["GpuTuningTitle"] = "GPU Acoustic & Power Tuning (NVIDIA)",
+                ["GpuTuningEnable"] = "Enable GPU Acoustic & Power Tuning",
+                ["SeparateCpuGpu"] = "Separate CPU & GPU Silent Control",
+                ["GpuPowerLimit"] = "Quiet Mode Power Limit",
+                ["GpuPowerLimitTip"] = "Limits GPU power draw to drastically reduce heat and fan noise under load",
+                ["GpuFanCapEnable"] = "Acoustic GPU Fan Cap",
+                ["GpuFanCap"] = "Max Fan Speed in Quiet Mode",
+                ["GpuFanCapTip"] = "Cap maximum GPU fan speed for whisper-quiet operation",
+                ["GpuFailSafeInfo"] = "🛡 Safety Fail-Safe: auto-releases fan cap at {0}°C",
+                ["GpuPresetEco"] = "Eco",
+                ["GpuPresetQuiet"] = "Quiet",
+                ["GpuPresetBalanced"] = "Balanced",
+                ["GpuPresetStock"] = "Stock"
             },
             ["de"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v3.0",
+                ["AppTitle"] = "RyzenQuiet PRO v4.0",
                 ["Silent"] = "Leise",
                 ["SilentFull"] = "🌿 Leise (99%)",
                 ["Boost"] = "Boost",
@@ -314,11 +362,35 @@ namespace RyzenQuietPro
                 ["InfoClose"] = "Schließen",
                 ["SysMemory"] = "Systemspeicher",
                 ["DedMemory"] = "Dedizierter Videospeicher",
-                ["PhysicalDrives"] = "Physische Laufwerke"
+                ["PhysicalDrives"] = "Physische Laufwerke",
+
+                // GPU Tuning & Separate Controls
+                ["CpuSilentFull"] = "CPU: 🌿 Leise (99%)",
+                ["CpuSilent"] = "CPU: 🌿 Leise",
+                ["CpuBoostActive"] = "CPU: ⚡ Boost (100%)",
+                ["CpuBoost"] = "CPU: ⚡ Boost",
+                ["GpuSilentFull"] = "GPU: 🌿 Leise ({0}W)",
+                ["GpuSilent"] = "GPU: 🌿 Leise",
+                ["GpuBoostActive"] = "GPU: ⚡ Boost ({0}W)",
+                ["GpuBoost"] = "GPU: ⚡ Boost ({0}W)",
+                ["TipGpuTuning"] = "GPU Leistung & Akustik-Tuning",
+                ["GpuTuningTitle"] = "GPU Akustik & Leistungs-Tuning (NVIDIA)",
+                ["GpuTuningEnable"] = "GPU-Tuning aktivieren",
+                ["SeparateCpuGpu"] = "Getrennte CPU- & GPU-Steuerung",
+                ["GpuPowerLimit"] = "Leistungslimit im Leise-Modus",
+                ["GpuPowerLimitTip"] = "Begrenzt die GPU-Leistungsaufnahme zur Reduzierung von Hitze und Lüftergeräuschen",
+                ["GpuFanCapEnable"] = "Akustisches GPU-Lüfterlimit",
+                ["GpuFanCap"] = "Max. Lüfterdrehzahl im Leise-Modus",
+                ["GpuFanCapTip"] = "Begrenzt die maximale Lüftergeschwindigkeit für flüsterleisen Betrieb",
+                ["GpuFailSafeInfo"] = "🛡 Schutzfunktion: automatische Lüfterfreigabe bei {0}°C",
+                ["GpuPresetEco"] = "Öko",
+                ["GpuPresetQuiet"] = "Leise",
+                ["GpuPresetBalanced"] = "Balance",
+                ["GpuPresetStock"] = "Standard"
             },
             ["es"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v3.0",
+                ["AppTitle"] = "RyzenQuiet PRO v4.0",
                 ["Silent"] = "Silencioso",
                 ["SilentFull"] = "🌿 Silencioso (99%)",
                 ["Boost"] = "Turbo",
@@ -409,11 +481,35 @@ namespace RyzenQuietPro
                 ["InfoClose"] = "Cerrar",
                 ["SysMemory"] = "Memoria del sistema",
                 ["DedMemory"] = "Memoria de video dedicada",
-                ["PhysicalDrives"] = "Discos físicos"
+                ["PhysicalDrives"] = "Discos físicos",
+
+                // GPU Tuning & Separate Controls
+                ["CpuSilentFull"] = "CPU: 🌿 Silencioso (99%)",
+                ["CpuSilent"] = "CPU: 🌿 Silencioso",
+                ["CpuBoostActive"] = "CPU: ⚡ Boost (100%)",
+                ["CpuBoost"] = "CPU: ⚡ Boost",
+                ["GpuSilentFull"] = "GPU: 🌿 Silencioso ({0}W)",
+                ["GpuSilent"] = "GPU: 🌿 Silencioso",
+                ["GpuBoostActive"] = "GPU: ⚡ Boost ({0}W)",
+                ["GpuBoost"] = "GPU: ⚡ Boost ({0}W)",
+                ["TipGpuTuning"] = "Ajuste acústico y de potencia de GPU",
+                ["GpuTuningTitle"] = "Ajuste acústico y de potencia de GPU (NVIDIA)",
+                ["GpuTuningEnable"] = "Habilitar ajuste de GPU",
+                ["SeparateCpuGpu"] = "Control silencioso separado CPU/GPU",
+                ["GpuPowerLimit"] = "Límite de potencia en modo silencioso",
+                ["GpuPowerLimitTip"] = "Limita el consumo de energía de la GPU para reducir calor y ruido",
+                ["GpuFanCapEnable"] = "Límite acústico de ventiladores GPU",
+                ["GpuFanCap"] = "Velocidad máxima de ventilador silencioso",
+                ["GpuFanCapTip"] = "Limita la velocidad máxima de los ventiladores",
+                ["GpuFailSafeInfo"] = "🛡 Protección térmica: liberación automática a {0}°C",
+                ["GpuPresetEco"] = "Eco",
+                ["GpuPresetQuiet"] = "Silencioso",
+                ["GpuPresetBalanced"] = "Balanceado",
+                ["GpuPresetStock"] = "Predeterminado"
             },
             ["fr"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v3.0",
+                ["AppTitle"] = "RyzenQuiet PRO v4.0",
                 ["Silent"] = "Silencieux",
                 ["SilentFull"] = "🌿 Silencieux (99%)",
                 ["Boost"] = "Turbo",
@@ -504,11 +600,35 @@ namespace RyzenQuietPro
                 ["InfoClose"] = "Fermer",
                 ["SysMemory"] = "Mémoire système",
                 ["DedMemory"] = "Mémoire vidéo dédiée",
-                ["PhysicalDrives"] = "Disques physiques"
+                ["PhysicalDrives"] = "Disques physiques",
+
+                // GPU Tuning & Separate Controls
+                ["CpuSilentFull"] = "CPU: 🌿 Silencieux (99%)",
+                ["CpuSilent"] = "CPU: 🌿 Silencieux",
+                ["CpuBoostActive"] = "CPU: ⚡ Boost (100%)",
+                ["CpuBoost"] = "CPU: ⚡ Boost",
+                ["GpuSilentFull"] = "GPU: 🌿 Silencieux ({0}W)",
+                ["GpuSilent"] = "GPU: 🌿 Silencieux",
+                ["GpuBoostActive"] = "GPU: ⚡ Boost ({0}W)",
+                ["GpuBoost"] = "GPU: ⚡ Boost ({0}W)",
+                ["TipGpuTuning"] = "Réglage de puissance et acoustique GPU",
+                ["GpuTuningTitle"] = "Réglage acoustique et puissance GPU (NVIDIA)",
+                ["GpuTuningEnable"] = "Activer le réglage GPU",
+                ["SeparateCpuGpu"] = "Contrôle silencieux CPU/GPU séparé",
+                ["GpuPowerLimit"] = "Limite de puissance en mode silencieux",
+                ["GpuPowerLimitTip"] = "Limite la puissance du GPU pour réduire la chaleur et le bruit",
+                ["GpuFanCapEnable"] = "Limite acoustique des ventilateurs GPU",
+                ["GpuFanCap"] = "Vitesse maximale des ventilateurs",
+                ["GpuFanCapTip"] = "Plafonne la vitesse des ventilateurs pour un silence optimal",
+                ["GpuFailSafeInfo"] = "🛡 Sécurité thermique: déblocage automatique à {0}°C",
+                ["GpuPresetEco"] = "Éco",
+                ["GpuPresetQuiet"] = "Silencieux",
+                ["GpuPresetBalanced"] = "Équilibré",
+                ["GpuPresetStock"] = "Standard"
             },
             ["ja"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v3.0",
+                ["AppTitle"] = "RyzenQuiet PRO v4.0",
                 ["Silent"] = "静音",
                 ["SilentFull"] = "🌿 静音モード (99%)",
                 ["Boost"] = "ブースト",
@@ -599,11 +719,35 @@ namespace RyzenQuietPro
                 ["InfoClose"] = "閉じる",
                 ["SysMemory"] = "システムメモリ",
                 ["DedMemory"] = "専用ビデオメモリ",
-                ["PhysicalDrives"] = "物理ドライブ"
+                ["PhysicalDrives"] = "物理ドライブ",
+
+                // GPU Tuning & Separate Controls
+                ["CpuSilentFull"] = "CPU: 🌿 静音 (99%)",
+                ["CpuSilent"] = "CPU: 🌿 静音",
+                ["CpuBoostActive"] = "CPU: ⚡ ブースト (100%)",
+                ["CpuBoost"] = "CPU: ⚡ ブースト",
+                ["GpuSilentFull"] = "GPU: 🌿 静音 ({0}W)",
+                ["GpuSilent"] = "GPU: 🌿 静音",
+                ["GpuBoostActive"] = "GPU: ⚡ ブースト ({0}W)",
+                ["GpuBoost"] = "GPU: ⚡ ブースト ({0}W)",
+                ["TipGpuTuning"] = "GPU電力＆静音チューニング",
+                ["GpuTuningTitle"] = "GPU静音＆電力チューニング (NVIDIA)",
+                ["GpuTuningEnable"] = "GPUチューニングを有効化",
+                ["SeparateCpuGpu"] = "CPUとGPUの個別静音制御",
+                ["GpuPowerLimit"] = "静音モード時の電力上限",
+                ["GpuPowerLimitTip"] = "GPU消費電力を抑え、高負荷時の発熱とファン騒音を劇的に低減します",
+                ["GpuFanCapEnable"] = "GPUファン速度上限（アコースティック制御）",
+                ["GpuFanCap"] = "静音時の最大ファン回転速度",
+                ["GpuFanCapTip"] = "ファンの最大回転速度を制限して静かな動作を維持します",
+                ["GpuFailSafeInfo"] = "🛡 安全保護: {0}°C到達でファン制限を自動解除",
+                ["GpuPresetEco"] = "エコ",
+                ["GpuPresetQuiet"] = "静音",
+                ["GpuPresetBalanced"] = "標準",
+                ["GpuPresetStock"] = "定格"
             },
             ["pt"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v3.0",
+                ["AppTitle"] = "RyzenQuiet PRO v4.0",
                 ["Silent"] = "Silencioso",
                 ["SilentFull"] = "🌿 Silencioso (99%)",
                 ["Boost"] = "Turbo",
@@ -694,11 +838,35 @@ namespace RyzenQuietPro
                 ["InfoClose"] = "Fechar",
                 ["SysMemory"] = "Memória do sistema",
                 ["DedMemory"] = "Memória de vídeo dedicada",
-                ["PhysicalDrives"] = "Discos físicos"
+                ["PhysicalDrives"] = "Discos físicos",
+
+                // GPU Tuning & Separate Controls
+                ["CpuSilentFull"] = "CPU: 🌿 Silencioso (99%)",
+                ["CpuSilent"] = "CPU: 🌿 Silencioso",
+                ["CpuBoostActive"] = "CPU: ⚡ Boost (100%)",
+                ["CpuBoost"] = "CPU: ⚡ Boost",
+                ["GpuSilentFull"] = "GPU: 🌿 Silencioso ({0}W)",
+                ["GpuSilent"] = "GPU: 🌿 Silencioso",
+                ["GpuBoostActive"] = "GPU: ⚡ Boost ({0}W)",
+                ["GpuBoost"] = "GPU: ⚡ Boost ({0}W)",
+                ["TipGpuTuning"] = "Ajuste acústico e de energia da GPU",
+                ["GpuTuningTitle"] = "Ajuste acústico e de energia da GPU (NVIDIA)",
+                ["GpuTuningEnable"] = "Ativar ajuste da GPU",
+                ["SeparateCpuGpu"] = "Controle silencioso individual CPU/GPU",
+                ["GpuPowerLimit"] = "Limite de potência no modo silencioso",
+                ["GpuPowerLimitTip"] = "Limita o consumo da GPU para reduzir calor e ruído",
+                ["GpuFanCapEnable"] = "Limite acústico dos ventiladores da GPU",
+                ["GpuFanCap"] = "Velocidade máxima dos ventiladores",
+                ["GpuFanCapTip"] = "Limita a rotação máxima para manter operação silenciosa",
+                ["GpuFailSafeInfo"] = "🛡 Proteção térmica: liberação automática aos {0}°C",
+                ["GpuPresetEco"] = "Eco",
+                ["GpuPresetQuiet"] = "Silencioso",
+                ["GpuPresetBalanced"] = "Equilibrado",
+                ["GpuPresetStock"] = "Padrão"
             },
             ["zh"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v3.0",
+                ["AppTitle"] = "RyzenQuiet PRO v4.0",
                 ["Silent"] = "静音",
                 ["SilentFull"] = "🌿 静音模式 (99%)",
                 ["Boost"] = "加速",
@@ -789,7 +957,31 @@ namespace RyzenQuietPro
                 ["InfoClose"] = "关闭",
                 ["SysMemory"] = "系统内存",
                 ["DedMemory"] = "独立显存",
-                ["PhysicalDrives"] = "物理磁盘数量"
+                ["PhysicalDrives"] = "物理磁盘数量",
+
+                // GPU Tuning & Separate Controls
+                ["CpuSilentFull"] = "CPU: 🌿 静音 (99%)",
+                ["CpuSilent"] = "CPU: 🌿 静音",
+                ["CpuBoostActive"] = "CPU: ⚡ 增强 (100%)",
+                ["CpuBoost"] = "CPU: ⚡ 增强",
+                ["GpuSilentFull"] = "GPU: 🌿 静音 ({0}W)",
+                ["GpuSilent"] = "GPU: 🌿 静音",
+                ["GpuBoostActive"] = "GPU: ⚡ 增强 ({0}W)",
+                ["GpuBoost"] = "GPU: ⚡ 增强 ({0}W)",
+                ["TipGpuTuning"] = "GPU功耗与静音调校",
+                ["GpuTuningTitle"] = "GPU静音与功耗调校 (NVIDIA)",
+                ["GpuTuningEnable"] = "启用GPU静音与功耗调校",
+                ["SeparateCpuGpu"] = "CPU与GPU独立静音控制",
+                ["GpuPowerLimit"] = "静音模式功耗上限",
+                ["GpuPowerLimitTip"] = "限制显卡功耗以显著降低高负载时的发热与风扇噪音",
+                ["GpuFanCapEnable"] = "显卡风扇声学转速限制",
+                ["GpuFanCap"] = "静音模式最大风扇转速",
+                ["GpuFanCapTip"] = "限制风扇最高转速以保持极致静音",
+                ["GpuFailSafeInfo"] = "🛡 温度安全防护: 达 {0}°C 时自动解除风扇限制",
+                ["GpuPresetEco"] = "节能",
+                ["GpuPresetQuiet"] = "静音",
+                ["GpuPresetBalanced"] = "均衡",
+                ["GpuPresetStock"] = "出厂预设"
             }
         };
 

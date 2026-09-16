@@ -37,9 +37,21 @@ namespace RyzenQuietPro
         private Label _lblSecGraphs = null!;
         private Label _lblSecTray = null!;
         private Label _lblSecSystem = null!;
+        private Label _lblSecGpuTuning = null!;
 
         private readonly List<Button> _langButtons = new();
         private readonly List<Button> _trayButtons = new();
+        private readonly List<Button> _gpuPowerPresetButtons = new();
+        private readonly List<Button> _gpuFanPresetButtons = new();
+
+        private CheckBox _chkGpuTuning = null!;
+        private CheckBox _chkSeparateCpuGpu = null!;
+        private Label _lblGpuPowerLimit = null!;
+        private TrackBar _tbGpuPowerLimit = null!;
+        private CheckBox _chkGpuFanCap = null!;
+        private Label _lblGpuFanCap = null!;
+        private TrackBar _tbGpuFanCap = null!;
+        private Label _lblGpuFailSafe = null!;
 
         private CheckBox _chkCpuGraph = null!;
         private CheckBox _chkCpuCores = null!;
@@ -91,13 +103,13 @@ namespace RyzenQuietPro
             _onModeChangeRequested = onModeChangeRequested;
 
             bool multiGpu = _hardware.Gpu.GpuCount > 1;
-            int formH = multiGpu ? 1000 : 970;
+            int formH = 800;
 
             this.AutoScaleMode = AutoScaleMode.None;
             this.FormBorderStyle = FormBorderStyle.None;
             this.StartPosition = FormStartPosition.Manual;
             this.ShowInTaskbar = false;
-            this.ClientSize = new Size(420, formH);
+            this.ClientSize = new Size(428, formH);
             this.BackColor = Color.FromArgb(20, 20, 24);
             this.ForeColor = Color.White;
             this.DoubleBuffered = true;
@@ -123,7 +135,7 @@ namespace RyzenQuietPro
         private void InitializeComponents()
         {
             int w = this.ClientSize.Width;
-            int cardW = w - 28;
+            int cardW = 380;
             bool multiGpu = _hardware.Gpu.GpuCount > 1;
 
             // ================= HEADER =================
@@ -135,7 +147,6 @@ namespace RyzenQuietPro
                 Cursor = Cursors.SizeAll
             };
             header.MouseDown += OnHeaderDrag;
-            this.Controls.Add(header);
 
             var picIcon = new PictureBox
             {
@@ -175,12 +186,86 @@ namespace RyzenQuietPro
             btnX.Click += (s, e) => this.Close();
             header.Controls.Add(btnX);
 
-            int curY = 46;
+            // ================= FOOTER BUTTONS =================
+            var pnlFooter = new Panel
+            {
+                Dock = DockStyle.Bottom,
+                Height = 44,
+                BackColor = Color.FromArgb(16, 16, 20)
+            };
+
+            _btnSpecs = new Button
+            {
+                Text = "ℹ",
+                Font = new Font("Segoe UI", 11f, FontStyle.Bold),
+                ForeColor = Color.FromArgb(200, 200, 215),
+                BackColor = Color.FromArgb(32, 32, 40),
+                FlatStyle = FlatStyle.Flat,
+                Size = new Size(95, 32),
+                Location = new Point(14, 6),
+                TextAlign = ContentAlignment.MiddleCenter,
+                Padding = Padding.Empty,
+                Cursor = Cursors.Hand
+            };
+            _btnSpecs.FlatAppearance.BorderColor = Color.FromArgb(50, 50, 65);
+            _toolTip.SetToolTip(_btnSpecs, Loc.Get("TipInfo"));
+            _btnSpecs.Click += (s, e) => OpenSpecsDialog();
+            pnlFooter.Controls.Add(_btnSpecs);
+
+            _btnTools = new Button
+            {
+                Text = "🔗",
+                Font = new Font("Segoe UI", 11f),
+                ForeColor = Color.FromArgb(160, 160, 180),
+                BackColor = Color.FromArgb(32, 32, 40),
+                FlatStyle = FlatStyle.Flat,
+                Size = new Size(95, 32),
+                Location = new Point(115, 6),
+                TextAlign = ContentAlignment.MiddleCenter,
+                Padding = Padding.Empty,
+                Cursor = Cursors.Hand
+            };
+            _btnTools.FlatAppearance.BorderColor = Color.FromArgb(50, 50, 65);
+            _toolTip.SetToolTip(_btnTools, "https://ph-cu-s.com/tools");
+            _btnTools.Click += (s, e) => OpenToolsUrl();
+            pnlFooter.Controls.Add(_btnTools);
+
+            _btnClose = new Button
+            {
+                Text = Loc.Get("InfoClose"),
+                Font = new Font("Segoe UI", 8.75f, FontStyle.Bold),
+                ForeColor = Color.White,
+                BackColor = Color.FromArgb(14, 165, 233), // Sky Blue Accent
+                FlatStyle = FlatStyle.Flat,
+                Size = new Size(184, 32),
+                Location = new Point(216, 6),
+                TextAlign = ContentAlignment.MiddleCenter,
+                Padding = Padding.Empty,
+                Cursor = Cursors.Hand
+            };
+            _btnClose.FlatAppearance.BorderSize = 0;
+            _btnClose.Click += (s, e) => this.Close();
+            pnlFooter.Controls.Add(_btnClose);
+
+            // ================= SCROLLABLE BODY =================
+            var pnlBody = new Panel
+            {
+                Dock = DockStyle.Fill,
+                AutoScroll = true,
+                BackColor = Color.Transparent
+            };
+
+            this.Controls.Add(pnlBody);
+            this.Controls.Add(pnlFooter);
+            this.Controls.Add(header);
+            pnlBody.BringToFront();
+
+            int curY = 10;
 
             // ================= 1. LANGUAGE CARD =================
             // 8 clean 2-letter buttons in 1 row: RU, EN, DE, ES, FR, JA, PT, ZH
             var cardLang = CreateCard(14, curY, cardW, 70);
-            this.Controls.Add(cardLang);
+            pnlBody.Controls.Add(cardLang);
 
             _lblSecLang = CreateSectionHeader(Loc.Get("Language"), 12, 8);
             cardLang.Controls.Add(_lblSecLang);
@@ -218,7 +303,7 @@ namespace RyzenQuietPro
             // Single vertical column (1 row per item) - spacious and slender
             int cardGraphsH = multiGpu ? 500 : 470;
             var cardGraphs = CreateCard(14, curY, cardW, cardGraphsH);
-            this.Controls.Add(cardGraphs);
+            pnlBody.Controls.Add(cardGraphs);
 
             _lblSecGraphs = CreateSectionHeader(Loc.Get("MenuGraphs"), 12, 8);
             cardGraphs.Controls.Add(_lblSecGraphs);
@@ -245,7 +330,7 @@ namespace RyzenQuietPro
             _chkFanGraph = CreateCheckbox(Loc.Get("FanGraph"), chkX, fanY + 3, _settings.ShowFanGraph, v => {
                 _settings.ShowFanGraph = v;
                 _settings.EnableFanAddon = v;
-                _hardware.Fans.SetEnabled(v);
+                _hardware.Fans.SetEnabled(v || _settings.GpuTuningEnabled);
                 UpdateFanStatusUI();
             });
             _chkFanGraph.AutoSize = false;
@@ -504,9 +589,257 @@ namespace RyzenQuietPro
 
             curY += cardGraphsH + 8;
 
+            // ================= 2b. GPU ACOUSTIC & POWER TUNING CARD =================
+            int cardGpuH = 312;
+            var cardGpu = CreateCard(14, curY, cardW, cardGpuH);
+            pnlBody.Controls.Add(cardGpu);
+
+            _lblSecGpuTuning = CreateSectionHeader("⚡ " + Loc.Get("GpuTuningTitle"), 12, 8);
+            cardGpu.Controls.Add(_lblSecGpuTuning);
+
+            string gpuModel = _hardware.Gpu.GpuName;
+            if (!string.IsNullOrEmpty(gpuModel))
+            {
+                var lblGpuBadge = new Label
+                {
+                    Text = $"{gpuModel} (Stock: {_hardware.GpuTuning.StockWatts}W)",
+                    Font = new Font("Segoe UI", 7.5f, FontStyle.Bold),
+                    ForeColor = Color.FromArgb(168, 85, 247),
+                    Location = new Point(12, 28),
+                    AutoSize = true
+                };
+                cardGpu.Controls.Add(lblGpuBadge);
+            }
+
+            int gpuY = 48;
+            _chkGpuTuning = CreateCheckbox(Loc.Get("GpuTuningEnable"), 14, gpuY, _settings.GpuTuningEnabled, v => {
+                _settings.GpuTuningEnabled = v;
+                _hardware.Fans.SetEnabled((_settings.ShowFanGraph && _settings.EnableFanAddon) || v);
+                _hardware.GpuTuning.ApplyMode(_settings.GpuIsQuietMode);
+                UpdateGpuTuningCardUI();
+                _settings.Save();
+                _onSettingsUpdated?.Invoke();
+            });
+            cardGpu.Controls.Add(_chkGpuTuning);
+
+            _chkSeparateCpuGpu = CreateCheckbox(Loc.Get("SeparateCpuGpu"), 14, gpuY + 24, _settings.SeparateCpuGpuControl, v => {
+                _settings.SeparateCpuGpuControl = v;
+                _settings.Save();
+                _onSettingsUpdated?.Invoke();
+            });
+            cardGpu.Controls.Add(_chkSeparateCpuGpu);
+
+            // Divider
+            var sepGpu1 = new Panel
+            {
+                Location = new Point(12, gpuY + 50),
+                Size = new Size(cardW - 24, 1),
+                BackColor = Color.FromArgb(40, 40, 52)
+            };
+            cardGpu.Controls.Add(sepGpu1);
+
+            // Power Limit Section
+            int pwrY = gpuY + 56;
+            _lblGpuPowerLimit = new Label
+            {
+                Text = $"{Loc.Get("GpuPowerLimit")}: {_settings.GpuSilentPowerWatts}W",
+                Font = new Font("Segoe UI", 8.5f, FontStyle.Bold),
+                ForeColor = Color.FromArgb(240, 240, 245),
+                Location = new Point(12, pwrY),
+                AutoSize = true
+            };
+            _toolTip.SetToolTip(_lblGpuPowerLimit, Loc.Get("GpuPowerLimitTip"));
+            cardGpu.Controls.Add(_lblGpuPowerLimit);
+
+            int minW = Math.Min(100, _hardware.GpuTuning.MinSupportedWatts);
+            int maxW = Math.Max(350, _hardware.GpuTuning.MaxSupportedWatts);
+
+            _tbGpuPowerLimit = new TrackBar
+            {
+                AutoSize = false,
+                Minimum = minW,
+                Maximum = maxW,
+                Value = Math.Clamp(_settings.GpuSilentPowerWatts, minW, maxW),
+                TickFrequency = 20,
+                SmallChange = 5,
+                LargeChange = 20,
+                Size = new Size(cardW - 24, 22),
+                Location = new Point(12, pwrY + 20),
+                Cursor = Cursors.Hand
+            };
+            _tbGpuPowerLimit.ValueChanged += (s, e) => {
+                _settings.GpuSilentPowerWatts = _tbGpuPowerLimit.Value;
+                _lblGpuPowerLimit.Text = $"{Loc.Get("GpuPowerLimit")}: {_tbGpuPowerLimit.Value}W";
+                if (_settings.GpuIsQuietMode && _settings.GpuTuningEnabled)
+                {
+                    _hardware.GpuTuning.ApplyPowerLimit(_settings.GpuSilentPowerWatts);
+                }
+                _settings.Save();
+                _onSettingsUpdated?.Invoke();
+            };
+            _toolTip.SetToolTip(_tbGpuPowerLimit, Loc.Get("GpuPowerLimitTip"));
+            cardGpu.Controls.Add(_tbGpuPowerLimit);
+
+            // Power Presets
+            int stockWatts = _hardware.GpuTuning.StockWatts > 0 ? _hardware.GpuTuning.StockWatts : 336;
+            (string key, int w)[] powerPresets = new[]
+            {
+                ("GpuPresetEco", 180),
+                ("GpuPresetQuiet", 240),
+                ("GpuPresetBalanced", 280),
+                ("GpuPresetStock", stockWatts)
+            };
+            int pwBtnX = 12;
+            int pwBtnW = (cardW - 24 - (powerPresets.Length - 1) * 4) / powerPresets.Length;
+            foreach (var p in powerPresets)
+            {
+                var btn = new Button
+                {
+                    Text = $"{Loc.Get(p.key)} ({p.w}W)",
+                    Font = new Font("Segoe UI", 7.5f, FontStyle.Bold),
+                    Size = new Size(pwBtnW, 24),
+                    Location = new Point(pwBtnX, pwrY + 46),
+                    FlatStyle = FlatStyle.Flat,
+                    BackColor = Color.FromArgb(32, 32, 40),
+                    ForeColor = Color.FromArgb(170, 170, 185),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    Padding = Padding.Empty,
+                    Cursor = Cursors.Hand,
+                    Tag = p.w
+                };
+                btn.FlatAppearance.BorderSize = 0;
+                int targetW = p.w;
+                btn.Click += (s, e) => {
+                    _tbGpuPowerLimit.Value = Math.Clamp(targetW, _tbGpuPowerLimit.Minimum, _tbGpuPowerLimit.Maximum);
+                };
+                cardGpu.Controls.Add(btn);
+                _gpuPowerPresetButtons.Add(btn);
+                pwBtnX += pwBtnW + 4;
+            }
+
+            // Divider
+            int fanDivY = pwrY + 76;
+            var sepGpu2 = new Panel
+            {
+                Location = new Point(12, fanDivY),
+                Size = new Size(cardW - 24, 1),
+                BackColor = Color.FromArgb(40, 40, 52)
+            };
+            cardGpu.Controls.Add(sepGpu2);
+
+            // Fan Acoustic Cap Section
+            int fanCapY = fanDivY + 6;
+            _chkGpuFanCap = CreateCheckbox(Loc.Get("GpuFanCapEnable"), 14, fanCapY, _settings.GpuFanCapEnabled, v => {
+                _settings.GpuFanCapEnabled = v;
+                if (v && _settings.GpuIsQuietMode && _settings.GpuTuningEnabled)
+                {
+                    _hardware.GpuTuning.ApplyFanCap(_settings.GpuFanMaxPercent);
+                }
+                else
+                {
+                    _hardware.GpuTuning.ReleaseFanCap();
+                }
+                UpdateGpuTuningCardUI();
+                _settings.Save();
+                _onSettingsUpdated?.Invoke();
+            });
+            cardGpu.Controls.Add(_chkGpuFanCap);
+
+            _lblGpuFanCap = new Label
+            {
+                Text = $"{_settings.GpuFanMaxPercent}%",
+                Font = new Font("Segoe UI", 9f, FontStyle.Bold),
+                ForeColor = Color.FromArgb(56, 189, 248),
+                Location = new Point(cardW - 75, fanCapY),
+                Size = new Size(65, 20),
+                TextAlign = ContentAlignment.MiddleRight
+            };
+            cardGpu.Controls.Add(_lblGpuFanCap);
+
+            _tbGpuFanCap = new TrackBar
+            {
+                AutoSize = false,
+                Minimum = 30,
+                Maximum = 100,
+                Value = Math.Clamp(_settings.GpuFanMaxPercent, 30, 100),
+                TickFrequency = 10,
+                SmallChange = 5,
+                LargeChange = 10,
+                Size = new Size(cardW - 24, 22),
+                Location = new Point(12, fanCapY + 24),
+                Cursor = Cursors.Hand
+            };
+            _tbGpuFanCap.ValueChanged += (s, e) => {
+                _settings.GpuFanMaxPercent = _tbGpuFanCap.Value;
+                _lblGpuFanCap.Text = $"{_tbGpuFanCap.Value}%";
+                if (_settings.GpuFanCapEnabled && _settings.GpuIsQuietMode && _settings.GpuTuningEnabled)
+                {
+                    _hardware.GpuTuning.ApplyFanCap(_settings.GpuFanMaxPercent);
+                }
+                _settings.Save();
+                _onSettingsUpdated?.Invoke();
+            };
+            _toolTip.SetToolTip(_tbGpuFanCap, Loc.Get("GpuFanCapTip"));
+            cardGpu.Controls.Add(_tbGpuFanCap);
+
+            // Fan Presets
+            int[] fanPresets = new[] { 35, 45, 60, 100 };
+            int fanBtnX = 12;
+            int fanBtnW = (cardW - 24 - (fanPresets.Length - 1) * 4) / fanPresets.Length;
+            foreach (var fp in fanPresets)
+            {
+                string label = fp == 100 ? "Auto (100%)" : $"{fp}%";
+                var btn = new Button
+                {
+                    Text = label,
+                    Font = new Font("Segoe UI", 7.5f, FontStyle.Bold),
+                    Size = new Size(fanBtnW, 24),
+                    Location = new Point(fanBtnX, fanCapY + 50),
+                    FlatStyle = FlatStyle.Flat,
+                    BackColor = Color.FromArgb(32, 32, 40),
+                    ForeColor = Color.FromArgb(170, 170, 185),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    Padding = Padding.Empty,
+                    Cursor = Cursors.Hand
+                };
+                btn.FlatAppearance.BorderSize = 0;
+                int targetPct = fp;
+                btn.Click += (s, e) => {
+                    _tbGpuFanCap.Value = targetPct;
+                };
+                cardGpu.Controls.Add(btn);
+                _gpuFanPresetButtons.Add(btn);
+                fanBtnX += fanBtnW + 4;
+            }
+
+            // Fail-Safe Banner
+            int failSafeY = fanCapY + 78;
+            var pnlFailSafe = new Panel
+            {
+                Location = new Point(12, failSafeY),
+                Size = new Size(cardW - 24, 26),
+                BackColor = Color.FromArgb(32, 28, 38)
+            };
+            cardGpu.Controls.Add(pnlFailSafe);
+
+            _lblGpuFailSafe = new Label
+            {
+                Text = string.Format(Loc.Get("GpuFailSafeInfo"), _settings.GpuFailSafeTempC > 0 ? _settings.GpuFailSafeTempC : 83),
+                Font = new Font("Segoe UI", 7.5f),
+                ForeColor = Color.FromArgb(248, 113, 113),
+                Dock = DockStyle.Fill,
+                TextAlign = ContentAlignment.MiddleLeft,
+                Padding = new Padding(4, 0, 0, 0)
+            };
+            pnlFailSafe.Controls.Add(_lblGpuFailSafe);
+
+            UpdateGpuTuningCardUI();
+
+            curY += cardGpuH + 8;
+
             // ================= 3. TRAY ICON CARD =================
             var cardTray = CreateCard(14, curY, cardW, 70);
-            this.Controls.Add(cardTray);
+            pnlBody.Controls.Add(cardTray);
 
             _lblSecTray = CreateSectionHeader(Loc.Get("TrayIconMenu"), 12, 8);
             cardTray.Controls.Add(_lblSecTray);
@@ -565,7 +898,7 @@ namespace RyzenQuietPro
             // ================= 4. SYSTEM & OPACITY CARD =================
             // Clear separation between slider presets and checkboxes
             var cardSys = CreateCard(14, curY, cardW, 192);
-            this.Controls.Add(cardSys);
+            pnlBody.Controls.Add(cardSys);
 
             _lblSecSystem = CreateSectionHeader(Loc.Get("Opacity"), 12, 8);
             cardSys.Controls.Add(_lblSecSystem);
@@ -658,67 +991,13 @@ namespace RyzenQuietPro
 
             curY += 200;
 
-            // ================= FOOTER BUTTONS =================
-            var pnlFooter = new Panel
+            // Bottom spacer for scrollable body
+            pnlBody.Controls.Add(new Panel
             {
                 Location = new Point(14, curY),
-                Size = new Size(cardW, 36),
+                Size = new Size(cardW, 14),
                 BackColor = Color.Transparent
-            };
-            this.Controls.Add(pnlFooter);
-
-            _btnSpecs = new Button
-            {
-                Text = "ℹ",
-                Font = new Font("Segoe UI", 11f, FontStyle.Bold),
-                ForeColor = Color.FromArgb(200, 200, 215),
-                BackColor = Color.FromArgb(32, 32, 40),
-                FlatStyle = FlatStyle.Flat,
-                Size = new Size(110, 32),
-                Location = new Point(0, 2),
-                TextAlign = ContentAlignment.MiddleCenter,
-                Padding = Padding.Empty,
-                Cursor = Cursors.Hand
-            };
-            _btnSpecs.FlatAppearance.BorderColor = Color.FromArgb(50, 50, 65);
-            _toolTip.SetToolTip(_btnSpecs, Loc.Get("TipInfo"));
-            _btnSpecs.Click += (s, e) => OpenSpecsDialog();
-            pnlFooter.Controls.Add(_btnSpecs);
-
-            _btnTools = new Button
-            {
-                Text = "🔗",
-                Font = new Font("Segoe UI", 11f),
-                ForeColor = Color.FromArgb(160, 160, 180),
-                BackColor = Color.FromArgb(32, 32, 40),
-                FlatStyle = FlatStyle.Flat,
-                Size = new Size(110, 32),
-                Location = new Point(116, 2),
-                TextAlign = ContentAlignment.MiddleCenter,
-                Padding = Padding.Empty,
-                Cursor = Cursors.Hand
-            };
-            _btnTools.FlatAppearance.BorderColor = Color.FromArgb(50, 50, 65);
-            _toolTip.SetToolTip(_btnTools, "https://ph-cu-s.com/tools");
-            _btnTools.Click += (s, e) => OpenToolsUrl();
-            pnlFooter.Controls.Add(_btnTools);
-
-            _btnClose = new Button
-            {
-                Text = Loc.Get("InfoClose"),
-                Font = new Font("Segoe UI", 8.75f, FontStyle.Bold),
-                ForeColor = Color.White,
-                BackColor = Color.FromArgb(14, 165, 233), // Sky Blue Accent
-                FlatStyle = FlatStyle.Flat,
-                Size = new Size(cardW - 232, 32),
-                Location = new Point(232, 2),
-                TextAlign = ContentAlignment.MiddleCenter,
-                Padding = Padding.Empty,
-                Cursor = Cursors.Hand
-            };
-            _btnClose.FlatAppearance.BorderSize = 0;
-            _btnClose.Click += (s, e) => this.Close();
-            pnlFooter.Controls.Add(_btnClose);
+            });
         }
 
         private Panel CreateCard(int x, int y, int w, int h)
@@ -858,13 +1137,69 @@ namespace RyzenQuietPro
             _chkAutoQuiet.Text = Loc.Get("AutoQuiet");
             _chkStartup.Text = Loc.Get("Startup");
 
-            _btnSpecs.Text = "ℹ";
-            _toolTip.SetToolTip(_btnSpecs, Loc.Get("TipInfo"));
-            _toolTip.SetToolTip(_btnTools, "https://ph-cu-s.com/tools");
-            _btnClose.Text = Loc.Get("InfoClose");
+            if (_lblSecGpuTuning != null) _lblSecGpuTuning.Text = "⚡ " + Loc.Get("GpuTuningTitle");
+            if (_chkGpuTuning != null) _chkGpuTuning.Text = Loc.Get("GpuTuningEnable");
+            if (_chkSeparateCpuGpu != null) _chkSeparateCpuGpu.Text = Loc.Get("SeparateCpuGpu");
+            if (_lblGpuPowerLimit != null) _lblGpuPowerLimit.Text = $"{Loc.Get("GpuPowerLimit")}: {_settings.GpuSilentPowerWatts}W";
+            if (_toolTip != null && _lblGpuPowerLimit != null) _toolTip.SetToolTip(_lblGpuPowerLimit, Loc.Get("GpuPowerLimitTip"));
+            if (_toolTip != null && _tbGpuPowerLimit != null) _toolTip.SetToolTip(_tbGpuPowerLimit, Loc.Get("GpuPowerLimitTip"));
+
+            if (_chkGpuFanCap != null) _chkGpuFanCap.Text = Loc.Get("GpuFanCapEnable");
+            if (_lblGpuFanCap != null) _lblGpuFanCap.Text = $"{_settings.GpuFanMaxPercent}%";
+            if (_toolTip != null && _tbGpuFanCap != null) _toolTip.SetToolTip(_tbGpuFanCap, Loc.Get("GpuFanCapTip"));
+
+            if (_lblGpuFailSafe != null)
+            {
+                _lblGpuFailSafe.Text = string.Format(Loc.Get("GpuFailSafeInfo"), _settings.GpuFailSafeTempC > 0 ? _settings.GpuFailSafeTempC : 83);
+            }
+
+            int stockWatts = _hardware.GpuTuning.StockWatts > 0 ? _hardware.GpuTuning.StockWatts : 336;
+            (string key, int w)[] powerPresets = new[]
+            {
+                ("GpuPresetEco", 180),
+                ("GpuPresetQuiet", 240),
+                ("GpuPresetBalanced", 280),
+                ("GpuPresetStock", stockWatts)
+            };
+            for (int i = 0; i < _gpuPowerPresetButtons.Count && i < powerPresets.Length; i++)
+            {
+                _gpuPowerPresetButtons[i].Text = $"{Loc.Get(powerPresets[i].key)} ({powerPresets[i].w}W)";
+            }
+
+            if (_btnSpecs != null)
+            {
+                _btnSpecs.Text = "ℹ";
+                _toolTip?.SetToolTip(_btnSpecs, Loc.Get("TipInfo"));
+            }
+            if (_btnTools != null) _toolTip?.SetToolTip(_btnTools, "https://ph-cu-s.com/tools");
+            if (_btnClose != null) _btnClose.Text = Loc.Get("InfoClose");
 
             UpdateFanModeUI();
             UpdateFanStatusUI();
+            UpdateGpuTuningCardUI();
+        }
+
+        private void UpdateGpuTuningCardUI()
+        {
+            if (_chkGpuTuning == null) return;
+
+            bool enabled = _chkGpuTuning.Checked;
+            if (_chkSeparateCpuGpu != null) _chkSeparateCpuGpu.Enabled = enabled;
+            if (_tbGpuPowerLimit != null) _tbGpuPowerLimit.Enabled = enabled;
+            if (_lblGpuPowerLimit != null)
+            {
+                _lblGpuPowerLimit.ForeColor = enabled ? Color.FromArgb(240, 240, 245) : Color.FromArgb(120, 120, 130);
+            }
+            foreach (var btn in _gpuPowerPresetButtons) btn.Enabled = enabled;
+
+            bool fanCapEnabled = enabled && _chkGpuFanCap != null && _chkGpuFanCap.Checked;
+            if (_chkGpuFanCap != null) _chkGpuFanCap.Enabled = enabled;
+            if (_tbGpuFanCap != null) _tbGpuFanCap.Enabled = fanCapEnabled;
+            if (_lblGpuFanCap != null)
+            {
+                _lblGpuFanCap.ForeColor = fanCapEnabled ? Color.FromArgb(56, 189, 248) : Color.FromArgb(120, 120, 130);
+            }
+            foreach (var btn in _gpuFanPresetButtons) btn.Enabled = fanCapEnabled;
         }
 
         private void UpdateFanModeUI()

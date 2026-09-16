@@ -13,10 +13,10 @@
     <EnableCompressionInSingleFile Condition="'$(SelfContained)' == 'true'">true</EnableCompressionInSingleFile>
     <DebugType>None</DebugType>
     <DebugSymbols>false</DebugSymbols>
-    <Version>3.0.0</Version>
-    <AssemblyVersion>3.0.0.0</AssemblyVersion>
-    <FileVersion>3.0.0.0</FileVersion>
-    <InformationalVersion>v3.0 FanService</InformationalVersion>
+    <Version>4.0.0</Version>
+    <AssemblyVersion>4.0.0.0</AssemblyVersion>
+    <FileVersion>4.0.0.0</FileVersion>
+    <InformationalVersion>v4.0 FanService</InformationalVersion>
     <Product>RyzenQuiet PRO Fan Service</Product>
   </PropertyGroup>
 

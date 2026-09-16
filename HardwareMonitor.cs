@@ -11,18 +11,21 @@ namespace RyzenQuietPro
         public DiskMonitor Disk { get; }
         public ProcessMonitor Processes { get; }
         public FanMonitorClient Fans { get; }
+        public GpuTuningManager GpuTuning { get; }
 
         private System.Threading.Timer? _timer;
         public event Action? MetricsUpdated;
 
-        public HardwareMonitor()
+        public HardwareMonitor(AppSettings? settings = null)
         {
+            var appSettings = settings ?? AppSettings.Load();
             Cpu = new CpuMonitor();
             Ram = new RamMonitor();
             Gpu = new GpuMonitor();
             Disk = new DiskMonitor();
             Processes = new ProcessMonitor();
             Fans = new FanMonitorClient();
+            GpuTuning = new GpuTuningManager(this, appSettings);
         }
 
         public void Start(int intervalMs = 1000)
@@ -47,6 +50,8 @@ namespace RyzenQuietPro
                 Disk.Sample();
                 Processes.Sample();
                 Fans.Sample();
+
+                GpuTuning.CheckFailSafe(Gpu.GpuTemperatureC);
 
                 MetricsUpdated?.Invoke();
             }

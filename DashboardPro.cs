@@ -118,6 +118,9 @@ namespace RyzenQuietPro
         private Button _btnSilent = null!;
         private Button _btnBoost = null!;
         private Button _btnGear = null!;
+        private Button _btnGpuSilent = null!;
+        private Button _btnGpuBoost = null!;
+        private Button _btnGpuTune = null!;
         private Label _lblResizeGrip = null!;
         private ToolTip _toolTip = null!;
         private HardwareInfoForm? _infoForm;
@@ -145,7 +148,7 @@ namespace RyzenQuietPro
 
             _hardware.Processes.IsEnabled = _settings.ShowTopProcesses;
             _hardware.Fans.DemoMode = _settings.EnableFanDemo;
-            _hardware.Fans.SetEnabled(_settings.ShowFanGraph && _settings.EnableFanAddon);
+            _hardware.Fans.SetEnabled((_settings.ShowFanGraph && _settings.EnableFanAddon) || _settings.GpuTuningEnabled);
             _hardware.Fans.FansUpdated += () => {
                 if (this.IsHandleCreated && !this.IsDisposed)
                 {
@@ -155,6 +158,13 @@ namespace RyzenQuietPro
                             UpdateMetricsUI();
                         })); 
                     } catch { }
+                }
+            };
+
+            _hardware.GpuTuning.StateChanged += () => {
+                if (this.IsHandleCreated && !this.IsDisposed)
+                {
+                    try { this.BeginInvoke((Action)UpdateModeUI); } catch { }
                 }
             };
 
@@ -547,6 +557,62 @@ namespace RyzenQuietPro
             _btnGear.Click += (s, e) => ShowSettingsDialog();
             _footerPanel.Controls.Add(_btnGear);
 
+            _btnGpuSilent = new Button
+            {
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 9f, FontStyle.Bold),
+                Cursor = Cursors.Hand,
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+            _btnGpuSilent.FlatAppearance.BorderSize = 0;
+            _btnGpuSilent.Click += (s, e) => {
+                if (!_hardware.GpuTuning.IsGpuQuietMode)
+                {
+                    _hardware.GpuTuning.ApplyMode(true);
+                    UpdateModeUI();
+                }
+            };
+            _footerPanel.Controls.Add(_btnGpuSilent);
+
+            _btnGpuBoost = new Button
+            {
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 9f, FontStyle.Bold),
+                Cursor = Cursors.Hand,
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+            _btnGpuBoost.FlatAppearance.BorderSize = 0;
+            _btnGpuBoost.Click += (s, e) => {
+                if (_hardware.GpuTuning.IsGpuQuietMode)
+                {
+                    _hardware.GpuTuning.ApplyMode(false);
+                    UpdateModeUI();
+                }
+            };
+            _footerPanel.Controls.Add(_btnGpuBoost);
+
+            _btnGpuTune = new Button
+            {
+                Text = "🎮",
+                Font = new Font("Segoe UI", 11f),
+                ForeColor = Color.FromArgb(175, 175, 190),
+                BackColor = Color.FromArgb(28, 28, 34),
+                FlatStyle = FlatStyle.Flat,
+                Cursor = Cursors.Hand,
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+            _btnGpuTune.FlatAppearance.BorderSize = 0;
+            _btnGpuTune.MouseEnter += (s, e) => {
+                _btnGpuTune.ForeColor = Color.White;
+                _btnGpuTune.BackColor = Color.FromArgb(42, 42, 52);
+            };
+            _btnGpuTune.MouseLeave += (s, e) => {
+                _btnGpuTune.ForeColor = Color.FromArgb(175, 175, 190);
+                _btnGpuTune.BackColor = Color.FromArgb(28, 28, 34);
+            };
+            _btnGpuTune.Click += (s, e) => ShowSettingsDialog();
+            _footerPanel.Controls.Add(_btnGpuTune);
+
             // Resize Grip in bottom-right corner
             _lblResizeGrip = new Label
             {
@@ -583,8 +649,9 @@ namespace RyzenQuietPro
             _btnPin.Location = new Point(w - 88, 6);
             _btnInfo.Location = new Point(w - 116, 6);
 
-            // 2. Footer Layout (Slim single row: Silent, Boost, Gear)
-            int footerH = 44;
+            // 2. Footer Layout (Single row unified, or two rows when separate CPU/GPU control is enabled)
+            bool separate = _settings.SeparateCpuGpuControl;
+            int footerH = separate ? 78 : 44;
             int footerY = h - footerH;
             _footerPanel.Location = new Point(0, footerY);
             _footerPanel.Size = new Size(w, footerH);
@@ -595,6 +662,7 @@ namespace RyzenQuietPro
             int availableBtnW = contentW - gearW - buttonGap;
             int halfW = (availableBtnW - buttonGap) / 2;
 
+            // Row 1: CPU Controls & Settings Gear
             _btnSilent.Location = new Point(marginX, 6);
             _btnSilent.Size = new Size(halfW, 32);
 
@@ -603,6 +671,23 @@ namespace RyzenQuietPro
 
             _btnGear.Location = new Point(marginX + contentW - gearW, 6);
             _btnGear.Size = new Size(gearW, 32);
+
+            // Row 2: GPU Controls (visible only when separate controls are enabled)
+            _btnGpuSilent.Visible = separate;
+            _btnGpuBoost.Visible = separate;
+            _btnGpuTune.Visible = separate;
+
+            if (separate)
+            {
+                _btnGpuSilent.Location = new Point(marginX, 42);
+                _btnGpuSilent.Size = new Size(halfW, 32);
+
+                _btnGpuBoost.Location = new Point(marginX + halfW + buttonGap, 42);
+                _btnGpuBoost.Size = new Size(availableBtnW - halfW - buttonGap, 32);
+
+                _btnGpuTune.Location = new Point(marginX + contentW - gearW, 42);
+                _btnGpuTune.Size = new Size(gearW, 32);
+            }
 
             _lblResizeGrip.Location = new Point(w - 18, footerH - 18);
 
@@ -897,7 +982,7 @@ namespace RyzenQuietPro
             {
                 _settingsForm = new SettingsForm(_hardware, _settings, () => {
                     _hardware.Fans.DemoMode = _settings.EnableFanDemo;
-                    _hardware.Fans.SetEnabled(_settings.ShowFanGraph && _settings.EnableFanAddon);
+                    _hardware.Fans.SetEnabled((_settings.ShowFanGraph && _settings.EnableFanAddon) || _settings.GpuTuningEnabled);
                     LayoutComponents();
                     this.Invalidate();
                     _onSettingsChanged?.Invoke();
@@ -1296,25 +1381,57 @@ namespace RyzenQuietPro
 
         private void UpdateModeUI()
         {
+            bool separate = _settings.SeparateCpuGpuControl;
+
+            // 1. CPU Mode UI
             if (_isQuietMode)
             {
-                _btnSilent.Text = Loc.Get("SilentFull");
+                _btnSilent.Text = separate ? Loc.Get("CpuSilentFull") : Loc.Get("SilentFull");
                 _btnSilent.BackColor = Color.FromArgb(34, 150, 85);
                 _btnSilent.ForeColor = Color.White;
 
-                _btnBoost.Text = Loc.Get("Boost");
+                _btnBoost.Text = separate ? Loc.Get("CpuBoost") : Loc.Get("Boost");
                 _btnBoost.BackColor = Color.FromArgb(28, 28, 34);
                 _btnBoost.ForeColor = Color.FromArgb(140, 140, 150);
             }
             else
             {
-                _btnSilent.Text = Loc.Get("Silent");
+                _btnSilent.Text = separate ? Loc.Get("CpuSilent") : Loc.Get("Silent");
                 _btnSilent.BackColor = Color.FromArgb(28, 28, 34);
                 _btnSilent.ForeColor = Color.FromArgb(140, 140, 150);
 
-                _btnBoost.Text = Loc.Get("BoostActive");
+                _btnBoost.Text = separate ? Loc.Get("CpuBoostActive") : Loc.Get("BoostActive");
                 _btnBoost.BackColor = Color.FromArgb(215, 135, 25);
                 _btnBoost.ForeColor = Color.White;
+            }
+
+            // 2. GPU Mode UI (when separate controls are enabled)
+            if (_btnGpuSilent != null && _btnGpuBoost != null)
+            {
+                bool gpuQuiet = _hardware.GpuTuning.IsGpuQuietMode;
+                int quietW = _hardware.GpuTuning.CurrentAppliedWatts > 0 ? _hardware.GpuTuning.CurrentAppliedWatts : _settings.GpuSilentPowerWatts;
+                int stockW = _hardware.GpuTuning.StockWatts > 0 ? _hardware.GpuTuning.StockWatts : 336;
+
+                if (gpuQuiet)
+                {
+                    _btnGpuSilent.Text = string.Format(Loc.Get("GpuSilentFull"), quietW);
+                    _btnGpuSilent.BackColor = Color.FromArgb(34, 150, 85);
+                    _btnGpuSilent.ForeColor = Color.White;
+
+                    _btnGpuBoost.Text = string.Format(Loc.Get("GpuBoost"), stockW);
+                    _btnGpuBoost.BackColor = Color.FromArgb(28, 28, 34);
+                    _btnGpuBoost.ForeColor = Color.FromArgb(140, 140, 150);
+                }
+                else
+                {
+                    _btnGpuSilent.Text = Loc.Get("GpuSilent");
+                    _btnGpuSilent.BackColor = Color.FromArgb(28, 28, 34);
+                    _btnGpuSilent.ForeColor = Color.FromArgb(140, 140, 150);
+
+                    _btnGpuBoost.Text = string.Format(Loc.Get("GpuBoostActive"), stockW);
+                    _btnGpuBoost.BackColor = Color.FromArgb(215, 135, 25);
+                    _btnGpuBoost.ForeColor = Color.White;
+                }
             }
         }
 
@@ -1326,6 +1443,7 @@ namespace RyzenQuietPro
             _toolTip.SetToolTip(_btnDetach, _isDetached ? Loc.Get("TipDock") : Loc.Get("TipDetach"));
             _toolTip.SetToolTip(_btnClose, Loc.Get("TipClose"));
             if (_btnGear != null) _toolTip.SetToolTip(_btnGear, Loc.Get("MenuSettings"));
+            if (_btnGpuTune != null) _toolTip.SetToolTip(_btnGpuTune, Loc.Get("TipGpuTuning"));
         }
 
         private void OnLanguageChanged()

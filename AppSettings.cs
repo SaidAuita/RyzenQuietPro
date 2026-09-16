@@ -13,6 +13,17 @@ namespace RyzenQuietPro
         public bool ShowTopProcesses { get; set; } = false;
         public bool ShowAllGpus { get; set; } = false;
 
+        // GPU Acoustic & Power Tuning
+        public bool GpuTuningEnabled { get; set; } = true;
+        public bool SeparateCpuGpuControl { get; set; } = false;
+        public bool GpuIsQuietMode { get; set; } = true;
+        public int GpuSilentPowerWatts { get; set; } = 240;
+        public int GpuStockPowerWatts { get; set; } = 336;
+        public bool GpuFanCapEnabled { get; set; } = false;
+        public int GpuFanMaxPercent { get; set; } = 45; // 30% to 100%
+        public int GpuTargetTempC { get; set; } = 75;
+        public int GpuFailSafeTempC { get; set; } = 83;
+
         // Visible Modules & Graphs
         public bool ShowCpuGraph { get; set; } = true;
         public bool ShowCpuCores { get; set; } = true;

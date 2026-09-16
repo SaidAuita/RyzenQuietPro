@@ -98,6 +98,8 @@ namespace RyzenQuietPro
         private Task? _workerTask;
         private Process? _serviceProcess;
         private StreamWriter? _pipeWriter;
+        private readonly System.Collections.Concurrent.ConcurrentQueue<string> _pendingCommands = new();
+        private readonly System.Threading.SemaphoreSlim _writeLock = new(1, 1);
 
         public FanPluginStatus Status { get; private set; } = FanPluginStatus.Disabled;
         public string StatusMessage { get; private set; } = string.Empty;
@@ -246,21 +248,49 @@ namespace RyzenQuietPro
             var writer = _pipeWriter;
             if (writer != null)
             {
+                await _writeLock.WaitAsync();
                 try
                 {
                     await writer.WriteLineAsync(command);
                     await writer.FlushAsync();
+                    return;
                 }
                 catch (Exception ex)
                 {
                     Logger.Log($"FanMonitorClient SendCommand error: {ex.Message}");
                 }
+                finally
+                {
+                    _writeLock.Release();
+                }
             }
+
+            _pendingCommands.Enqueue(command);
         }
 
         public void TriggerGpuFanTest()
         {
             _ = SendCommandAsync("TEST_GPU_FAN");
+        }
+
+        public void SendGpuPowerLimit(int watts)
+        {
+            _ = SendCommandAsync($"SET_GPU_POWER:{watts}");
+        }
+
+        public void ResetGpuPowerLimit(int stockWatts = 336)
+        {
+            _ = SendCommandAsync($"RESET_GPU_POWER:{stockWatts}");
+        }
+
+        public void SendGpuFanCap(int percent)
+        {
+            _ = SendCommandAsync($"SET_GPU_FAN_MAX:{percent}");
+        }
+
+        public void ResetGpuFan()
+        {
+            _ = SendCommandAsync("RESET_GPU_FAN");
         }
 
         public void SetEnabled(bool enabled)
@@ -328,6 +358,26 @@ namespace RyzenQuietPro
                     using var reader = new StreamReader(pipeClient, Encoding.UTF8, false, 1024, leaveOpen: true);
                     using var writer = new StreamWriter(pipeClient, Encoding.UTF8, 1024, leaveOpen: true) { AutoFlush = true };
                     _pipeWriter = writer;
+
+                    // Drain any commands queued before connection was established
+                    await _writeLock.WaitAsync(ct);
+                    try
+                    {
+                        while (_pendingCommands.TryDequeue(out var pendingCmd))
+                        {
+                            await writer.WriteLineAsync(pendingCmd);
+                            await writer.FlushAsync();
+                            Logger.Log($"[FanMonitorClient] Sent queued command to FanService: {pendingCmd}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Log($"[FanMonitorClient] Error sending queued command: {ex.Message}");
+                    }
+                    finally
+                    {
+                        _writeLock.Release();
+                    }
 
                     try
                     {

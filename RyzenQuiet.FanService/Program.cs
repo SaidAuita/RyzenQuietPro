@@ -36,6 +36,8 @@ namespace RyzenQuiet.FanService
 
         private static Computer? _computer;
         private static readonly CancellationTokenSource _cts = new();
+        private static readonly List<IControl> _appliedGpuControls = new();
+        private static readonly object _gpuControlLock = new();
 
         private static readonly string LogFile = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -258,6 +260,34 @@ namespace RyzenQuiet.FanService
                                     _cts.Cancel();
                                     break;
                                 }
+                                else if (line.StartsWith("SET_GPU_POWER:", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    string part = line.Substring("SET_GPU_POWER:".Length).Trim();
+                                    if (int.TryParse(part, out int watts) && watts > 0)
+                                    {
+                                        ExecuteNvidiaSmiPower(watts);
+                                    }
+                                }
+                                else if (line.StartsWith("RESET_GPU_POWER:", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    string part = line.Substring("RESET_GPU_POWER:".Length).Trim();
+                                    if (int.TryParse(part, out int watts) && watts > 0)
+                                    {
+                                        ExecuteNvidiaSmiPower(watts);
+                                    }
+                                }
+                                else if (line.StartsWith("SET_GPU_FAN_MAX:", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    string part = line.Substring("SET_GPU_FAN_MAX:".Length).Trim();
+                                    if (float.TryParse(part, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float pct))
+                                    {
+                                        SetGpuFanSoftware(pct);
+                                    }
+                                }
+                                else if (line.Equals("RESET_GPU_FAN", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    ResetGpuFanSoftware();
+                                }
                                 else if (line.StartsWith("TEST_GPU_FAN", StringComparison.OrdinalIgnoreCase))
                                 {
                                     _ = Task.Run(async () =>
@@ -443,10 +473,112 @@ namespace RyzenQuiet.FanService
             }
         }
 
+        private static void SetGpuFanSoftware(float percent)
+        {
+            lock (_gpuControlLock)
+            {
+                try
+                {
+                    if (_computer == null) return;
+                    percent = Math.Clamp(percent, 0f, 100f);
+                    Log($"[GPU_FAN] Setting software control to {percent}%");
+                    foreach (var hw in _computer.Hardware)
+                    {
+                        if (hw.HardwareType == HardwareType.GpuNvidia || hw.HardwareType == HardwareType.GpuAmd)
+                        {
+                            foreach (var s in hw.Sensors)
+                            {
+                                if (s.SensorType == SensorType.Control && s.Control != null)
+                                {
+                                    if (!_appliedGpuControls.Contains(s.Control))
+                                    {
+                                        _appliedGpuControls.Add(s.Control);
+                                    }
+                                    s.Control.SetSoftware(percent);
+                                    Log($"[GPU_FAN] Control '{s.Name}' set to {percent}%");
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log($"[GPU_FAN] SetGpuFanSoftware error: {ex.Message}");
+                }
+            }
+        }
+
+        private static void ResetGpuFanSoftware()
+        {
+            lock (_gpuControlLock)
+            {
+                try
+                {
+                    Log("[GPU_FAN] Resetting GPU fan controls to hardware default");
+                    foreach (var c in _appliedGpuControls)
+                    {
+                        try { c.SetDefault(); } catch { }
+                    }
+                    _appliedGpuControls.Clear();
+
+                    if (_computer != null)
+                    {
+                        foreach (var hw in _computer.Hardware)
+                        {
+                            if (hw.HardwareType == HardwareType.GpuNvidia || hw.HardwareType == HardwareType.GpuAmd)
+                            {
+                                foreach (var s in hw.Sensors)
+                                {
+                                    if (s.SensorType == SensorType.Control && s.Control != null)
+                                    {
+                                        try { s.Control.SetDefault(); } catch { }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log($"[GPU_FAN] ResetGpuFanSoftware error: {ex.Message}");
+                }
+            }
+        }
+
+        private static void ExecuteNvidiaSmiPower(int watts)
+        {
+            try
+            {
+                Log($"[GPU_POWER] Executing nvidia-smi -i 0 -pl {watts}");
+                var psi = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "nvidia-smi",
+                    Arguments = $"-i 0 -pl {watts}",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+                using var p = System.Diagnostics.Process.Start(psi);
+                if (p != null)
+                {
+                    string outText = p.StandardOutput.ReadToEnd();
+                    string errText = p.StandardError.ReadToEnd();
+                    p.WaitForExit(3000);
+                    Log($"[GPU_POWER] Result (exit code {p.ExitCode}): {outText.Trim()} {errText.Trim()}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log($"[GPU_POWER] ExecuteNvidiaSmiPower error: {ex.Message}");
+            }
+        }
+
         private static void Cleanup()
         {
             try
             {
+                ResetGpuFanSoftware();
                 _computer?.Close();
                 _computer = null;
             }
