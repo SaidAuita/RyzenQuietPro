@@ -118,9 +118,9 @@ namespace RyzenQuietPro
         private Button _btnSilent = null!;
         private Button _btnBoost = null!;
         private Button _btnGear = null!;
+        private bool _gearHover;
         private Button _btnGpuSilent = null!;
         private Button _btnGpuBoost = null!;
-        private Button _btnGpuTune = null!;
         private Label _lblResizeGrip = null!;
         private ToolTip _toolTip = null!;
         private HardwareInfoForm? _infoForm;
@@ -537,22 +537,24 @@ namespace RyzenQuietPro
 
             _btnGear = new Button
             {
-                Text = "⚙",
-                Font = new Font("Segoe UI", 12f),
-                ForeColor = Color.FromArgb(175, 175, 190),
+                Text = "",
                 BackColor = Color.FromArgb(28, 28, 34),
                 FlatStyle = FlatStyle.Flat,
-                Cursor = Cursors.Hand,
-                TextAlign = ContentAlignment.MiddleCenter
+                Cursor = Cursors.Hand
             };
             _btnGear.FlatAppearance.BorderSize = 0;
             _btnGear.MouseEnter += (s, e) => {
-                _btnGear.ForeColor = Color.White;
+                _gearHover = true;
                 _btnGear.BackColor = Color.FromArgb(42, 42, 52);
+                _btnGear.Invalidate();
             };
             _btnGear.MouseLeave += (s, e) => {
-                _btnGear.ForeColor = Color.FromArgb(175, 175, 190);
+                _gearHover = false;
                 _btnGear.BackColor = Color.FromArgb(28, 28, 34);
+                _btnGear.Invalidate();
+            };
+            _btnGear.Paint += (s, e) => {
+                DrawGearIcon(e.Graphics, _btnGear.ClientRectangle, _gearHover ? Color.White : Color.FromArgb(175, 175, 190));
             };
             _btnGear.Click += (s, e) => ShowSettingsDialog();
             _footerPanel.Controls.Add(_btnGear);
@@ -590,28 +592,6 @@ namespace RyzenQuietPro
                 }
             };
             _footerPanel.Controls.Add(_btnGpuBoost);
-
-            _btnGpuTune = new Button
-            {
-                Text = "🎮",
-                Font = new Font("Segoe UI", 11f),
-                ForeColor = Color.FromArgb(175, 175, 190),
-                BackColor = Color.FromArgb(28, 28, 34),
-                FlatStyle = FlatStyle.Flat,
-                Cursor = Cursors.Hand,
-                TextAlign = ContentAlignment.MiddleCenter
-            };
-            _btnGpuTune.FlatAppearance.BorderSize = 0;
-            _btnGpuTune.MouseEnter += (s, e) => {
-                _btnGpuTune.ForeColor = Color.White;
-                _btnGpuTune.BackColor = Color.FromArgb(42, 42, 52);
-            };
-            _btnGpuTune.MouseLeave += (s, e) => {
-                _btnGpuTune.ForeColor = Color.FromArgb(175, 175, 190);
-                _btnGpuTune.BackColor = Color.FromArgb(28, 28, 34);
-            };
-            _btnGpuTune.Click += (s, e) => ShowSettingsDialog();
-            _footerPanel.Controls.Add(_btnGpuTune);
 
             // Resize Grip in bottom-right corner
             _lblResizeGrip = new Label
@@ -662,20 +642,21 @@ namespace RyzenQuietPro
             int availableBtnW = contentW - gearW - buttonGap;
             int halfW = (availableBtnW - buttonGap) / 2;
 
-            // Row 1: CPU Controls & Settings Gear
+            // Row 1: CPU Controls
             _btnSilent.Location = new Point(marginX, 6);
             _btnSilent.Size = new Size(halfW, 32);
 
             _btnBoost.Location = new Point(marginX + halfW + buttonGap, 6);
             _btnBoost.Size = new Size(availableBtnW - halfW - buttonGap, 32);
 
+            // Single unified Gear button on the right (centered vertically across 1 or 2 rows)
+            int gearH = separate ? (42 + 32 - 6) : 32;
             _btnGear.Location = new Point(marginX + contentW - gearW, 6);
-            _btnGear.Size = new Size(gearW, 32);
+            _btnGear.Size = new Size(gearW, gearH);
 
             // Row 2: GPU Controls (visible only when separate controls are enabled)
             _btnGpuSilent.Visible = separate;
             _btnGpuBoost.Visible = separate;
-            _btnGpuTune.Visible = separate;
 
             if (separate)
             {
@@ -684,9 +665,6 @@ namespace RyzenQuietPro
 
                 _btnGpuBoost.Location = new Point(marginX + halfW + buttonGap, 42);
                 _btnGpuBoost.Size = new Size(availableBtnW - halfW - buttonGap, 32);
-
-                _btnGpuTune.Location = new Point(marginX + contentW - gearW, 42);
-                _btnGpuTune.Size = new Size(gearW, 32);
             }
 
             _lblResizeGrip.Location = new Point(w - 18, footerH - 18);
@@ -1032,6 +1010,43 @@ namespace RyzenQuietPro
                 _settings.WindowHeight = this.ClientSize.Height;
                 _settings.Save();
             }
+        }
+
+        private static void DrawGearIcon(Graphics g, Rectangle bounds, Color color)
+        {
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            float cx = bounds.X + bounds.Width / 2f;
+            float cy = bounds.Y + bounds.Height / 2f;
+            float ro = 10.5f;
+            float ri = 7.4f;
+            float rh = 3.6f;
+
+            var pts = new List<PointF>(36);
+            for (int i = 0; i < 6; i++)
+            {
+                float baseAngle = i * 60f;
+                float[] angles = new float[] {
+                    baseAngle - 15f,
+                    baseAngle - 9f,
+                    baseAngle + 9f,
+                    baseAngle + 15f,
+                    baseAngle + 30f,
+                    baseAngle + 45f
+                };
+                float[] radii = new float[] { ri, ro, ro, ri, ri, ri };
+                for (int j = 0; j < 6; j++)
+                {
+                    float rad = (float)(angles[j] * Math.PI / 180.0);
+                    pts.Add(new PointF(cx + (float)(radii[j] * Math.Cos(rad)), cy + (float)(radii[j] * Math.Sin(rad))));
+                }
+            }
+
+            using var path = new GraphicsPath(FillMode.Alternate);
+            path.AddPolygon(pts.ToArray());
+            path.AddEllipse(cx - rh, cy - rh, rh * 2f, rh * 2f);
+
+            using var brush = new SolidBrush(color);
+            g.FillPath(brush, path);
         }
 
         private Label CreateMetricHeader(string text, Color color)
@@ -1444,7 +1459,6 @@ namespace RyzenQuietPro
             _toolTip.SetToolTip(_btnDetach, _isDetached ? Loc.Get("TipDock") : Loc.Get("TipDetach"));
             _toolTip.SetToolTip(_btnClose, Loc.Get("TipClose"));
             if (_btnGear != null) _toolTip.SetToolTip(_btnGear, Loc.Get("MenuSettings"));
-            if (_btnGpuTune != null) _toolTip.SetToolTip(_btnGpuTune, Loc.Get("TipGpuTuning"));
         }
 
         private void OnLanguageChanged()
