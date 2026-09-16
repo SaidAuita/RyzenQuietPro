@@ -987,6 +987,10 @@ namespace RyzenQuietPro
                     this.Invalidate();
                     _onSettingsChanged?.Invoke();
                 }, _onModeChangeRequested);
+
+                _settingsForm.FormClosed += (s, e) => {
+                    this.Opacity = _settings.WidgetOpacity;
+                };
             }
             _settingsForm.TopMost = this.TopMost;
 
@@ -997,12 +1001,24 @@ namespace RyzenQuietPro
             y = Math.Clamp(y, screen.WorkingArea.Top + 10, screen.WorkingArea.Bottom - _settingsForm.Height - 10);
             _settingsForm.Location = new Point(x, y);
 
+            this.Opacity = 0.35; // Dim the background dashboard ("в дымке")
+
             if (!_settingsForm.Visible)
             {
                 _settingsForm.Show(this);
             }
             _settingsForm.BringToFront();
             _settingsForm.Activate();
+        }
+
+        protected override void OnActivated(EventArgs e)
+        {
+            base.OnActivated(e);
+            if (_settingsForm != null && !_settingsForm.IsDisposed && _settingsForm.Visible)
+            {
+                _settingsForm.BringToFront();
+                _settingsForm.Activate();
+            }
         }
 
         protected override void OnResize(EventArgs e)

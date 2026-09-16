@@ -103,14 +103,18 @@ namespace RyzenQuietPro
             _onModeChangeRequested = onModeChangeRequested;
 
             bool multiGpu = _hardware.Gpu.GpuCount > 1;
-            int formH = 800;
+            int totalFormH = multiGpu ? 1300 : 1265;
+
+            var screen = Screen.FromPoint(Cursor.Position);
+            int availH = screen.WorkingArea.Height - 30;
+            int formH = Math.Min(totalFormH, availH);
 
             this.AutoScaleMode = AutoScaleMode.None;
             this.FormBorderStyle = FormBorderStyle.None;
             this.StartPosition = FormStartPosition.Manual;
             this.ShowInTaskbar = false;
             this.ClientSize = new Size(428, formH);
-            this.BackColor = Color.FromArgb(20, 20, 24);
+            this.BackColor = Color.FromArgb(24, 24, 32);
             this.ForeColor = Color.White;
             this.DoubleBuffered = true;
             this.Icon = AppIcons.QuietIcon;
@@ -127,15 +131,27 @@ namespace RyzenQuietPro
             UpdateFanStatusUI();
 
             this.Paint += (s, e) => {
-                using var pen = new Pen(Color.FromArgb(50, 50, 65), 1f);
-                e.Graphics.DrawRectangle(pen, 0, 0, this.ClientSize.Width - 1, this.ClientSize.Height - 1);
+                // 2px vibrant Sky Blue accent border to clearly delineate SettingsForm from background
+                using var pen = new Pen(Color.FromArgb(14, 165, 233), 2f);
+                e.Graphics.DrawRectangle(pen, 1, 1, this.ClientSize.Width - 2, this.ClientSize.Height - 2);
             };
+        }
+
+        protected override CreateParams CreateParams
+        {
+            get
+            {
+                var cp = base.CreateParams;
+                cp.ClassStyle |= 0x00020000; // CS_DROPSHADOW
+                return cp;
+            }
         }
 
         private void InitializeComponents()
         {
             int w = this.ClientSize.Width;
-            int cardW = 380;
+            int cardW = 396;
+            int cardX = (w - cardW) / 2;
             bool multiGpu = _hardware.Gpu.GpuCount > 1;
 
             // ================= HEADER =================
@@ -143,7 +159,7 @@ namespace RyzenQuietPro
             {
                 Dock = DockStyle.Top,
                 Height = 38,
-                BackColor = Color.FromArgb(14, 14, 18),
+                BackColor = Color.FromArgb(18, 18, 24),
                 Cursor = Cursors.SizeAll
             };
             header.MouseDown += OnHeaderDrag;
@@ -191,7 +207,7 @@ namespace RyzenQuietPro
             {
                 Dock = DockStyle.Bottom,
                 Height = 44,
-                BackColor = Color.FromArgb(16, 16, 20)
+                BackColor = Color.FromArgb(18, 18, 24)
             };
 
             _btnSpecs = new Button
@@ -202,7 +218,7 @@ namespace RyzenQuietPro
                 BackColor = Color.FromArgb(32, 32, 40),
                 FlatStyle = FlatStyle.Flat,
                 Size = new Size(95, 32),
-                Location = new Point(14, 6),
+                Location = new Point(cardX, 6),
                 TextAlign = ContentAlignment.MiddleCenter,
                 Padding = Padding.Empty,
                 Cursor = Cursors.Hand
@@ -220,7 +236,7 @@ namespace RyzenQuietPro
                 BackColor = Color.FromArgb(32, 32, 40),
                 FlatStyle = FlatStyle.Flat,
                 Size = new Size(95, 32),
-                Location = new Point(115, 6),
+                Location = new Point(cardX + 101, 6),
                 TextAlign = ContentAlignment.MiddleCenter,
                 Padding = Padding.Empty,
                 Cursor = Cursors.Hand
@@ -237,8 +253,8 @@ namespace RyzenQuietPro
                 ForeColor = Color.White,
                 BackColor = Color.FromArgb(14, 165, 233), // Sky Blue Accent
                 FlatStyle = FlatStyle.Flat,
-                Size = new Size(184, 32),
-                Location = new Point(216, 6),
+                Size = new Size(cardW - 202, 32),
+                Location = new Point(cardX + 202, 6),
                 TextAlign = ContentAlignment.MiddleCenter,
                 Padding = Padding.Empty,
                 Cursor = Cursors.Hand
@@ -248,10 +264,13 @@ namespace RyzenQuietPro
             pnlFooter.Controls.Add(_btnClose);
 
             // ================= SCROLLABLE BODY =================
+            int totalFormH = multiGpu ? 1300 : 1265;
+            bool needScroll = this.ClientSize.Height < totalFormH;
+
             var pnlBody = new Panel
             {
                 Dock = DockStyle.Fill,
-                AutoScroll = true,
+                AutoScroll = needScroll,
                 BackColor = Color.Transparent
             };
 
@@ -264,7 +283,7 @@ namespace RyzenQuietPro
 
             // ================= 1. LANGUAGE CARD =================
             // 8 clean 2-letter buttons in 1 row: RU, EN, DE, ES, FR, JA, PT, ZH
-            var cardLang = CreateCard(14, curY, cardW, 70);
+            var cardLang = CreateCard(cardX, curY, cardW, 70);
             pnlBody.Controls.Add(cardLang);
 
             _lblSecLang = CreateSectionHeader(Loc.Get("Language"), 12, 8);
@@ -302,7 +321,7 @@ namespace RyzenQuietPro
             // ================= 2. GRAPHS & MODULES CARD =================
             // Single vertical column (1 row per item) - spacious and slender
             int cardGraphsH = multiGpu ? 500 : 470;
-            var cardGraphs = CreateCard(14, curY, cardW, cardGraphsH);
+            var cardGraphs = CreateCard(cardX, curY, cardW, cardGraphsH);
             pnlBody.Controls.Add(cardGraphs);
 
             _lblSecGraphs = CreateSectionHeader(Loc.Get("MenuGraphs"), 12, 8);
@@ -591,7 +610,7 @@ namespace RyzenQuietPro
 
             // ================= 2b. GPU ACOUSTIC & POWER TUNING CARD =================
             int cardGpuH = 312;
-            var cardGpu = CreateCard(14, curY, cardW, cardGpuH);
+            var cardGpu = CreateCard(cardX, curY, cardW, cardGpuH);
             pnlBody.Controls.Add(cardGpu);
 
             _lblSecGpuTuning = CreateSectionHeader("⚡ " + Loc.Get("GpuTuningTitle"), 12, 8);
@@ -838,7 +857,7 @@ namespace RyzenQuietPro
             curY += cardGpuH + 8;
 
             // ================= 3. TRAY ICON CARD =================
-            var cardTray = CreateCard(14, curY, cardW, 70);
+            var cardTray = CreateCard(cardX, curY, cardW, 70);
             pnlBody.Controls.Add(cardTray);
 
             _lblSecTray = CreateSectionHeader(Loc.Get("TrayIconMenu"), 12, 8);
@@ -897,7 +916,7 @@ namespace RyzenQuietPro
 
             // ================= 4. SYSTEM & OPACITY CARD =================
             // Clear separation between slider presets and checkboxes
-            var cardSys = CreateCard(14, curY, cardW, 192);
+            var cardSys = CreateCard(cardX, curY, cardW, 192);
             pnlBody.Controls.Add(cardSys);
 
             _lblSecSystem = CreateSectionHeader(Loc.Get("Opacity"), 12, 8);
@@ -994,7 +1013,7 @@ namespace RyzenQuietPro
             // Bottom spacer for scrollable body
             pnlBody.Controls.Add(new Panel
             {
-                Location = new Point(14, curY),
+                Location = new Point(cardX, curY),
                 Size = new Size(cardW, 14),
                 BackColor = Color.Transparent
             });
@@ -1006,10 +1025,10 @@ namespace RyzenQuietPro
             {
                 Location = new Point(x, y),
                 Size = new Size(w, h),
-                BackColor = Color.FromArgb(26, 26, 32)
+                BackColor = Color.FromArgb(32, 32, 42)
             };
             pnl.Paint += (s, e) => {
-                using var borderPen = new Pen(Color.FromArgb(40, 40, 50), 1f);
+                using var borderPen = new Pen(Color.FromArgb(52, 52, 68), 1f);
                 e.Graphics.DrawRectangle(borderPen, 0, 0, pnl.Width - 1, pnl.Height - 1);
             };
             return pnl;
