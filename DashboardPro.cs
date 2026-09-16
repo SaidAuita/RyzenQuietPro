@@ -1150,22 +1150,7 @@ namespace RyzenQuietPro
                     }
                 }
 
-                // 3. Power Consumption (⚡ 136 W)
-                if (PowerWatts > 0)
-                {
-                    string pwrStr = $"⚡ {PowerWatts:F0} W";
-                    Size pwrSize = TextRenderer.MeasureText(g, pwrStr, font, Size.Empty, TextFormatFlags.NoPadding);
-                    int pwrW = pwrSize.Width + 6;
-                    int pwrX = curRight - pwrW;
-
-                    TextRenderer.DrawText(g, pwrStr, font, new Rectangle(pwrX, 0, pwrW, h),
-                        Color.FromArgb(250, 204, 21),
-                        TextFormatFlags.NoPadding | TextFormatFlags.VerticalCenter);
-
-                    curRight = pwrX - 8;
-                }
-
-                // 4. GPU Name (left of power/fan/temp)
+                // 3. GPU Name (left of fan/temp) - now has full horizontal space
                 if (curRight > 20)
                 {
                     TextRenderer.DrawText(g, GpuName, font, new Rectangle(0, 0, curRight - 4, h),
@@ -1714,6 +1699,133 @@ namespace RyzenQuietPro
                     DrawTemperatureCurve(e.Graphics, _pnlGpuGraph, _hardware.Gpu.TempHistory);
                 }
             }
+
+            DrawGpuTuningOverlay(e.Graphics, _pnlGpuGraph);
+        }
+
+        private void DrawGpuTuningOverlay(Graphics g, Panel pnl)
+        {
+            int w = pnl.Width;
+            int h = pnl.Height;
+            if (w <= 80 || h <= 20) return;
+
+            using var font = new Font("Segoe UI", 8.0f);
+
+            // 1. Current Power Consumption (Yellow)
+            float pwr = _hardware.Gpu.GpuPowerWatts;
+            string pwrStr = pwr > 0 ? $"⚡ {pwr:F0} W" : "";
+
+            // 2. Power Limit (Green if quiet/active, Gray if stock/inactive)
+            bool tuningEnabled = _settings.GpuTuningEnabled;
+            bool quietMode = _hardware.GpuTuning.IsGpuQuietMode;
+            int currentWatts = _hardware.GpuTuning.CurrentAppliedWatts > 0 
+                ? _hardware.GpuTuning.CurrentAppliedWatts 
+                : _settings.GpuSilentPowerWatts;
+            int stockWatts = _hardware.GpuTuning.StockWatts > 0 
+                ? _hardware.GpuTuning.StockWatts 
+                : 336;
+
+            string plStr;
+            Color plColor;
+
+            if (tuningEnabled && quietMode)
+            {
+                plStr = $"PL: {currentWatts}W";
+                plColor = Color.FromArgb(74, 222, 128); // Vibrant Green
+            }
+            else if (tuningEnabled)
+            {
+                plStr = $"PL: {stockWatts}W";
+                plColor = Color.FromArgb(148, 163, 184); // Slate Gray
+            }
+            else
+            {
+                plStr = $"PL: {stockWatts}W";
+                plColor = Color.FromArgb(130, 130, 140); // Muted Gray
+            }
+
+            // 3. Fan Cap (Green if active, Gray if Auto, Red if FailSafe)
+            string fanCapStr;
+            Color fanCapColor;
+
+            if (tuningEnabled && _settings.GpuFanCapEnabled && quietMode)
+            {
+                if (_hardware.GpuTuning.IsFailSafeActive)
+                {
+                    fanCapStr = "Fan: ⚠️ Auto (83°C)";
+                    fanCapColor = Color.FromArgb(248, 113, 113); // Danger Red
+                }
+                else
+                {
+                    fanCapStr = $"Fan: {_settings.GpuFanMaxPercent}%";
+                    fanCapColor = Color.FromArgb(74, 222, 128); // Vibrant Green
+                }
+            }
+            else
+            {
+                fanCapStr = "Fan: Auto";
+                fanCapColor = Color.FromArgb(148, 163, 184); // Slate Gray
+            }
+
+            // Measure components
+            Size szPwr = !string.IsNullOrEmpty(pwrStr) 
+                ? TextRenderer.MeasureText(g, pwrStr, font, Size.Empty, TextFormatFlags.NoPadding) 
+                : Size.Empty;
+            Size szSep1 = !string.IsNullOrEmpty(pwrStr)
+                ? TextRenderer.MeasureText(g, "|", font, Size.Empty, TextFormatFlags.NoPadding)
+                : Size.Empty;
+            Size szPl = TextRenderer.MeasureText(g, plStr, font, Size.Empty, TextFormatFlags.NoPadding);
+            Size szSep2 = TextRenderer.MeasureText(g, "/", font, Size.Empty, TextFormatFlags.NoPadding);
+            Size szFan = TextRenderer.MeasureText(g, fanCapStr, font, Size.Empty, TextFormatFlags.NoPadding);
+
+            int gap = 5;
+            int totalW = 0;
+            if (szPwr.Width > 0)
+            {
+                totalW += szPwr.Width + gap + szSep1.Width + gap;
+            }
+            totalW += szPl.Width + gap + szSep2.Width + gap + szFan.Width;
+
+            int topY = 2;
+            int textH = 15;
+            int startX = w - 6 - totalW;
+            if (startX < 6) startX = 6;
+
+            // Draw translucent dark background pill for high contrast over graph lines
+            using (var bgBrush = new SolidBrush(Color.FromArgb(140, 12, 12, 16)))
+            {
+                g.FillRectangle(bgBrush, startX - 4, topY - 1, totalW + 8, textH + 2);
+            }
+
+            int curX = startX;
+            Color sepColor = Color.FromArgb(100, 100, 115);
+
+            if (!string.IsNullOrEmpty(pwrStr))
+            {
+                TextRenderer.DrawText(g, pwrStr, font, new Rectangle(curX, topY, szPwr.Width + 2, textH),
+                    Color.FromArgb(250, 204, 21),
+                    TextFormatFlags.NoPadding | TextFormatFlags.VerticalCenter);
+                curX += szPwr.Width + gap;
+
+                TextRenderer.DrawText(g, "|", font, new Rectangle(curX, topY, szSep1.Width + 2, textH),
+                    sepColor,
+                    TextFormatFlags.NoPadding | TextFormatFlags.VerticalCenter);
+                curX += szSep1.Width + gap;
+            }
+
+            TextRenderer.DrawText(g, plStr, font, new Rectangle(curX, topY, szPl.Width + 2, textH),
+                plColor,
+                TextFormatFlags.NoPadding | TextFormatFlags.VerticalCenter);
+            curX += szPl.Width + gap;
+
+            TextRenderer.DrawText(g, "/", font, new Rectangle(curX, topY, szSep2.Width + 2, textH),
+                sepColor,
+                TextFormatFlags.NoPadding | TextFormatFlags.VerticalCenter);
+            curX += szSep2.Width + gap;
+
+            TextRenderer.DrawText(g, fanCapStr, font, new Rectangle(curX, topY, szFan.Width + 2, textH),
+                fanCapColor,
+                TextFormatFlags.NoPadding | TextFormatFlags.VerticalCenter);
         }
 
         private void DrawVramGraph(object? sender, PaintEventArgs e)
