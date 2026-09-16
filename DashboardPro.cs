@@ -1768,26 +1768,25 @@ namespace RyzenQuietPro
             }
 
             // Measure components
+            Size szPl = TextRenderer.MeasureText(g, plStr, font, Size.Empty, TextFormatFlags.NoPadding);
+            Size szSepSlash = TextRenderer.MeasureText(g, "/", font, Size.Empty, TextFormatFlags.NoPadding);
+            Size szFan = TextRenderer.MeasureText(g, fanCapStr, font, Size.Empty, TextFormatFlags.NoPadding);
+            Size szSepPipe = !string.IsNullOrEmpty(pwrStr)
+                ? TextRenderer.MeasureText(g, "|", font, Size.Empty, TextFormatFlags.NoPadding)
+                : Size.Empty;
             Size szPwr = !string.IsNullOrEmpty(pwrStr) 
                 ? TextRenderer.MeasureText(g, pwrStr, font, Size.Empty, TextFormatFlags.NoPadding) 
                 : Size.Empty;
-            Size szSep1 = !string.IsNullOrEmpty(pwrStr)
-                ? TextRenderer.MeasureText(g, "|", font, Size.Empty, TextFormatFlags.NoPadding)
-                : Size.Empty;
-            Size szPl = TextRenderer.MeasureText(g, plStr, font, Size.Empty, TextFormatFlags.NoPadding);
-            Size szSep2 = TextRenderer.MeasureText(g, "/", font, Size.Empty, TextFormatFlags.NoPadding);
-            Size szFan = TextRenderer.MeasureText(g, fanCapStr, font, Size.Empty, TextFormatFlags.NoPadding);
 
             int gap = 5;
-            int totalW = 0;
+            int totalW = szPl.Width + gap + szSepSlash.Width + gap + szFan.Width;
             if (szPwr.Width > 0)
             {
-                totalW += szPwr.Width + gap + szSep1.Width + gap;
+                totalW += gap + szSepPipe.Width + gap + szPwr.Width;
             }
-            totalW += szPl.Width + gap + szSep2.Width + gap + szFan.Width;
 
             int topY = 2;
-            int textH = 15;
+            int textH = 18;
             int startX = w - 6 - totalW;
             if (startX < 6) startX = 6;
 
@@ -1800,32 +1799,36 @@ namespace RyzenQuietPro
             int curX = startX;
             Color sepColor = Color.FromArgb(100, 100, 115);
 
-            if (!string.IsNullOrEmpty(pwrStr))
-            {
-                TextRenderer.DrawText(g, pwrStr, font, new Rectangle(curX, topY, szPwr.Width + 2, textH),
-                    Color.FromArgb(250, 204, 21),
-                    TextFormatFlags.NoPadding | TextFormatFlags.VerticalCenter);
-                curX += szPwr.Width + gap;
-
-                TextRenderer.DrawText(g, "|", font, new Rectangle(curX, topY, szSep1.Width + 2, textH),
-                    sepColor,
-                    TextFormatFlags.NoPadding | TextFormatFlags.VerticalCenter);
-                curX += szSep1.Width + gap;
-            }
-
+            // 1. Power Limit
             TextRenderer.DrawText(g, plStr, font, new Rectangle(curX, topY, szPl.Width + 2, textH),
                 plColor,
                 TextFormatFlags.NoPadding | TextFormatFlags.VerticalCenter);
             curX += szPl.Width + gap;
 
-            TextRenderer.DrawText(g, "/", font, new Rectangle(curX, topY, szSep2.Width + 2, textH),
+            // 2. Separator /
+            TextRenderer.DrawText(g, "/", font, new Rectangle(curX, topY, szSepSlash.Width + 2, textH),
                 sepColor,
                 TextFormatFlags.NoPadding | TextFormatFlags.VerticalCenter);
-            curX += szSep2.Width + gap;
+            curX += szSepSlash.Width + gap;
 
+            // 3. Fan Cap
             TextRenderer.DrawText(g, fanCapStr, font, new Rectangle(curX, topY, szFan.Width + 2, textH),
                 fanCapColor,
                 TextFormatFlags.NoPadding | TextFormatFlags.VerticalCenter);
+            curX += szFan.Width + gap;
+
+            // 4. Power Consumption on the right (Yellow)
+            if (!string.IsNullOrEmpty(pwrStr))
+            {
+                TextRenderer.DrawText(g, "|", font, new Rectangle(curX, topY, szSepPipe.Width + 2, textH),
+                    sepColor,
+                    TextFormatFlags.NoPadding | TextFormatFlags.VerticalCenter);
+                curX += szSepPipe.Width + gap;
+
+                TextRenderer.DrawText(g, pwrStr, font, new Rectangle(curX, topY, szPwr.Width + 4, textH),
+                    Color.FromArgb(250, 204, 21),
+                    TextFormatFlags.NoPadding | TextFormatFlags.VerticalCenter);
+            }
         }
 
         private void DrawVramGraph(object? sender, PaintEventArgs e)
