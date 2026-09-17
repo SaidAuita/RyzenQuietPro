@@ -601,6 +601,7 @@ namespace RyzenQuietPro
             });
             _chkFanDemo.Font = new Font("Segoe UI", 8.25f);
             _chkFanDemo.Size = new Size(110, 24);
+            _toolTip.SetToolTip(_chkFanDemo, Loc.Get("FanDemoModeTooltip"));
 
             // Tier 4: Fan Spinner Scale Slider [ Размер: 100% ] [--------O--------]
             int fanScaleY = fanOptY + 36;
@@ -1616,6 +1617,7 @@ namespace RyzenQuietPro
             _btnFanModeIcons.Text = Loc.Get("FanVisualMode_Icons");
             _btnFanModeGrid.Text = Loc.Get("FanVisualMode_Grid");
             _chkFanDemo.Text = Loc.Get("FanDemoMode");
+            if (_toolTip != null) _toolTip.SetToolTip(_chkFanDemo, Loc.Get("FanDemoModeTooltip"));
             _lblFanScale.Text = $"{Loc.Get("FanScale")}: {_settings.FanScalePercent}%";
             if (_toolTip != null && _tbFanScale != null) _toolTip.SetToolTip(_tbFanScale, Loc.Get("FanScaleTip"));
             if (_toolTip != null && _lblFanScale != null) _toolTip.SetToolTip(_lblFanScale, Loc.Get("FanScaleTip"));

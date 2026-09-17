@@ -46,9 +46,15 @@ if exist "build\temp_standalone\RyzenQuietPro.exe" (
 
     if exist "build\temp_lite\RyzenQuietPro.exe" (
         move /Y "build\temp_lite\RyzenQuietPro.exe" "build\RyzenQuietPro-%VERSION%-Lite.exe" >nul
+        if exist "build\temp_lite\RyzenQuietPro.runtimeconfig.json" (
+            copy /Y "build\temp_lite\RyzenQuietPro.runtimeconfig.json" "build\RyzenQuietPro-%VERSION%-Lite.runtimeconfig.json" >nul
+        )
         rd /s /q "build\temp_lite" >nul 2>&1
         if exist "%USERPROFILE%\Documents\RyzenQuietPro-%VERSION%-Lite.exe" (
             copy /Y "build\RyzenQuietPro-%VERSION%-Lite.exe" "%USERPROFILE%\Documents\RyzenQuietPro-%VERSION%-Lite.exe" >nul
+            if exist "build\RyzenQuietPro-%VERSION%-Lite.runtimeconfig.json" (
+                copy /Y "build\RyzenQuietPro-%VERSION%-Lite.runtimeconfig.json" "%USERPROFILE%\Documents\RyzenQuietPro-%VERSION%-Lite.runtimeconfig.json" >nul
+            )
         )
     )
 

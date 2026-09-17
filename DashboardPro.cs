@@ -1031,8 +1031,9 @@ namespace RyzenQuietPro
                 curY += 6;
 
                 _lblFans.Location = new Point(marginX, curY);
-                _lblFansSub.Location = new Point(marginX + 95, curY);
-                _lblFansSub.Size = new Size(contentW - 95, 18);
+                int fansLabelW = Math.Max(70, _lblFans.PreferredWidth);
+                _lblFansSub.Location = new Point(marginX + fansLabelW + 8, curY);
+                _lblFansSub.Size = new Size(Math.Max(10, contentW - (fansLabelW + 8)), 18);
                 curY += 24;
 
                 _pnlFansGraph.Location = new Point(marginX, curY);
@@ -1799,7 +1800,7 @@ namespace RyzenQuietPro
                 ? $"{freqGhz:F2} GHz | {_hardware.Cpu.CoreCount} {Loc.Get("Threads")}"
                 : $"{_hardware.Cpu.CoreCount} {Loc.Get("ThreadsActive")}";
             string cpuText = !string.IsNullOrEmpty(cpuName) ? $"{cpuName} | {cpuCoreInfo}" : cpuCoreInfo;
-            if (_hardware.Fans.IsConnected)
+            if (_hardware.Fans.IsConnected && !_hardware.Fans.DemoMode)
             {
                 var cpuFan = _hardware.Fans.Fans.FirstOrDefault(f => f.Name.Contains("CPU", StringComparison.OrdinalIgnoreCase));
                 if (cpuFan != null)
@@ -1873,7 +1874,7 @@ namespace RyzenQuietPro
                 _lblGpu.Text = $"{Loc.Get("Gpu")}: {gpuUsage:F0}%";
 
                 int gpuFanRpm = -1;
-                if (_hardware.Fans.IsConnected)
+                if (_hardware.Fans.IsConnected && !_hardware.Fans.DemoMode)
                 {
                     var gpuFans = _hardware.Fans.Fans.Where(f => f.Hardware.Contains("GPU", StringComparison.OrdinalIgnoreCase) || f.Hardware.Contains("NVIDIA", StringComparison.OrdinalIgnoreCase) || f.Hardware.Contains("AMD", StringComparison.OrdinalIgnoreCase)).ToList();
                     if (gpuFans.Count > 0)
@@ -1911,12 +1912,23 @@ namespace RyzenQuietPro
                 var fans = _hardware.Fans.Fans;
                 if (_hardware.Fans.IsConnected && fans.Count > 0)
                 {
-                    _lblFans.Text = Loc.Get("Fans");
-                    _lblFansSub.Text = "";
+                    if (_hardware.Fans.DemoMode)
+                    {
+                        _lblFans.Text = $"{Loc.Get("Fans")} [DEMO]";
+                        _lblFans.ForeColor = Color.FromArgb(245, 158, 11);
+                        _lblFansSub.Text = Loc.Get("FanDemoModeHint");
+                    }
+                    else
+                    {
+                        _lblFans.Text = Loc.Get("Fans");
+                        _lblFans.ForeColor = Color.FromArgb(14, 165, 233);
+                        _lblFansSub.Text = "";
+                    }
                 }
                 else
                 {
                     _lblFans.Text = $"{Loc.Get("Fans")}: --";
+                    _lblFans.ForeColor = Color.FromArgb(14, 165, 233);
                     string msg = _hardware.Fans.StatusMessage;
                     if (_hardware.Fans.IsConnected && fans.Count == 0)
                     {
