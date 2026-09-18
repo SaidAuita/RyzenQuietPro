@@ -16,6 +16,10 @@ namespace RyzenQuietPro
         public double CpuPercent { get; set; }
         public long WorkingSetBytes { get; set; }
         public string RamFormatted { get; set; } = "";
+        public double ReadMbPerSec { get; set; }
+        public double WriteMbPerSec { get; set; }
+        public double TotalDiskMbPerSec => ReadMbPerSec + WriteMbPerSec;
+        public string ExePath { get; set; } = "";
         public Image? Icon { get; set; }
     }
 
@@ -46,17 +50,22 @@ namespace RyzenQuietPro
             public string Name;
             public long TotalCpuTime; // Kernel + User (100ns units)
             public long WorkingSet;   // RAM bytes
+            public long ReadTransferBytes;  // offset 192
+            public long WriteTransferBytes; // offset 200
         }
 
         private readonly int _processorCount;
         private readonly Dictionary<int, long> _prevCpuTimes = new();
+        private readonly Dictionary<int, (long read, long write)> _prevIoTimes = new();
         private DateTime _prevSampleTime = DateTime.MinValue;
         private readonly object _lock = new();
 
         private static readonly Dictionary<string, string> _nameCache = new(StringComparer.OrdinalIgnoreCase);
         private static readonly Dictionary<string, Image?> _iconCache = new(StringComparer.OrdinalIgnoreCase);
+        private static readonly Dictionary<string, string> _pathCache = new(StringComparer.OrdinalIgnoreCase);
 
         private List<ProcessMetric> _topProcesses = new();
+        private List<ProcessMetric> _topDiskProcesses = new();
 
         public bool IsEnabled { get; set; } = false;
 
@@ -67,6 +76,17 @@ namespace RyzenQuietPro
                 lock (_lock)
                 {
                     return _topProcesses.ToArray();
+                }
+            }
+        }
+
+        public IReadOnlyList<ProcessMetric> TopDiskProcesses
+        {
+            get
+            {
+                lock (_lock)
+                {
+                    return _topDiskProcesses.ToArray();
                 }
             }
         }
@@ -83,8 +103,10 @@ namespace RyzenQuietPro
                 lock (_lock)
                 {
                     if (_topProcesses.Count > 0) _topProcesses.Clear();
+                    if (_topDiskProcesses.Count > 0) _topDiskProcesses.Clear();
                 }
                 _prevCpuTimes.Clear();
+                _prevIoTimes.Clear();
                 _prevSampleTime = DateTime.MinValue;
                 return;
             }
@@ -98,9 +120,11 @@ namespace RyzenQuietPro
                 {
                     // First sample: record baseline
                     _prevCpuTimes.Clear();
+                    _prevIoTimes.Clear();
                     foreach (var s in currentSnapshots)
                     {
                         _prevCpuTimes[s.Pid] = s.TotalCpuTime;
+                        _prevIoTimes[s.Pid] = (s.ReadTransferBytes, s.WriteTransferBytes);
                     }
                     _prevSampleTime = now;
                     return;
@@ -114,6 +138,7 @@ namespace RyzenQuietPro
 
                 var currentPids = new HashSet<int>(currentSnapshots.Count);
                 var candidates = new List<ProcessRawSnapshot>();
+                var ioCandidates = new List<(ProcessRawSnapshot snap, double rMb, double wMb, double totMb)>();
 
                 // Build candidate list of non-idle processes
                 foreach (var snap in currentSnapshots)
@@ -129,9 +154,25 @@ namespace RyzenQuietPro
                             candidates.Add(snap);
                         }
                     }
+
+                    if (_prevIoTimes.TryGetValue(snap.Pid, out var prevIo))
+                    {
+                        long rDelta = Math.Max(0, snap.ReadTransferBytes - prevIo.read);
+                        long wDelta = Math.Max(0, snap.WriteTransferBytes - prevIo.write);
+                        if (rDelta > 0 || wDelta > 0)
+                        {
+                            double rMb = (rDelta / elapsedSec) / (1024.0 * 1024.0);
+                            double wMb = (wDelta / elapsedSec) / (1024.0 * 1024.0);
+                            double totMb = rMb + wMb;
+                            if (totMb >= 0.01) // at least 10 KB/s
+                            {
+                                ioCandidates.Add((snap, rMb, wMb, totMb));
+                            }
+                        }
+                    }
                 }
 
-                // Sort candidates by delta descending to find top 5
+                // Sort CPU candidates by delta descending to find top 5
                 candidates.Sort((a, b) => {
                     long aDelta = a.TotalCpuTime - (_prevCpuTimes.TryGetValue(a.Pid, out var at) ? at : 0);
                     long bDelta = b.TotalCpuTime - (_prevCpuTimes.TryGetValue(b.Pid, out var bt) ? bt : 0);
@@ -157,21 +198,47 @@ namespace RyzenQuietPro
                         CpuPercent = cpuPct,
                         WorkingSetBytes = c.WorkingSet,
                         RamFormatted = FormatRam(c.WorkingSet),
+                        ExePath = details.Path,
+                        Icon = details.Icon
+                    });
+                }
+
+                // Sort Disk IO candidates by throughput descending to find top 5
+                ioCandidates.Sort((a, b) => b.totMb.CompareTo(a.totMb));
+                int diskTakeCount = Math.Min(5, ioCandidates.Count);
+                var newTopDisk = new List<ProcessMetric>(diskTakeCount);
+                for (int i = 0; i < diskTakeCount; i++)
+                {
+                    var item = ioCandidates[i];
+                    var details = ResolveProcessDetails(item.snap.Pid, item.snap.Name);
+                    newTopDisk.Add(new ProcessMetric
+                    {
+                        Pid = item.snap.Pid,
+                        ExeName = item.snap.Name,
+                        FriendlyName = details.Name,
+                        WorkingSetBytes = item.snap.WorkingSet,
+                        RamFormatted = FormatRam(item.snap.WorkingSet),
+                        ReadMbPerSec = item.rMb,
+                        WriteMbPerSec = item.wMb,
+                        ExePath = details.Path,
                         Icon = details.Icon
                     });
                 }
 
                 // Update baseline
                 _prevCpuTimes.Clear();
+                _prevIoTimes.Clear();
                 foreach (var s in currentSnapshots)
                 {
                     _prevCpuTimes[s.Pid] = s.TotalCpuTime;
+                    _prevIoTimes[s.Pid] = (s.ReadTransferBytes, s.WriteTransferBytes);
                 }
                 _prevSampleTime = now;
 
                 lock (_lock)
                 {
                     _topProcesses = newTop;
+                    _topDiskProcesses = newTopDisk;
                 }
             }
             catch (Exception ex)
@@ -209,6 +276,8 @@ namespace RyzenQuietPro
                     IntPtr nameBuffer = Marshal.ReadIntPtr(currentPtr, 64);
                     IntPtr pidPtr = Marshal.ReadIntPtr(currentPtr, 80);
                     IntPtr workingSetPtr = Marshal.ReadIntPtr(currentPtr, 144);
+                    long readBytes = Marshal.ReadInt64(currentPtr, 192);
+                    long writeBytes = Marshal.ReadInt64(currentPtr, 200);
 
                     int pid = pidPtr.ToInt32();
                     string name;
@@ -226,7 +295,9 @@ namespace RyzenQuietPro
                         Pid = pid,
                         Name = name,
                         TotalCpuTime = userTime + kernelTime,
-                        WorkingSet = workingSetPtr.ToInt64()
+                        WorkingSet = workingSetPtr.ToInt64(),
+                        ReadTransferBytes = readBytes,
+                        WriteTransferBytes = writeBytes
                     });
 
                     if (nextOffset == 0) break;
@@ -241,9 +312,9 @@ namespace RyzenQuietPro
             return list;
         }
 
-        private static (string Name, Image? Icon) ResolveProcessDetails(int pid, string exeName)
+        private static (string Name, Image? Icon, string Path) ResolveProcessDetails(int pid, string exeName)
         {
-            if (string.IsNullOrEmpty(exeName)) return ("Unknown", null);
+            if (string.IsNullOrEmpty(exeName)) return ("Unknown", null, "");
 
             string cleanName = exeName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
                 ? exeName[..^4]
@@ -251,35 +322,42 @@ namespace RyzenQuietPro
 
             lock (_nameCache)
             {
-                if (_nameCache.TryGetValue(exeName, out var cachedName) && _iconCache.TryGetValue(exeName, out var cachedIcon))
+                if (_nameCache.TryGetValue(exeName, out var cachedName) &&
+                    _iconCache.TryGetValue(exeName, out var cachedIcon) &&
+                    _pathCache.TryGetValue(exeName, out var cachedPath))
                 {
-                    return (cachedName, cachedIcon);
+                    return (cachedName, cachedIcon, cachedPath);
                 }
             }
 
             string friendlyName = cleanName;
             Image? iconImage = null;
+            string foundPath = "";
 
             try
             {
                 string? path = GetProcessPath(pid);
-                if (!string.IsNullOrEmpty(path) && File.Exists(path))
+                if (!string.IsNullOrEmpty(path))
                 {
-                    var fvi = FileVersionInfo.GetVersionInfo(path);
-                    if (!string.IsNullOrWhiteSpace(fvi.FileDescription))
+                    foundPath = path;
+                    if (File.Exists(path))
                     {
-                        friendlyName = fvi.FileDescription.Trim();
-                    }
-
-                    try
-                    {
-                        using var icon = Icon.ExtractAssociatedIcon(path);
-                        if (icon != null)
+                        var fvi = FileVersionInfo.GetVersionInfo(path);
+                        if (!string.IsNullOrWhiteSpace(fvi.FileDescription))
                         {
-                            iconImage = icon.ToBitmap();
+                            friendlyName = fvi.FileDescription.Trim();
                         }
+
+                        try
+                        {
+                            using var icon = Icon.ExtractAssociatedIcon(path);
+                            if (icon != null)
+                            {
+                                iconImage = icon.ToBitmap();
+                            }
+                        }
+                        catch { }
                     }
-                    catch { }
                 }
             }
             catch
@@ -291,9 +369,10 @@ namespace RyzenQuietPro
             {
                 _nameCache[exeName] = friendlyName;
                 _iconCache[exeName] = iconImage;
+                _pathCache[exeName] = foundPath;
             }
 
-            return (friendlyName, iconImage);
+            return (friendlyName, iconImage, foundPath);
         }
 
         private static string? GetProcessPath(int pid)
@@ -336,6 +415,7 @@ namespace RyzenQuietPro
                 }
                 _iconCache.Clear();
                 _nameCache.Clear();
+                _pathCache.Clear();
             }
         }
     }

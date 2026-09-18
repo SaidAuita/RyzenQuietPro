@@ -126,7 +126,7 @@ namespace RyzenQuietPro
         {
             _contextMenu = new ContextMenuStrip();
 
-            var titleItem = new ToolStripMenuItem("RyzenQuiet PRO v4.01")
+            var titleItem = new ToolStripMenuItem("RyzenQuiet PRO v4.02")
             {
                 Enabled = false,
                 Font = new Font(SystemFonts.DefaultFont, FontStyle.Bold)
@@ -203,7 +203,7 @@ namespace RyzenQuietPro
             };
             _topProcessesMenuItem.Click += (s, e) => {
                 _settings.ShowTopProcesses = !_settings.ShowTopProcesses;
-                _hardware.Processes.IsEnabled = _settings.ShowTopProcesses;
+                _hardware.Processes.IsEnabled = _settings.ShowTopProcesses || (_settings.ShowDiskGraph && _settings.EnhancedDiskMode);
                 _settings.Save();
                 _dashboard?.SyncTopProcessesSetting();
                 UpdateContextMenuState();

@@ -28,7 +28,7 @@ namespace RyzenQuietPro
         {
             ["ru"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.01",
+                ["AppTitle"] = "RyzenQuiet PRO v4.02",
                 ["Silent"] = "Тихий",
                 ["SilentFull"] = "🌿 Тихий (99%)",
                 ["Boost"] = "Турбо",
@@ -97,6 +97,10 @@ namespace RyzenQuietPro
                 ["DiskLegendExpand"] = "Развернуть список накопителей",
                 ["DiskLegendCollapse"] = "Свернуть список накопителей",
                 ["DiskToggleTip"] = "Включить/выключить график данного накопителя",
+                ["DiskProcessesTitle"] = "ТОП ДИСКОВЫХ ПРОЦЕССОВ",
+                ["DiskProcessesIdle"] = "Нет активной нагрузки на накопители",
+                ["ResmonBtn"] = "Монитор ↗",
+                ["TipDiskClick"] = "Кликните на диск, чтобы увидеть процессы",
                 ["FanGraph"] = "❄️ График кулеров (RPM) [Дополнение]",
                 ["ShowAllGraphs"] = "Показать все графики",
                 
@@ -185,7 +189,7 @@ namespace RyzenQuietPro
             },
             ["en"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.01",
+                ["AppTitle"] = "RyzenQuiet PRO v4.02",
                 ["Silent"] = "Silent",
                 ["SilentFull"] = "🌿 Silent (99%)",
                 ["Boost"] = "Boost",
@@ -251,6 +255,10 @@ namespace RyzenQuietPro
                 ["DiskLegendExpand"] = "Expand drive list",
                 ["DiskLegendCollapse"] = "Collapse drive list",
                 ["DiskToggleTip"] = "Toggle this drive's graph line",
+                ["DiskProcessesTitle"] = "TOP DISK PROCESSES",
+                ["DiskProcessesIdle"] = "No active disk I/O activity",
+                ["ResmonBtn"] = "Resmon ↗",
+                ["TipDiskClick"] = "Click drive to see processes",
                 ["FanGraph"] = "❄️ Fan Speed Graph (RPM) [Addon]",
                 ["ShowAllGraphs"] = "Show All Graphs",
 
@@ -337,7 +345,7 @@ namespace RyzenQuietPro
             },
             ["de"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.01",
+                ["AppTitle"] = "RyzenQuiet PRO v4.02",
                 ["Silent"] = "Leise",
                 ["SilentFull"] = "🌿 Leise (99%)",
                 ["Boost"] = "Boost",
@@ -458,7 +466,7 @@ namespace RyzenQuietPro
             },
             ["es"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.01",
+                ["AppTitle"] = "RyzenQuiet PRO v4.02",
                 ["Silent"] = "Silencioso",
                 ["SilentFull"] = "🌿 Silencioso (99%)",
                 ["Boost"] = "Turbo",
@@ -579,7 +587,7 @@ namespace RyzenQuietPro
             },
             ["fr"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.01",
+                ["AppTitle"] = "RyzenQuiet PRO v4.02",
                 ["Silent"] = "Silencieux",
                 ["SilentFull"] = "🌿 Silencieux (99%)",
                 ["Boost"] = "Turbo",
@@ -700,7 +708,7 @@ namespace RyzenQuietPro
             },
             ["ja"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.01",
+                ["AppTitle"] = "RyzenQuiet PRO v4.02",
                 ["Silent"] = "静音",
                 ["SilentFull"] = "🌿 静音モード (99%)",
                 ["Boost"] = "ブースト",
@@ -821,7 +829,7 @@ namespace RyzenQuietPro
             },
             ["pt"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.01",
+                ["AppTitle"] = "RyzenQuiet PRO v4.02",
                 ["Silent"] = "Silencioso",
                 ["SilentFull"] = "🌿 Silencioso (99%)",
                 ["Boost"] = "Turbo",
@@ -942,7 +950,7 @@ namespace RyzenQuietPro
             },
             ["zh"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.01",
+                ["AppTitle"] = "RyzenQuiet PRO v4.02",
                 ["Silent"] = "静音",
                 ["SilentFull"] = "🌿 静音模式 (99%)",
                 ["Boost"] = "加速",
