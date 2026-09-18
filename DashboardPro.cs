@@ -283,6 +283,11 @@ namespace RyzenQuietPro
             int initW = Math.Max(380, _settings.WindowWidth > 0 ? _settings.WindowWidth : 420);
             int defaultH = _settings.ShowTopProcesses ? 590 : 495;
             if (_settings.ShowStopwatch) defaultH += 75;
+            if (_settings.ShowDiskGraph && _settings.EnhancedDiskMode && _settings.DiskLegendExpanded)
+            {
+                int driveCount = Math.Max(1, _hardware.Disk.Drives.Count);
+                defaultH += driveCount * 22 + 4;
+            }
             if (_settings.ShowFanGraph)
             {
                 float fanScale = _settings.FanScale;
@@ -809,7 +814,7 @@ namespace RyzenQuietPro
             if (showDisk && _settings.EnhancedDiskMode && _settings.DiskLegendExpanded)
             {
                 int driveCount = Math.Max(1, _hardware.Disk.Drives.Count);
-                diskLegendH = Math.Clamp(driveCount * 22 + 6, 44, 132);
+                diskLegendH = driveCount * 22 + 4;
                 fixedH += diskLegendH + 4;
             }
             if (showDisk) fixedH += 3 + 5 + 20 + (showFans ? 6 : 0);
@@ -1550,9 +1555,18 @@ namespace RyzenQuietPro
             {
                 int count = _hardware.Disk.Drives.Count;
                 int totalH = count * 22 + 4;
-                if (this.AutoScrollMinSize.Height != totalH)
+                if (this.Height >= totalH)
                 {
-                    this.AutoScrollMinSize = new Size(0, totalH);
+                    this.AutoScroll = false;
+                    this.AutoScrollMinSize = Size.Empty;
+                }
+                else
+                {
+                    this.AutoScroll = true;
+                    if (this.AutoScrollMinSize.Height != totalH)
+                    {
+                        this.AutoScrollMinSize = new Size(0, totalH);
+                    }
                 }
                 this.Invalidate();
             }
@@ -1816,7 +1830,7 @@ namespace RyzenQuietPro
 
         private void OnWindowDeactivated(object? sender, EventArgs e)
         {
-            if (!_isDetached && this.Visible)
+            if (!_isDetached && !_alwaysOnTop && this.Visible)
             {
                 this.Hide();
             }
@@ -2124,8 +2138,7 @@ namespace RyzenQuietPro
             }
 
             // 5. DISK
-            float diskUsage = _hardware.Disk.DiskLoadPercent;
-            _lblDisk.Text = $"{Loc.Get("Disk")}: {diskUsage:F0}%";
+            _lblDisk.Text = Loc.Get("Disk");
             string diskIdleText = (_hardware.Disk.PeakActiveDisk == "Idle") ? Loc.Get("Idle") : _hardware.Disk.PeakActiveDisk;
             _lblDiskSub.Text = $"R:{_hardware.Disk.ReadMbPerSec:F1} W:{_hardware.Disk.WriteMbPerSec:F1} MB/s [{diskIdleText}]";
 
@@ -3257,23 +3270,29 @@ namespace RyzenQuietPro
             _toolTip.SetToolTip(_btnDiskExpand, _settings.DiskLegendExpanded ? Loc.Get("DiskLegendCollapse") : Loc.Get("DiskLegendExpand"));
 
             int driveCount = Math.Max(1, _hardware.Disk.Drives.Count);
-            int diskLegendH = Math.Clamp(driveCount * 22 + 6, 44, 132);
+            int diskLegendH = driveCount * 22 + 4;
 
             if (_settings.DiskLegendExpanded)
             {
                 var screen = Screen.FromControl(this);
-                int addH = Math.Min(120, diskLegendH);
-                if (this.Bottom + addH < screen.WorkingArea.Bottom)
+                int addH = diskLegendH + 4;
+                if (this.Bottom + addH > screen.WorkingArea.Bottom)
                 {
-                    this.Height += addH;
+                    int shiftUp = (this.Bottom + addH) - screen.WorkingArea.Bottom;
+                    this.Top = Math.Max(screen.WorkingArea.Top, this.Top - shiftUp);
                 }
+                this.Height += addH;
             }
             else
             {
-                int subH = Math.Min(120, diskLegendH);
+                int subH = diskLegendH + 4;
                 if (this.Height - subH >= 480)
                 {
                     this.Height -= subH;
+                }
+                else
+                {
+                    this.Height = 480;
                 }
             }
 
@@ -3362,7 +3381,8 @@ namespace RyzenQuietPro
                 {
                     var drive = activeDrives[i];
                     string ltr = !string.IsNullOrEmpty(drive.DriveLetters) ? drive.DriveLetters : $"#{drive.PhysicalIndex}";
-                    string text = $"{ltr}: {drive.LoadPercent:F0}%";
+                    string prefix = ltr.EndsWith(":") ? ltr : $"{ltr}:";
+                    string text = $"{prefix} {drive.LoadPercent:F0}%";
                     Size sz = TextRenderer.MeasureText(g, text, font, Size.Empty, TextFormatFlags.NoPadding);
 
                     badgeX -= sz.Width + 10;
