@@ -50,8 +50,8 @@ namespace RyzenQuietPro
             public string Name;
             public long TotalCpuTime; // Kernel + User (100ns units)
             public long WorkingSet;   // RAM bytes
-            public long ReadTransferBytes;  // offset 192
-            public long WriteTransferBytes; // offset 200
+            public long ReadTransferBytes;  // offset 232 (0xE8) ReadTransferCount
+            public long WriteTransferBytes; // offset 240 (0xF0) WriteTransferCount
         }
 
         private readonly int _processorCount;
@@ -276,8 +276,8 @@ namespace RyzenQuietPro
                     IntPtr nameBuffer = Marshal.ReadIntPtr(currentPtr, 64);
                     IntPtr pidPtr = Marshal.ReadIntPtr(currentPtr, 80);
                     IntPtr workingSetPtr = Marshal.ReadIntPtr(currentPtr, 144);
-                    long readBytes = Marshal.ReadInt64(currentPtr, 192);
-                    long writeBytes = Marshal.ReadInt64(currentPtr, 200);
+                    long readBytes = Marshal.ReadInt64(currentPtr, 232);
+                    long writeBytes = Marshal.ReadInt64(currentPtr, 240);
 
                     int pid = pidPtr.ToInt32();
                     string name;
@@ -312,6 +312,38 @@ namespace RyzenQuietPro
             return list;
         }
 
+        private static readonly Dictionary<string, string> _knownServiceNames = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["service_process"] = "Acronis Backup Engine",
+            ["mms"] = "Acronis Managed Machine",
+            ["agent"] = "Acronis Remote Agent",
+            ["TibMounterMonitor"] = "Acronis Tib Mounter",
+            ["ExilandBackupService"] = "Exiland Backup Service",
+            ["ExilandBackup"] = "Exiland Backup",
+            ["SearchIndexer"] = "Windows Search Indexer",
+            ["System"] = "Windows Kernel / Paging",
+            ["System Idle Process"] = "System Idle",
+            ["svchost"] = "Windows Service Host",
+            ["TiWorker"] = "Windows Update Worker",
+            ["TrustedInstaller"] = "Windows Modules Installer",
+            ["MsMpEng"] = "Microsoft Defender Antivirus",
+            ["vssvc"] = "Volume Shadow Copy Service",
+            ["defrag"] = "Windows Drive Defragmenter",
+            ["dfrgui"] = "Defragment & Optimize Drives",
+            ["CompPkgSrv"] = "Component Package Support Server",
+            ["taskhostw"] = "Host Process for Windows Tasks"
+        };
+
+        private static readonly string[] _knownServiceDirs = new[]
+        {
+            @"C:\Program Files (x86)\Common Files\Acronis\BackupAndRecovery\Common64",
+            @"C:\Program Files (x86)\Common Files\Acronis\BackupAndRecovery\Common",
+            @"C:\Program Files (x86)\Acronis\BackupAndRecovery",
+            @"C:\Program Files\Common Files\Acronis\BackupAndRecovery\Common64",
+            @"C:\Exiland Backup Professional",
+            @"C:\Windows\System32"
+        };
+
         private static (string Name, Image? Icon, string Path) ResolveProcessDetails(int pid, string exeName)
         {
             if (string.IsNullOrEmpty(exeName)) return ("Unknown", null, "");
@@ -331,19 +363,38 @@ namespace RyzenQuietPro
             }
 
             string friendlyName = cleanName;
+            if (_knownServiceNames.TryGetValue(cleanName, out var knownName))
+            {
+                friendlyName = knownName;
+            }
+
             Image? iconImage = null;
             string foundPath = "";
 
             try
             {
                 string? path = GetProcessPath(pid);
+                if (string.IsNullOrEmpty(path))
+                {
+                    // Fallback to searching known locations if access was denied to system service
+                    foreach (var dir in _knownServiceDirs)
+                    {
+                        string candidate = Path.Combine(dir, exeName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) ? exeName : exeName + ".exe");
+                        if (File.Exists(candidate))
+                        {
+                            path = candidate;
+                            break;
+                        }
+                    }
+                }
+
                 if (!string.IsNullOrEmpty(path))
                 {
                     foundPath = path;
                     if (File.Exists(path))
                     {
                         var fvi = FileVersionInfo.GetVersionInfo(path);
-                        if (!string.IsNullOrWhiteSpace(fvi.FileDescription))
+                        if (!string.IsNullOrWhiteSpace(fvi.FileDescription) && !_knownServiceNames.ContainsKey(cleanName))
                         {
                             friendlyName = fvi.FileDescription.Trim();
                         }

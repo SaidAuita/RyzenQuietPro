@@ -351,7 +351,7 @@ namespace RyzenQuietPro
 
             _lblTitle = new Label
             {
-                Text = "RyzenQuiet PRO v4.02",
+                Text = "RyzenQuiet PRO v4.03",
                 Font = new Font("Segoe UI", 10f, FontStyle.Bold),
                 ForeColor = Color.FromArgb(240, 240, 245),
                 Location = new Point(36, 8),
@@ -1546,7 +1546,7 @@ namespace RyzenQuietPro
             private int _hoveredIndex = -1;
             private int _selectedDriveIndex = -1;
 
-            public int ExpandedExtraHeight => (_selectedDriveIndex >= 0 && _selectedDriveIndex < _hardware.Disk.Drives.Count) ? 74 : 0;
+            public int ExpandedExtraHeight => (_selectedDriveIndex >= 0 && _selectedDriveIndex < _hardware.Disk.Drives.Count) ? 84 : 0;
 
             public DiskLegendPanel(HardwareMonitor hardware, AppSettings settings, Action onDiskToggled, Action<bool> onSelectionChanged)
             {
@@ -1574,7 +1574,7 @@ namespace RyzenQuietPro
                 int baseRow = index * 22 + 2;
                 if (_selectedDriveIndex >= 0 && index > _selectedDriveIndex)
                 {
-                    return baseRow + 74;
+                    return baseRow + 84;
                 }
                 return baseRow;
             }
@@ -1585,7 +1585,7 @@ namespace RyzenQuietPro
                     return Rectangle.Empty;
                 int y = GetRowY(_selectedDriveIndex) + 22;
                 int w = this.ClientSize.Width;
-                return new Rectangle(4, y, Math.Max(10, w - 8), 70);
+                return new Rectangle(4, y, Math.Max(10, w - 8), 80);
             }
 
             public Rectangle GetResmonButtonRect(Rectangle cardRect)
@@ -1762,13 +1762,13 @@ namespace RyzenQuietPro
                             for (int p = 0; p < maxP; p++)
                             {
                                 var proc = topIo[p];
-                                int py = cardRect.Y + 20 + (p * 16);
+                                int py = cardRect.Y + 22 + (p * 18);
 
                                 int px = cardRect.X + 8;
                                 if (proc.Icon != null)
                                 {
-                                    g.DrawImage(proc.Icon, new Rectangle(px, py + 1, 13, 13));
-                                    px += 16;
+                                    g.DrawImage(proc.Icon, new Rectangle(px, py + 1, 14, 14));
+                                    px += 18;
                                 }
 
                                 string pName = !string.IsNullOrEmpty(proc.FriendlyName) ? proc.FriendlyName : proc.ExeName;
@@ -1786,14 +1786,14 @@ namespace RyzenQuietPro
                                 int rwX = totX - rwSz.Width - 6;
                                 int nameMaxW = Math.Max(10, rwX - px - 4);
 
-                                TextRenderer.DrawText(g, pName, fontProc, new Rectangle(px, py, nameMaxW, 15),
+                                TextRenderer.DrawText(g, pName, fontProc, new Rectangle(px, py, nameMaxW, 16),
                                     matchesDrive ? selectedDrive.Color : Color.FromArgb(220, 225, 235),
                                     TextFormatFlags.EndEllipsis | TextFormatFlags.VerticalCenter);
 
-                                TextRenderer.DrawText(g, rwStr, fontProc, new Point(rwX, py + 1),
+                                TextRenderer.DrawText(g, rwStr, fontProc, new Point(rwX, py + 2),
                                     Color.FromArgb(140, 150, 170), TextFormatFlags.NoPadding);
 
-                                TextRenderer.DrawText(g, totalStr, fontBoldMetrics, new Point(totX, py + 1),
+                                TextRenderer.DrawText(g, totalStr, fontBoldMetrics, new Point(totX, py + 2),
                                     proc.TotalDiskMbPerSec > 1.0 ? selectedDrive.Color : Color.FromArgb(180, 185, 200), TextFormatFlags.NoPadding);
                             }
                         }
@@ -1801,7 +1801,7 @@ namespace RyzenQuietPro
                         {
                             using var fontIdle = new Font("Segoe UI", 7.2f, FontStyle.Italic);
                             TextRenderer.DrawText(g, Loc.Get("DiskProcessesIdle"), fontIdle,
-                                new Rectangle(cardRect.X + 8, cardRect.Y + 28, cardRect.Width - 16, 20),
+                                new Rectangle(cardRect.X + 8, cardRect.Y + 30, cardRect.Width - 16, 24),
                                 Color.FromArgb(120, 125, 140), TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
                         }
                     }
@@ -3513,7 +3513,7 @@ namespace RyzenQuietPro
 
         private void OnDiskSelectionLayoutChanged(bool expanded)
         {
-            int diffH = 74;
+            int diffH = 84;
             if (expanded)
             {
                 var screen = Screen.FromControl(this);

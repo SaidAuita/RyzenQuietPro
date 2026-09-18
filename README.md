@@ -1,24 +1,27 @@
 <div align="center">
 
-# ⚡ RyzenQuiet PRO (v4.02)
+# ⚡ RyzenQuiet PRO (v4.03)
 **Sleek, lightweight hardware HUD & power-plan optimizer for Windows with AMD Ryzen CPB toggle, GPU power limiting & acoustic tuning, enhanced multi-disk telemetry with process drill-down, and modular fan monitoring.**
 
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011%20(64--bit)-blue.svg)](#)
 [![.NET](https://img.shields.io/badge/.NET-8.0-purple.svg)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/Release-v4.02-orange.svg)](https://github.com/SaidAuita/RyzenQuietPro/releases)
+[![Release](https://img.shields.io/badge/Release-v4.03-orange.svg)](https://github.com/SaidAuita/RyzenQuietPro/releases)
 [![Telemetry](https://img.shields.io/badge/Telemetry-Zero%20%2F%20100%25%20Offline-brightgreen.svg)](#)
 
 <br/>
 
 <p align="center">
-  <img src="images/RyzenQuietPro-v4_1.png" alt="RyzenQuiet PRO v4.0 Main Desktop HUD & Real-Time Telemetry" width="360" />
+  <img src="images/RyzenQuietPro-v4_1.png" alt="RyzenQuiet PRO Main Desktop HUD & Real-Time Telemetry" width="360" />
   &nbsp;&nbsp;&nbsp;&nbsp;
   <img src="images/RyzenQuietPro-v4_1pl.png" alt="GPU Power Limit & Real-Time Fan Tachometer Telemetry" width="360" />
 </p>
 <p align="center">
-  <img src="images/RyzenQuietPro-v4_2.png" alt="GPU Acoustic & Power Tuning Settings Dialog with Background Dimming" width="330" />
+  <img src="images/RyzenQuietPro-v4_4.png" alt="Multi-Disk Mode with Interactive Legend & Top I/O Processes Drill-Down" width="360" />
   &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="images/RyzenQuietPro-v4_2.png" alt="GPU Acoustic & Power Tuning Settings Dialog with Background Dimming" width="330" />
+</p>
+<p align="center">
   <img src="images/RyzenQuietPro-v4_3.png" alt="Hardware Specifications & System Diagnostics" width="370" />
 </p>
 
@@ -63,7 +66,7 @@ All subsystem graphs share a synchronized 60-second historical canvas rendered w
 * 🔵 **RAM Monitor:** Instant Win32 SMBIOS memory type & speed with Used / Total physical memory (e.g., `DDR5/4800 | 18.5 / 64.0 GB`) with 0% CPU overhead.
 * 🟣 **GPU Monitor:** High-precision GPU core load %, chip temperature (°C) with dashed curve, live **Power Limit & Fan RPM telemetry**, and real-time **Power Consumption in Watts** (`⚡ 136W`) via official signed NVIDIA NVML (`nvmlDeviceGetPowerUsage`). Supports AMD Radeon (ADL) and Windows GPU Engine fallbacks.
 * 🌸 **VRAM Monitor:** Dedicated video memory type, load %, and live usage (e.g., `GDDR6 | 1.5 / 6.0 GB`).
-* 🩵 **DISK Monitor (Smart Auto-Focus, Multi-Disk Mode & Process Drill-Down v4.02):** Unified storage activity graph with Read / Write throughput in MB/s (`R:12.4 W:45.0 MB/s`) and dynamic auto-focus on the heaviest loaded drive. When **Enhanced Multi-Disk Mode** is enabled, the graph renders each physical storage drive (NVMe SSD, SATA, HDD) with an individual vibrant color, maps all logical partitions (`C:, D: [Samsung 980 PRO 1TB]`), provides an interactive expand/collapse legend with one-click toggles, and allows clicking any drive to inspect the **Top Active Disk I/O Processes** (Read/Write MB/s, icons, path matching, and instant Resmon shortcut).
+* 🩵 **DISK Monitor (Smart Auto-Focus, Multi-Disk Mode & Process Drill-Down v4.03):** Unified storage activity graph with Read / Write throughput in MB/s (`R:12.4 W:45.0 MB/s`) and dynamic auto-focus on the heaviest loaded drive. When **Enhanced Multi-Disk Mode** is enabled, the graph renders each physical storage drive (NVMe SSD, SATA, HDD) with an individual vibrant color, maps all logical partitions (`C:, D: [Samsung 980 PRO 1TB]`), provides an interactive expand/collapse legend with one-click toggles, and allows clicking any drive to inspect the **Top Active Disk I/O Processes** (Read/Write MB/s, icons, path matching, and instant Resmon shortcut).
 * ❄️ **FAN Speed Monitor (Modular Addon with 3 Visualization Modes & Hardware Spin Test):**
   * **3 Switchable Modes in Settings:**
     * **Multi-trace Graph (`📈`):** Synchronized real-time RPM history curves.
@@ -173,7 +176,7 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 <a name="русский"></a>
 <div align="center">
 
-# ⚡ RyzenQuiet PRO (v4.02) — Описание на русском
+# ⚡ RyzenQuiet PRO (v4.03) — Описание на русском
 **Стильный, легковесный аппаратный HUD-монитор и менеджер профилей питания для Windows с мгновенным отключением CPB у процессоров AMD Ryzen, акустическим контролем и ограничением мощности видеокарт (GPU Power Limiting), расширенным мониторингом накопителей с раскрытием процессов I/O и модульным мониторингом вентиляторов.**
 
 </div>
@@ -205,7 +208,7 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 * 🔵 **Монитор RAM:** Опрос типа и частоты памяти через Win32 SMBIOS Type 17 с отображением занятой и общей памяти (например, `DDR5/4800 | 18.5 / 64.0 GB`) с 0% нагрузки на CPU.
 * 🟣 **Монитор GPU:** Нагрузка графического чипа в %, температура ядра (°C) с пунктирной линией, статус **Power Limit & Fan RPM** и **реальное энергопотребление в ваттах** (`⚡ 136W`) через официальный подписанный NVIDIA NVML (`nvmlDeviceGetPowerUsage`). Поддержка AMD Radeon (ADL) и Windows GPU Engine.
 * 🌸 **Монитор VRAM:** Тип видеопамяти, процент нагрузки и точный объём занятой VRAM (например, `GDDR6 | 1.5 / 6.0 GB`).
-* 🩵 **Монитор накопителей (DISK) с умным фокусом, расширенным режимом и раскрытием процессов (v4.02):** Общая дисковая активность и скорость чтения/записи в МБ/с (`R:12.4 W:45.0 MB/s`) с авто-фокусом на самом нагруженном диске. При включении **расширенного режима** в настройках график выводит отдельную цветную линию для каждого физического диска (NVMe SSD, SATA, HDD), маппит все логические разделы (`C:, D: [Samsung 980 PRO 1TB]`), предоставляет интерактивную легенду в основном окне с возможностью включения/отключения любого накопителя в один клик, а также кликом по диску разворачивает список **Топ активных процессов ввода/вывода (Disk I/O)** с иконками, скоростями чтения/записи и кнопкой быстрого перехода в Монитор ресурсов Windows.
+* 🩵 **Монитор накопителей (DISK) с умным фокусом, расширенным режимом и раскрытием процессов (v4.03):** Общая дисковая активность и скорость чтения/записи в МБ/с (`R:12.4 W:45.0 MB/s`) с авто-фокусом на самом нагруженном диске. При включении **расширенного режима** в настройках график выводит отдельную цветную линию для каждого физического диска (NVMe SSD, SATA, HDD), маппит все логические разделы (`C:, D: [Samsung 980 PRO 1TB]`), предоставляет интерактивную легенду в основном окне с возможностью включения/отключения любого накопителя в один клик, а также кликом по диску разворачивает список **Топ активных процессов ввода/вывода (Disk I/O)** с иконками, скоростями чтения/записи и кнопкой быстрого перехода в Монитор ресурсов Windows.
 * ❄️ **Монитор кулеров (Изолированное дополнение с 3 режимами и тестом кулеров):**
   * **3 переключаемых режима в настройках:**
     * **График (`📈`):** Синхронизированные кривые RPM в реальном времени.

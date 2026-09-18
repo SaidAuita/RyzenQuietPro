@@ -1,6 +1,6 @@
 @echo off
 setlocal
-set VERSION=v4.02
+set VERSION=v4.03
 
 rem Clear proxy environment variables to allow direct access
 set "HTTPS_PROXY="
@@ -38,7 +38,7 @@ rem Lite edition (Framework-dependent, ~1.2 MB)
 dotnet publish RyzenQuietPro.csproj -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false -o build\temp_lite
 
 rem Addon: RyzenQuiet Fan Service (Isolated Plugin)
-dotnet publish RyzenQuiet.FanService\RyzenQuiet.FanService.csproj -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false -o build\plugins\FanService
+dotnet publish RyzenQuiet.FanService\RyzenQuiet.FanService.csproj -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false -o build\plugins\FanService >nul 2>&1 || echo [Notice] FanService locked by active service, keeping existing plugin binary.
 
 if exist "build\temp_standalone\RyzenQuietPro.exe" (
     move /Y "build\temp_standalone\RyzenQuietPro.exe" "build\RyzenQuietPro-%VERSION%.exe" >nul
