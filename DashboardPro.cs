@@ -109,6 +109,8 @@ namespace RyzenQuietPro
 
         private Label _lblDisk = null!;
         private Label _lblDiskSub = null!;
+        private Label _btnDiskExpand = null!;
+        private DiskLegendPanel _pnlDiskLegend = null!;
         private SmoothPanel _pnlDiskGraph = null!;
 
         private Label _lblFans = null!;
@@ -343,7 +345,7 @@ namespace RyzenQuietPro
 
             _lblTitle = new Label
             {
-                Text = "RyzenQuiet PRO v4.0",
+                Text = "RyzenQuiet PRO v4.01",
                 Font = new Font("Segoe UI", 10f, FontStyle.Bold),
                 ForeColor = Color.FromArgb(240, 240, 245),
                 Location = new Point(36, 8),
@@ -555,6 +557,26 @@ namespace RyzenQuietPro
             _lblDiskSub = CreateMetricSubHeader("R:0.0 W:0.0 MB/s [Idle]");
             this.Controls.Add(_lblDisk);
             this.Controls.Add(_lblDiskSub);
+
+            _btnDiskExpand = new Label
+            {
+                Text = _settings.DiskLegendExpanded ? "▲" : "▼",
+                Font = new Font("Segoe UI", 7.5f, FontStyle.Bold),
+                ForeColor = Color.FromArgb(6, 182, 212),
+                BackColor = Color.FromArgb(20, 24, 32),
+                TextAlign = ContentAlignment.MiddleCenter,
+                Cursor = Cursors.Hand,
+                Size = new Size(20, 18)
+            };
+            _btnDiskExpand.MouseEnter += (s, e) => _btnDiskExpand.BackColor = Color.FromArgb(32, 42, 56);
+            _btnDiskExpand.MouseLeave += (s, e) => _btnDiskExpand.BackColor = Color.FromArgb(20, 24, 32);
+            _btnDiskExpand.Click += (s, e) => ToggleDiskLegend();
+            this.Controls.Add(_btnDiskExpand);
+
+            _pnlDiskLegend = new DiskLegendPanel(_hardware, _settings, () => {
+                _pnlDiskGraph.Invalidate();
+            });
+            this.Controls.Add(_pnlDiskLegend);
 
             _pnlDiskGraph = CreateGraphPanel();
             _pnlDiskGraph.Paint += DrawDiskGraph;
@@ -783,6 +805,13 @@ namespace RyzenQuietPro
             if (showRam) fixedH += 3 + 5 + 20 + 6;
             if (showGpu) fixedH += 3 + 5 + 20 + 6;
             if (showVram) fixedH += 3 + 5 + 20 + (showDisk || showFans ? 6 : 0);
+            int diskLegendH = 0;
+            if (showDisk && _settings.EnhancedDiskMode && _settings.DiskLegendExpanded)
+            {
+                int driveCount = Math.Max(1, _hardware.Disk.Drives.Count);
+                diskLegendH = Math.Clamp(driveCount * 22 + 6, 44, 132);
+                fixedH += diskLegendH + 4;
+            }
             if (showDisk) fixedH += 3 + 5 + 20 + (showFans ? 6 : 0);
             if (showFans) fixedH += 3 + 6 + 24;
 
@@ -997,9 +1026,14 @@ namespace RyzenQuietPro
             }
 
             // --- DISK ---
+            // --- DISK ---
+            bool enhancedDisk = _settings.EnhancedDiskMode;
+            bool diskLegendOpen = enhancedDisk && _settings.DiskLegendExpanded;
             _sepDisk.Visible = showDisk;
             _lblDisk.Visible = showDisk;
             _lblDiskSub.Visible = showDisk;
+            _btnDiskExpand.Visible = showDisk && enhancedDisk;
+            _pnlDiskLegend.Visible = showDisk && diskLegendOpen;
             _pnlDiskGraph.Visible = showDisk;
 
             if (showDisk)
@@ -1009,9 +1043,25 @@ namespace RyzenQuietPro
                 curY += 5;
 
                 _lblDisk.Location = new Point(marginX, curY);
+                int expandBtnW = enhancedDisk ? 24 : 0;
                 _lblDiskSub.Location = new Point(marginX + 95, curY);
-                _lblDiskSub.Size = new Size(contentW - 95, 20);
+                _lblDiskSub.Size = new Size(contentW - 95 - expandBtnW, 20);
+
+                if (enhancedDisk)
+                {
+                    _btnDiskExpand.Location = new Point(marginX + contentW - 20, curY + 1);
+                    _btnDiskExpand.Text = _settings.DiskLegendExpanded ? "▲" : "▼";
+                    _toolTip.SetToolTip(_btnDiskExpand, _settings.DiskLegendExpanded ? Loc.Get("DiskLegendCollapse") : Loc.Get("DiskLegendExpand"));
+                }
                 curY += 20;
+
+                if (diskLegendOpen)
+                {
+                    _pnlDiskLegend.Location = new Point(marginX, curY);
+                    _pnlDiskLegend.Size = new Size(contentW, diskLegendH);
+                    _pnlDiskLegend.UpdateLayout();
+                    curY += diskLegendH + 4;
+                }
 
                 _pnlDiskGraph.Location = new Point(marginX, curY);
                 _pnlDiskGraph.Size = new Size(contentW, graphH);
@@ -1476,6 +1526,179 @@ namespace RyzenQuietPro
             {
                 BackColor = Color.FromArgb(16, 16, 20)
             };
+        }
+
+        private class DiskLegendPanel : Panel
+        {
+            private readonly HardwareMonitor _hardware;
+            private readonly AppSettings _settings;
+            private readonly Action _onDiskToggled;
+            private int _hoveredIndex = -1;
+
+            public DiskLegendPanel(HardwareMonitor hardware, AppSettings settings, Action onDiskToggled)
+            {
+                _hardware = hardware;
+                _settings = settings;
+                _onDiskToggled = onDiskToggled;
+                this.DoubleBuffered = true;
+                this.SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer, true);
+                this.AutoScroll = true;
+                this.BackColor = Color.FromArgb(14, 16, 22);
+            }
+
+            public void UpdateLayout()
+            {
+                int count = _hardware.Disk.Drives.Count;
+                int totalH = count * 22 + 4;
+                if (this.AutoScrollMinSize.Height != totalH)
+                {
+                    this.AutoScrollMinSize = new Size(0, totalH);
+                }
+                this.Invalidate();
+            }
+
+            protected override void OnPaint(PaintEventArgs e)
+            {
+                base.OnPaint(e);
+                var g = e.Graphics;
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
+
+                g.TranslateTransform(this.AutoScrollPosition.X, this.AutoScrollPosition.Y);
+
+                var drives = _hardware.Disk.Drives;
+                int rowH = 22;
+                int w = this.ClientSize.Width;
+
+                using var fontBold = new Font("Segoe UI", 7.5f, FontStyle.Bold);
+                using var fontRegular = new Font("Segoe UI", 7.5f);
+
+                for (int i = 0; i < drives.Count; i++)
+                {
+                    var drive = drives[i];
+                    int rowY = i * rowH + 2;
+                    bool isVisible = _settings.IsDiskVisible(drive.Id, drive.InstanceName);
+                    bool isHover = (i == _hoveredIndex);
+
+                    if (isHover)
+                    {
+                        using var hBrush = new SolidBrush(Color.FromArgb(28, 32, 44));
+                        g.FillRectangle(hBrush, 0, rowY, w, rowH - 1);
+                    }
+
+                    // 1. Toggle checkbox indicator [✓] / [ ]
+                    int chkX = 4;
+                    int chkY = rowY + 3;
+                    var chkRect = new Rectangle(chkX, chkY, 14, 14);
+
+                    if (isVisible)
+                    {
+                        using var chkBg = new SolidBrush(Color.FromArgb(50, drive.Color.R, drive.Color.G, drive.Color.B));
+                        using var chkPen = new Pen(drive.Color, 1.2f);
+                        g.FillRectangle(chkBg, chkRect);
+                        g.DrawRectangle(chkPen, chkRect);
+
+                        TextRenderer.DrawText(g, "✓", fontBold, new Rectangle(chkX - 1, chkY - 2, 16, 16),
+                            drive.Color, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+                    }
+                    else
+                    {
+                        using var chkPen = new Pen(Color.FromArgb(70, 75, 90), 1f);
+                        g.DrawRectangle(chkPen, chkRect);
+                    }
+
+                    // 2. Color dot
+                    int dotX = chkX + 18;
+                    int dotY = rowY + 6;
+                    using (var dotBrush = new SolidBrush(isVisible ? drive.Color : Color.FromArgb(70, 75, 90)))
+                    {
+                        g.FillEllipse(dotBrush, dotX, dotY, 8, 8);
+                    }
+
+                    // 3. Letters badge: [C:] or [C:, D:]
+                    int ltrX = dotX + 13;
+                    string ltrText = !string.IsNullOrEmpty(drive.DriveLetters) ? drive.DriveLetters : $"#{drive.PhysicalIndex}";
+                    Size ltrSz = TextRenderer.MeasureText(g, ltrText, fontBold, Size.Empty, TextFormatFlags.NoPadding);
+
+                    using (var ltrBg = new SolidBrush(Color.FromArgb(36, 40, 54)))
+                    {
+                        g.FillRectangle(ltrBg, ltrX - 2, rowY + 2, ltrSz.Width + 4, 16);
+                    }
+                    TextRenderer.DrawText(g, ltrText, fontBold, new Point(ltrX, rowY + 3),
+                        isVisible ? Color.FromArgb(56, 189, 248) : Color.FromArgb(120, 130, 145), TextFormatFlags.NoPadding);
+
+                    // 4. Metrics on right: "12% 45.2M"
+                    string metricsText = isVisible ? $"{drive.LoadPercent:F0}%  {drive.CurrentMbPerSec:F1}M" : "OFF";
+                    Size metSz = TextRenderer.MeasureText(g, metricsText, fontBold, Size.Empty, TextFormatFlags.NoPadding);
+                    int metX = w - metSz.Width - 6;
+                    TextRenderer.DrawText(g, metricsText, fontBold, new Point(metX, rowY + 3),
+                        isVisible && drive.LoadPercent > 0.5f ? drive.Color : Color.FromArgb(110, 115, 130), TextFormatFlags.NoPadding);
+
+                    // 5. Model / Manufacturer in middle
+                    int modelX = ltrX + ltrSz.Width + 8;
+                    int modelMaxW = Math.Max(10, metX - modelX - 6);
+
+                    string brand = !string.IsNullOrEmpty(drive.Manufacturer) && !drive.Model.StartsWith(drive.Manufacturer, StringComparison.OrdinalIgnoreCase)
+                        ? $"{drive.Manufacturer} " : "";
+                    string fullModel = $"{brand}{drive.Model}".Trim();
+                    if (string.IsNullOrEmpty(fullModel)) fullModel = drive.InstanceName;
+
+                    Color textColor = isVisible ? Color.FromArgb(220, 225, 235) : Color.FromArgb(100, 105, 120);
+                    TextRenderer.DrawText(g, fullModel, fontRegular, new Rectangle(modelX, rowY + 3, modelMaxW, 16),
+                        textColor, TextFormatFlags.EndEllipsis | TextFormatFlags.VerticalCenter);
+                }
+            }
+
+            protected override void OnMouseMove(MouseEventArgs e)
+            {
+                base.OnMouseMove(e);
+                int virtY = e.Y - this.AutoScrollPosition.Y;
+                int newIndex = (virtY - 2) / 22;
+                var drives = _hardware.Disk.Drives;
+                if (newIndex >= 0 && newIndex < drives.Count)
+                {
+                    this.Cursor = Cursors.Hand;
+                    if (newIndex != _hoveredIndex)
+                    {
+                        _hoveredIndex = newIndex;
+                        this.Invalidate();
+                    }
+                }
+                else
+                {
+                    this.Cursor = Cursors.Default;
+                    if (_hoveredIndex != -1)
+                    {
+                        _hoveredIndex = -1;
+                        this.Invalidate();
+                    }
+                }
+            }
+
+            protected override void OnMouseLeave(EventArgs e)
+            {
+                base.OnMouseLeave(e);
+                this.Cursor = Cursors.Default;
+                _hoveredIndex = -1;
+                this.Invalidate();
+            }
+
+            protected override void OnMouseClick(MouseEventArgs e)
+            {
+                base.OnMouseClick(e);
+                int virtY = e.Y - this.AutoScrollPosition.Y;
+                int index = (virtY - 2) / 22;
+                var drives = _hardware.Disk.Drives;
+                if (index >= 0 && index < drives.Count)
+                {
+                    var d = drives[index];
+                    bool cur = _settings.IsDiskVisible(d.Id, d.InstanceName);
+                    _settings.SetDiskVisibility(d.Id, !cur);
+                    _settings.Save();
+                    _onDiskToggled();
+                    this.Invalidate();
+                }
+            }
         }
 
         private class ModuleSeparator : Control
@@ -1949,6 +2172,7 @@ namespace RyzenQuietPro
             if (_pnlGpuGraph.Visible) _pnlGpuGraph.Invalidate();
             if (_pnlVramGraph.Visible) _pnlVramGraph.Invalidate();
             if (_pnlDiskGraph.Visible) _pnlDiskGraph.Invalidate();
+            if (_pnlDiskLegend.Visible) _pnlDiskLegend.Invalidate();
             if (_pnlFansGraph.Visible) _pnlFansGraph.Invalidate();
         }
 
@@ -2173,9 +2397,16 @@ namespace RyzenQuietPro
 
         private void DrawDiskGraph(object? sender, PaintEventArgs e)
         {
-            Color stroke = Color.FromArgb(6, 182, 212);
-            Color fill = Color.FromArgb(60, 6, 182, 212);
-            DrawGraphInternal(e.Graphics, _pnlDiskGraph, _hardware.Disk.History, stroke, fill);
+            if (_settings.EnhancedDiskMode && _hardware.Disk.Drives.Count > 0)
+            {
+                DrawMultiDiskGraphInternal(e.Graphics, _pnlDiskGraph);
+            }
+            else
+            {
+                Color stroke = Color.FromArgb(6, 182, 212);
+                Color fill = Color.FromArgb(60, 6, 182, 212);
+                DrawGraphInternal(e.Graphics, _pnlDiskGraph, _hardware.Disk.History, stroke, fill);
+            }
         }
 
         private void DrawFansGraph(object? sender, PaintEventArgs e)
@@ -3017,6 +3248,138 @@ namespace RyzenQuietPro
             using var tempPen = new Pen(GpuTempColor, 1.4f);
             tempPen.DashPattern = new float[] { 3.5f, 2.5f };
             g.DrawLines(tempPen, points);
+        }
+
+        private void ToggleDiskLegend()
+        {
+            _settings.DiskLegendExpanded = !_settings.DiskLegendExpanded;
+            _btnDiskExpand.Text = _settings.DiskLegendExpanded ? "▲" : "▼";
+            _toolTip.SetToolTip(_btnDiskExpand, _settings.DiskLegendExpanded ? Loc.Get("DiskLegendCollapse") : Loc.Get("DiskLegendExpand"));
+
+            int driveCount = Math.Max(1, _hardware.Disk.Drives.Count);
+            int diskLegendH = Math.Clamp(driveCount * 22 + 6, 44, 132);
+
+            if (_settings.DiskLegendExpanded)
+            {
+                var screen = Screen.FromControl(this);
+                int addH = Math.Min(120, diskLegendH);
+                if (this.Bottom + addH < screen.WorkingArea.Bottom)
+                {
+                    this.Height += addH;
+                }
+            }
+            else
+            {
+                int subH = Math.Min(120, diskLegendH);
+                if (this.Height - subH >= 480)
+                {
+                    this.Height -= subH;
+                }
+            }
+
+            _settings.Save();
+            LayoutComponents();
+            this.Invalidate();
+        }
+
+        private void DrawMultiDiskGraphInternal(Graphics g, Panel pnl)
+        {
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+
+            int w = pnl.Width;
+            int h = pnl.Height;
+            if (w <= 1 || h <= 1) return;
+
+            // Grid lines (50%)
+            using var gridPen = new Pen(Color.FromArgb(32, 32, 38), 1f);
+            int midY = h / 2;
+            g.DrawLine(gridPen, 0, midY, w, midY);
+
+            var allDrives = _hardware.Disk.Drives;
+            var visibleDrives = allDrives.Where(d => _settings.IsDiskVisible(d.Id, d.InstanceName)).ToList();
+            if (visibleDrives.Count == 0)
+            {
+                Color dimStroke = Color.FromArgb(60, 6, 182, 212);
+                Color dimFill = Color.FromArgb(20, 6, 182, 212);
+                DrawGraphInternal(g, pnl, _hardware.Disk.History, dimStroke, dimFill);
+                return;
+            }
+
+            var peakDrive = visibleDrives.OrderByDescending(d => d.LoadPercent).FirstOrDefault();
+
+            for (int d = visibleDrives.Count - 1; d >= 0; d--)
+            {
+                var drive = visibleDrives[d];
+                var history = drive.History;
+                if (history.Count < 2) continue;
+
+                Color color = drive.Color;
+                var points = new PointF[history.Count];
+                float stepX = (float)w / (history.Count - 1);
+
+                for (int i = 0; i < history.Count; i++)
+                {
+                    float val = Math.Clamp(history[i], 0f, 100f);
+                    float x = i * stepX;
+                    float y = h - (h * (val / 100f));
+                    points[i] = new PointF(x, y);
+                }
+
+                if (drive == peakDrive && drive.LoadPercent > 1f)
+                {
+                    using var path = new GraphicsPath();
+                    path.AddLines(points);
+                    path.AddLine(w, h, 0, h);
+                    path.CloseFigure();
+
+                    Color topFill = Color.FromArgb(45, color.R, color.G, color.B);
+                    Color botFill = Color.FromArgb(5, 16, 18, 22);
+                    using var brush = new LinearGradientBrush(new Point(0, 0), new Point(0, h), topFill, botFill);
+                    g.FillPath(brush, path);
+                }
+
+                using var linePen = new Pen(color, drive == peakDrive ? 2.0f : 1.5f);
+                if (visibleDrives.Count > 4 && d % 2 == 1)
+                {
+                    linePen.DashStyle = DashStyle.Dash;
+                }
+                g.DrawLines(linePen, points);
+            }
+
+            // Draw real-time active badges on top-right of graph
+            var activeDrives = visibleDrives.Where(d => d.LoadPercent > 0.5f)
+                .OrderByDescending(d => d.LoadPercent)
+                .Take(3)
+                .ToList();
+
+            if (activeDrives.Count > 0)
+            {
+                using var font = new Font("Segoe UI", 7.5f, FontStyle.Bold);
+                int badgeX = w - 8;
+                int badgeY = 3;
+
+                for (int i = 0; i < activeDrives.Count; i++)
+                {
+                    var drive = activeDrives[i];
+                    string ltr = !string.IsNullOrEmpty(drive.DriveLetters) ? drive.DriveLetters : $"#{drive.PhysicalIndex}";
+                    string text = $"{ltr}: {drive.LoadPercent:F0}%";
+                    Size sz = TextRenderer.MeasureText(g, text, font, Size.Empty, TextFormatFlags.NoPadding);
+
+                    badgeX -= sz.Width + 10;
+                    if (badgeX < 6) break;
+
+                    using (var bgBrush = new SolidBrush(Color.FromArgb(190, 16, 18, 24)))
+                    using (var borderPen = new Pen(drive.Color, 1f))
+                    {
+                        var rect = new Rectangle(badgeX, badgeY, sz.Width + 8, 15);
+                        g.FillRectangle(bgBrush, rect);
+                        g.DrawRectangle(borderPen, rect);
+                    }
+
+                    TextRenderer.DrawText(g, text, font, new Point(badgeX + 4, badgeY + 1), drive.Color, TextFormatFlags.NoPadding);
+                    badgeX -= 3;
+                }
+            }
         }
 
         private void DrawCoresMatrix(object? sender, PaintEventArgs e)

@@ -41,6 +41,29 @@ namespace RyzenQuietPro
         public bool ShowGpuFanSpeed { get; set; } = true;
         public bool ShowVramGraph { get; set; } = true;
         public bool ShowDiskGraph { get; set; } = true;
+        public bool EnhancedDiskMode { get; set; } = false;
+        public bool DiskLegendExpanded { get; set; } = false;
+        public System.Collections.Generic.List<string> HiddenDiskIds { get; set; } = new();
+
+        public bool IsDiskVisible(string diskId, string instanceName)
+        {
+            if (HiddenDiskIds == null || HiddenDiskIds.Count == 0) return true;
+            return !HiddenDiskIds.Contains(diskId) && !HiddenDiskIds.Contains(instanceName);
+        }
+
+        public void SetDiskVisibility(string diskId, bool visible)
+        {
+            HiddenDiskIds ??= new();
+            if (visible)
+            {
+                HiddenDiskIds.Remove(diskId);
+            }
+            else
+            {
+                if (!HiddenDiskIds.Contains(diskId))
+                    HiddenDiskIds.Add(diskId);
+            }
+        }
         public bool ShowFanGraph { get; set; } = false;
         public bool EnableFanAddon { get; set; } = false;
         public int FanVisualMode { get; set; } = 0; // 0 = Graph (default), 1 = 1 Row (Icons), 2 = Grid (Multi-row)

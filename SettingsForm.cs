@@ -92,6 +92,7 @@ namespace RyzenQuietPro
         private CheckBox _chkGpuFan = null!;
         private CheckBox _chkVramGraph = null!;
         private CheckBox _chkDiskGraph = null!;
+        private CheckBox _chkEnhancedDiskMode = null!;
         private CheckBox _chkFanGraph = null!;
         private Label _lblFanStatus = null!;
         private Button _btnFanToggle = null!;
@@ -414,7 +415,7 @@ namespace RyzenQuietPro
 
             // ================= 2. GRAPHS & MODULES CARD =================
             // Single vertical column (1 row per item) - spacious and slender
-            int cardGraphsH = multiGpu ? 526 : 496;
+            int cardGraphsH = multiGpu ? 552 : 522;
             var cardGraphs = CreateCard(cardX, curY, cardW, cardGraphsH);
             _pnlBody.Controls.Add(cardGraphs);
 
@@ -443,10 +444,21 @@ namespace RyzenQuietPro
             _chkGpuTemp = CreateCheckbox(Loc.Get("GpuTemp"), chkX, chkY + (chkGap * 6), _settings.ShowGpuTempLine, v => _settings.ShowGpuTempLine = v);
             _chkGpuFan = CreateCheckbox(Loc.Get("GpuFan"), chkX, chkY + (chkGap * 7), _settings.ShowGpuFanSpeed, v => _settings.ShowGpuFanSpeed = v);
             _chkVramGraph = CreateCheckbox(Loc.Get("VramGraph"), chkX, chkY + (chkGap * 8), _settings.ShowVramGraph, v => _settings.ShowVramGraph = v);
-            _chkDiskGraph = CreateCheckbox(Loc.Get("DiskGraph"), chkX, chkY + (chkGap * 9), _settings.ShowDiskGraph, v => _settings.ShowDiskGraph = v);
+            _chkDiskGraph = CreateCheckbox(Loc.Get("DiskGraph"), chkX, chkY + (chkGap * 9), _settings.ShowDiskGraph, v => {
+                _settings.ShowDiskGraph = v;
+                _chkEnhancedDiskMode.Enabled = v;
+                _settings.Save();
+                _onSettingsUpdated?.Invoke();
+            });
+            _chkEnhancedDiskMode = CreateCheckbox(Loc.Get("EnhancedDiskMode"), chkX + 16, chkY + (chkGap * 10), _settings.EnhancedDiskMode, v => {
+                _settings.EnhancedDiskMode = v;
+                _settings.Save();
+                _onSettingsUpdated?.Invoke();
+            });
+            _chkEnhancedDiskMode.Enabled = _settings.ShowDiskGraph;
 
             // Tier 1: Checkbox on left + Active/Start status button on right + Folder button
-            int fanY = chkY + (chkGap * 10);
+            int fanY = chkY + (chkGap * 11);
             _chkFanGraph = CreateCheckbox(Loc.Get("FanGraph"), chkX, fanY + 3, _settings.ShowFanGraph, v => {
                 _settings.ShowFanGraph = v;
                 _settings.Save();
@@ -640,7 +652,7 @@ namespace RyzenQuietPro
             cardGraphs.Controls.AddRange(new Control[] {
                 _chkCpuGraph, _chkCpuCores, _chkTopProcesses,
                 _chkRamGraph, _chkGpuGraph, _chkGpuTemp, _chkGpuFan,
-                _chkVramGraph, _chkDiskGraph, _chkFanGraph,
+                _chkVramGraph, _chkDiskGraph, _chkEnhancedDiskMode, _chkFanGraph,
                 _lblFanStatus, _btnFanToggle, _btnFanFolder,
                 _btnFanModeGraph, _btnFanModeIcons, _btnFanModeGrid,
                 _btnFanSelect, _chkFanDemo,
@@ -1587,6 +1599,7 @@ namespace RyzenQuietPro
             _chkGpuFan.Text = Loc.Get("GpuFan");
             _chkVramGraph.Text = Loc.Get("VramGraph");
             _chkDiskGraph.Text = Loc.Get("DiskGraph");
+            _chkEnhancedDiskMode.Text = Loc.Get("EnhancedDiskMode");
             _chkFanGraph.Text = Loc.Get("FanGraph");
 
             if (_lblSecStopwatch != null) _lblSecStopwatch.Text = "⏱ " + Loc.Get("StopwatchSettings");

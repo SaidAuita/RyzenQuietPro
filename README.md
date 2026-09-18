@@ -1,12 +1,12 @@
 <div align="center">
 
-# ⚡ RyzenQuiet PRO (v4.0)
-**Sleek, lightweight hardware HUD & power-plan optimizer for Windows with AMD Ryzen CPB toggle, GPU power limiting & acoustic tuning, and modular fan monitoring.**
+# ⚡ RyzenQuiet PRO (v4.01)
+**Sleek, lightweight hardware HUD & power-plan optimizer for Windows with AMD Ryzen CPB toggle, GPU power limiting & acoustic tuning, enhanced multi-disk telemetry, and modular fan monitoring.**
 
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011%20(64--bit)-blue.svg)](#)
 [![.NET](https://img.shields.io/badge/.NET-8.0-purple.svg)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/Release-v4.0-orange.svg)](https://github.com/SaidAuita/RyzenQuietPro/releases)
+[![Release](https://img.shields.io/badge/Release-v4.01-orange.svg)](https://github.com/SaidAuita/RyzenQuietPro/releases)
 [![Telemetry](https://img.shields.io/badge/Telemetry-Zero%20%2F%20100%25%20Offline-brightgreen.svg)](#)
 
 <br/>
@@ -63,7 +63,7 @@ All subsystem graphs share a synchronized 60-second historical canvas rendered w
 * 🔵 **RAM Monitor:** Instant Win32 SMBIOS memory type & speed with Used / Total physical memory (e.g., `DDR5/4800 | 18.5 / 64.0 GB`) with 0% CPU overhead.
 * 🟣 **GPU Monitor:** High-precision GPU core load %, chip temperature (°C) with dashed curve, live **Power Limit & Fan RPM telemetry**, and real-time **Power Consumption in Watts** (`⚡ 136W`) via official signed NVIDIA NVML (`nvmlDeviceGetPowerUsage`). Supports AMD Radeon (ADL) and Windows GPU Engine fallbacks.
 * 🌸 **VRAM Monitor:** Dedicated video memory type, load %, and live usage (e.g., `GDDR6 | 1.5 / 6.0 GB`).
-* 🩵 **DISK Monitor (Smart Auto-Focus):** Unified storage activity graph with Read / Write throughput in MB/s (`R:12.4 W:45.0 MB/s`). Dynamically auto-focuses on whichever drive is currently under heavy load (e.g., `[Z: (games)]` or `[C: (Windows)]`).
+* 🩵 **DISK Monitor (Smart Auto-Focus & Enhanced Multi-Disk Mode v4.01):** Unified storage activity graph with Read / Write throughput in MB/s (`R:12.4 W:45.0 MB/s`) and dynamic auto-focus on the heaviest loaded drive. When **Enhanced Multi-Disk Mode** is enabled, the graph renders each physical storage drive (NVMe SSD, SATA, HDD) with an individual vibrant color, maps all logical partitions (`C:, D: [Samsung 980 PRO 1TB]`), and provides an interactive expand/collapse legend with one-click toggles to show or hide any disk.
 * ❄️ **FAN Speed Monitor (Modular Addon with 3 Visualization Modes & Hardware Spin Test):**
   * **3 Switchable Modes in Settings:**
     * **Multi-trace Graph (`📈`):** Synchronized real-time RPM history curves.
@@ -173,8 +173,8 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 <a name="русский"></a>
 <div align="center">
 
-# ⚡ RyzenQuiet PRO (v4.0) — Описание на русском
-**Стильный, легковесный аппаратный HUD-монитор и менеджер профилей питания для Windows с мгновенным отключением CPB у процессоров AMD Ryzen, акустическим контролем и ограничением мощности видеокарт (GPU Power Limiting) и модульным мониторингом вентиляторов.**
+# ⚡ RyzenQuiet PRO (v4.01) — Описание на русском
+**Стильный, легковесный аппаратный HUD-монитор и менеджер профилей питания для Windows с мгновенным отключением CPB у процессоров AMD Ryzen, акустическим контролем и ограничением мощности видеокарт (GPU Power Limiting), расширенным мониторингом накопителей и модульным мониторингом вентиляторов.**
 
 </div>
 
@@ -205,7 +205,7 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 * 🔵 **Монитор RAM:** Опрос типа и частоты памяти через Win32 SMBIOS Type 17 с отображением занятой и общей памяти (например, `DDR5/4800 | 18.5 / 64.0 GB`) с 0% нагрузки на CPU.
 * 🟣 **Монитор GPU:** Нагрузка графического чипа в %, температура ядра (°C) с пунктирной линией, статус **Power Limit & Fan RPM** и **реальное энергопотребление в ваттах** (`⚡ 136W`) через официальный подписанный NVIDIA NVML (`nvmlDeviceGetPowerUsage`). Поддержка AMD Radeon (ADL) и Windows GPU Engine.
 * 🌸 **Монитор VRAM:** Тип видеопамяти, процент нагрузки и точный объём занятой VRAM (например, `GDDR6 | 1.5 / 6.0 GB`).
-* 🩵 **Монитор накопителей (DISK) с умным фокусом:** Общая дисковая активность и скорость чтения/записи в МБ/с (`R:12.4 W:45.0 MB/s`). Автофокус на самом активном накопителе.
+* 🩵 **Монитор накопителей (DISK) с умным фокусом и расширенным режимом (v4.01):** Общая дисковая активность и скорость чтения/записи в МБ/с (`R:12.4 W:45.0 MB/s`) с авто-фокусом на самом нагруженном диске. При включении **расширенного режима** в настройках график выводит отдельную цветную линию для каждого физического диска (NVMe SSD, SATA, HDD), маппит все логические разделы (`C:, D: [Samsung 980 PRO 1TB]`) и предоставляет интерактивную легенду в основном окне с возможностью включения/отключения любого накопителя в один клик.
 * ❄️ **Монитор кулеров (Изолированное дополнение с 3 режимами и тестом кулеров):**
   * **3 переключаемых режима в настройках:**
     * **График (`📈`):** Синхронизированные кривые RPM в реальном времени.
