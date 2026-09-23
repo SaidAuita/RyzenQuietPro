@@ -1,10 +1,12 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 
 namespace RyzenQuietPro
 {
@@ -21,6 +23,19 @@ namespace RyzenQuietPro
         public double TotalDiskMbPerSec => ReadMbPerSec + WriteMbPerSec;
         public string ExePath { get; set; } = "";
         public Image? Icon { get; set; }
+    }
+
+    public class ProcessAppGroup
+    {
+        public string ExeName { get; set; } = "";
+        public string FriendlyName { get; set; } = "";
+        public int ProcessCount { get; set; }
+        public List<int> Pids { get; set; } = new();
+        public double TotalCpuPercent { get; set; }
+        public long TotalWorkingSetBytes { get; set; }
+        public string RamFormatted { get; set; } = "";
+        public Image? Icon { get; set; }
+        public string ExePath { get; set; } = "";
     }
 
     public class ProcessMonitor : IDisposable
@@ -55,19 +70,22 @@ namespace RyzenQuietPro
         }
 
         private readonly int _processorCount;
-        private readonly Dictionary<int, long> _prevCpuTimes = new();
-        private readonly Dictionary<int, (long read, long write)> _prevIoTimes = new();
+        private Dictionary<int, long> _prevCpuTimes = new();
+        private Dictionary<int, (long read, long write)> _prevIoTimes = new();
         private DateTime _prevSampleTime = DateTime.MinValue;
         private readonly object _lock = new();
+        private readonly object _sampleLock = new();
 
-        private static readonly Dictionary<string, string> _nameCache = new(StringComparer.OrdinalIgnoreCase);
-        private static readonly Dictionary<string, Image?> _iconCache = new(StringComparer.OrdinalIgnoreCase);
-        private static readonly Dictionary<string, string> _pathCache = new(StringComparer.OrdinalIgnoreCase);
+        private static readonly ConcurrentDictionary<string, (string Name, Image? Icon, string Path)> _detailsCache = new(StringComparer.OrdinalIgnoreCase);
 
         private List<ProcessMetric> _topProcesses = new();
         private List<ProcessMetric> _topDiskProcesses = new();
+        private readonly Dictionary<string, double> _appCpuMap = new(StringComparer.OrdinalIgnoreCase);
+        private readonly HashSet<string> _runningAppNames = new(StringComparer.OrdinalIgnoreCase);
 
         public bool IsEnabled { get; set; } = false;
+        public bool HasActiveAppTriggers { get; set; } = false;
+
 
         public IReadOnlyList<ProcessMetric> TopProcesses
         {
@@ -98,17 +116,27 @@ namespace RyzenQuietPro
 
         public void Sample()
         {
-            if (!IsEnabled)
+            if (!IsEnabled && !HasActiveAppTriggers)
             {
                 lock (_lock)
                 {
                     if (_topProcesses.Count > 0) _topProcesses.Clear();
                     if (_topDiskProcesses.Count > 0) _topDiskProcesses.Clear();
+                    _appCpuMap.Clear();
+                    _runningAppNames.Clear();
                 }
-                _prevCpuTimes.Clear();
-                _prevIoTimes.Clear();
-                _prevSampleTime = DateTime.MinValue;
+                lock (_sampleLock)
+                {
+                    _prevCpuTimes = new Dictionary<int, long>();
+                    _prevIoTimes = new Dictionary<int, (long read, long write)>();
+                    _prevSampleTime = DateTime.MinValue;
+                }
                 return;
+            }
+
+            if (!Monitor.TryEnter(_sampleLock))
+            {
+                return; // Another thread is sampling processes, skip overlapping run
             }
 
             try
@@ -119,8 +147,8 @@ namespace RyzenQuietPro
                 if (_prevSampleTime == DateTime.MinValue || _prevCpuTimes.Count == 0)
                 {
                     // First sample: record baseline
-                    _prevCpuTimes.Clear();
-                    _prevIoTimes.Clear();
+                    _prevCpuTimes = new Dictionary<int, long>(currentSnapshots.Count);
+                    _prevIoTimes = new Dictionary<int, (long read, long write)>(currentSnapshots.Count);
                     foreach (var s in currentSnapshots)
                     {
                         _prevCpuTimes[s.Pid] = s.TotalCpuTime;
@@ -139,6 +167,7 @@ namespace RyzenQuietPro
                 var currentPids = new HashSet<int>(currentSnapshots.Count);
                 var candidates = new List<ProcessRawSnapshot>();
                 var ioCandidates = new List<(ProcessRawSnapshot snap, double rMb, double wMb, double totMb)>();
+                var appCpuDeltas = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
 
                 // Build candidate list of non-idle processes
                 foreach (var snap in currentSnapshots)
@@ -152,6 +181,10 @@ namespace RyzenQuietPro
                         if (delta > 0)
                         {
                             candidates.Add(snap);
+                            if (!string.IsNullOrEmpty(snap.Name))
+                            {
+                                appCpuDeltas[snap.Name] = (appCpuDeltas.TryGetValue(snap.Name, out long ad) ? ad : 0) + delta;
+                            }
                         }
                     }
 
@@ -172,62 +205,65 @@ namespace RyzenQuietPro
                     }
                 }
 
-                // Sort CPU candidates by delta descending to find top 5
-                candidates.Sort((a, b) => {
-                    long aDelta = a.TotalCpuTime - (_prevCpuTimes.TryGetValue(a.Pid, out var at) ? at : 0);
-                    long bDelta = b.TotalCpuTime - (_prevCpuTimes.TryGetValue(b.Pid, out var bt) ? bt : 0);
-                    return bDelta.CompareTo(aDelta);
-                });
+                var newTop = new List<ProcessMetric>();
+                var newTopDisk = new List<ProcessMetric>();
 
-                int takeCount = Math.Min(5, candidates.Count);
-                var newTop = new List<ProcessMetric>(takeCount);
-
-                for (int i = 0; i < takeCount; i++)
+                if (IsEnabled)
                 {
-                    var c = candidates[i];
-                    long delta = c.TotalCpuTime - (_prevCpuTimes.TryGetValue(c.Pid, out var prev) ? prev : 0);
-                    double cpuPct = Math.Clamp((double)delta / totalCapacityTime * 100.0, 0.0, 100.0);
-
-                    var details = ResolveProcessDetails(c.Pid, c.Name);
-
-                    newTop.Add(new ProcessMetric
-                    {
-                        Pid = c.Pid,
-                        ExeName = c.Name,
-                        FriendlyName = details.Name,
-                        CpuPercent = cpuPct,
-                        WorkingSetBytes = c.WorkingSet,
-                        RamFormatted = FormatRam(c.WorkingSet),
-                        ExePath = details.Path,
-                        Icon = details.Icon
+                    // Sort CPU candidates by delta descending to find top 5
+                    candidates.Sort((a, b) => {
+                        long aDelta = a.TotalCpuTime - (_prevCpuTimes.TryGetValue(a.Pid, out var at) ? at : 0);
+                        long bDelta = b.TotalCpuTime - (_prevCpuTimes.TryGetValue(b.Pid, out var bt) ? bt : 0);
+                        return bDelta.CompareTo(aDelta);
                     });
-                }
 
-                // Sort Disk IO candidates by throughput descending to find top 5
-                ioCandidates.Sort((a, b) => b.totMb.CompareTo(a.totMb));
-                int diskTakeCount = Math.Min(5, ioCandidates.Count);
-                var newTopDisk = new List<ProcessMetric>(diskTakeCount);
-                for (int i = 0; i < diskTakeCount; i++)
-                {
-                    var item = ioCandidates[i];
-                    var details = ResolveProcessDetails(item.snap.Pid, item.snap.Name);
-                    newTopDisk.Add(new ProcessMetric
+                    int takeCount = Math.Min(5, candidates.Count);
+                    for (int i = 0; i < takeCount; i++)
                     {
-                        Pid = item.snap.Pid,
-                        ExeName = item.snap.Name,
-                        FriendlyName = details.Name,
-                        WorkingSetBytes = item.snap.WorkingSet,
-                        RamFormatted = FormatRam(item.snap.WorkingSet),
-                        ReadMbPerSec = item.rMb,
-                        WriteMbPerSec = item.wMb,
-                        ExePath = details.Path,
-                        Icon = details.Icon
-                    });
+                        var c = candidates[i];
+                        long delta = c.TotalCpuTime - (_prevCpuTimes.TryGetValue(c.Pid, out var prev) ? prev : 0);
+                        double cpuPct = Math.Clamp((double)delta / totalCapacityTime * 100.0, 0.0, 100.0);
+
+                        var details = ResolveProcessDetails(c.Pid, c.Name);
+
+                        newTop.Add(new ProcessMetric
+                        {
+                            Pid = c.Pid,
+                            ExeName = c.Name,
+                            FriendlyName = details.Name,
+                            CpuPercent = cpuPct,
+                            WorkingSetBytes = c.WorkingSet,
+                            RamFormatted = FormatRam(c.WorkingSet),
+                            ExePath = details.Path,
+                            Icon = details.Icon
+                        });
+                    }
+
+                    // Sort Disk IO candidates by throughput descending to find top 5
+                    ioCandidates.Sort((a, b) => b.totMb.CompareTo(a.totMb));
+                    int diskTakeCount = Math.Min(5, ioCandidates.Count);
+                    for (int i = 0; i < diskTakeCount; i++)
+                    {
+                        var item = ioCandidates[i];
+                        var details = ResolveProcessDetails(item.snap.Pid, item.snap.Name);
+                        newTopDisk.Add(new ProcessMetric
+                        {
+                            Pid = item.snap.Pid,
+                            ExeName = item.snap.Name,
+                            FriendlyName = details.Name,
+                            WorkingSetBytes = item.snap.WorkingSet,
+                            RamFormatted = FormatRam(item.snap.WorkingSet),
+                            ReadMbPerSec = item.rMb,
+                            WriteMbPerSec = item.wMb,
+                            ExePath = details.Path,
+                            Icon = details.Icon
+                        });
+                    }
                 }
 
                 // Update baseline
-                _prevCpuTimes.Clear();
-                _prevIoTimes.Clear();
+                _prevCpuTimes = new Dictionary<int, long>(currentSnapshots.Count);
+                _prevIoTimes = new Dictionary<int, (long read, long write)>(currentSnapshots.Count);
                 foreach (var s in currentSnapshots)
                 {
                     _prevCpuTimes[s.Pid] = s.TotalCpuTime;
@@ -239,12 +275,100 @@ namespace RyzenQuietPro
                 {
                     _topProcesses = newTop;
                     _topDiskProcesses = newTopDisk;
+                    _runningAppNames.Clear();
+                    foreach (var s in currentSnapshots)
+                    {
+                        if (s.Pid != 0 && !string.IsNullOrEmpty(s.Name))
+                            _runningAppNames.Add(s.Name);
+                    }
+                    _appCpuMap.Clear();
+                    foreach (var kvp in appCpuDeltas)
+                    {
+                        double pct = Math.Clamp((double)kvp.Value / totalCapacityTime * 100.0, 0.0, 100.0);
+                        _appCpuMap[kvp.Key] = pct;
+                    }
                 }
             }
             catch (Exception ex)
             {
                 Logger.Log($"ProcessMonitor sample error: {ex.Message}");
+                _prevCpuTimes = new Dictionary<int, long>();
+                _prevIoTimes = new Dictionary<int, (long read, long write)>();
+                _prevSampleTime = DateTime.MinValue;
             }
+            finally
+            {
+                Monitor.Exit(_sampleLock);
+            }
+        }
+
+        public double GetAppCpuPercent(string exeName)
+        {
+            if (string.IsNullOrWhiteSpace(exeName)) return 0.0;
+            lock (_lock)
+            {
+                return _appCpuMap.TryGetValue(exeName, out double val) ? val : 0.0;
+            }
+        }
+
+        public bool IsAppRunning(string exeName)
+        {
+            if (string.IsNullOrWhiteSpace(exeName)) return false;
+            lock (_lock)
+            {
+                return _runningAppNames.Contains(exeName);
+            }
+        }
+
+        public List<ProcessAppGroup> GetRunningAppGroups()
+        {
+            var snapshots = QuerySystemProcesses();
+            var groups = new Dictionary<string, ProcessAppGroup>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var s in snapshots)
+            {
+                if (s.Pid == 0 || string.IsNullOrEmpty(s.Name)) continue;
+
+                if (!groups.TryGetValue(s.Name, out var group))
+                {
+                    var details = ResolveProcessDetails(s.Pid, s.Name);
+                    group = new ProcessAppGroup
+                    {
+                        ExeName = s.Name,
+                        FriendlyName = details.Name,
+                        ExePath = details.Path,
+                        Icon = details.Icon,
+                        ProcessCount = 0,
+                        TotalWorkingSetBytes = 0
+                    };
+                    groups[s.Name] = group;
+                }
+
+                group.ProcessCount++;
+                group.Pids.Add(s.Pid);
+                group.TotalWorkingSetBytes += s.WorkingSet;
+            }
+
+            lock (_lock)
+            {
+                foreach (var g in groups.Values)
+                {
+                    g.TotalCpuPercent = _appCpuMap.TryGetValue(g.ExeName, out double cpu) ? cpu : 0.0;
+                    g.RamFormatted = FormatRam(g.TotalWorkingSetBytes);
+                }
+            }
+
+            var result = new List<ProcessAppGroup>(groups.Values);
+            result.Sort((a, b) =>
+            {
+                int cmp = b.TotalCpuPercent.CompareTo(a.TotalCpuPercent);
+                if (cmp != 0) return cmp;
+                cmp = b.TotalWorkingSetBytes.CompareTo(a.TotalWorkingSetBytes);
+                if (cmp != 0) return cmp;
+                return string.Compare(a.FriendlyName, b.FriendlyName, StringComparison.OrdinalIgnoreCase);
+            });
+
+            return result;
         }
 
         private static List<ProcessRawSnapshot> QuerySystemProcesses()
@@ -348,19 +472,14 @@ namespace RyzenQuietPro
         {
             if (string.IsNullOrEmpty(exeName)) return ("Unknown", null, "");
 
+            if (_detailsCache.TryGetValue(exeName, out var cached))
+            {
+                return cached;
+            }
+
             string cleanName = exeName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
                 ? exeName[..^4]
                 : exeName;
-
-            lock (_nameCache)
-            {
-                if (_nameCache.TryGetValue(exeName, out var cachedName) &&
-                    _iconCache.TryGetValue(exeName, out var cachedIcon) &&
-                    _pathCache.TryGetValue(exeName, out var cachedPath))
-                {
-                    return (cachedName, cachedIcon, cachedPath);
-                }
-            }
 
             string friendlyName = cleanName;
             if (_knownServiceNames.TryGetValue(cleanName, out var knownName))
@@ -416,14 +535,9 @@ namespace RyzenQuietPro
                 // Process exited or access denied
             }
 
-            lock (_nameCache)
-            {
-                _nameCache[exeName] = friendlyName;
-                _iconCache[exeName] = iconImage;
-                _pathCache[exeName] = foundPath;
-            }
-
-            return (friendlyName, iconImage, foundPath);
+            var result = (friendlyName, iconImage, foundPath);
+            _detailsCache[exeName] = result;
+            return result;
         }
 
         private static string? GetProcessPath(int pid)
@@ -458,16 +572,11 @@ namespace RyzenQuietPro
 
         public void Dispose()
         {
-            lock (_iconCache)
+            foreach (var item in _detailsCache.Values)
             {
-                foreach (var img in _iconCache.Values)
-                {
-                    img?.Dispose();
-                }
-                _iconCache.Clear();
-                _nameCache.Clear();
-                _pathCache.Clear();
+                item.Icon?.Dispose();
             }
+            _detailsCache.Clear();
         }
     }
 }

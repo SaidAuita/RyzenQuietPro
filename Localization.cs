@@ -28,7 +28,7 @@ namespace RyzenQuietPro
         {
             ["ru"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.03",
+                ["AppTitle"] = "RyzenQuiet PRO v4.04",
                 ["Silent"] = "Тихий",
                 ["SilentFull"] = "🌿 Тихий (99%)",
                 ["Boost"] = "Турбо",
@@ -73,6 +73,34 @@ namespace RyzenQuietPro
                 ["StopwatchHysteresis"] = "Гистерезис (задержка)",
                 ["StopwatchHysteresisTip"] = "Задержка остановки при кратковременном падении мощности (смена сцен, загрузка)",
                 ["Sec"] = "сек",
+                ["StopwatchAdd"] = "+ Добавить секундомер",
+                ["StopwatchEdit"] = "Изменить",
+                ["StopwatchDelete"] = "Удалить",
+                ["StopwatchName"] = "Название секундомера:",
+                ["StopwatchColor"] = "Цвет оформления:",
+                ["StopwatchTargetApp"] = "Отслеживаемая программа:",
+                ["StopwatchAllApps"] = "Любая программа",
+                ["StopwatchAllAppsDesc"] = "Срабатывать при нагрузке от любой программы",
+                ["StopwatchSpecificAppDesc"] = "Срабатывать только для определенной программы",
+                ["StopwatchSelectApp"] = "Выбор программы для отслеживания",
+                ["StopwatchSelectAppBtn"] = "Выбрать...",
+                ["StopwatchSearchProc"] = "Поиск среди запущенных процессов:",
+                ["StopwatchColApp"] = "Приложение",
+                ["StopwatchColProcs"] = "Процессов",
+                ["StopwatchAppsFound"] = "приложений найдено",
+                ["StopwatchNoneSelected"] = "Программа не выбрана",
+                ["StopwatchListTitle"] = "Секундомеры и привязка к программам:",
+                ["StopwatchAnyProgram"] = "Любая программа",
+                ["StopwatchProcs"] = "проц.",
+                ["StopwatchCustomColor"] = "Свой цвет...",
+                ["StopwatchShowOnCpuGraph"] = "Отображать график на шкале CPU при запуске",
+                ["StopwatchScale_Auto"] = "Авто",
+                ["StopwatchScale_Off"] = "Выкл",
+                ["StopwatchScaleTip"] = "Масштаб кривой нагрузки процесса на графике CPU (кликните для переключения: Авто, 2x, 4x, 8x, 16x, 1x, Выкл)",
+                ["Select"] = "Выбрать",
+                ["Cancel"] = "Отмена",
+                ["Save"] = "Сохранить",
+
                 
                 // Tooltips
                 ["TipInfo"] = "Характеристики системы и совместимость",
@@ -85,6 +113,9 @@ namespace RyzenQuietPro
                 // Menu: Graphs
                 ["MenuGraphs"] = "Графики и модули:",
                 ["CpuGraph"] = "📊 График CPU (Загрузка)",
+                ["CpuGraphScaleTitle"] = "Масштаб графика CPU:",
+                ["CpuGraphScaleTip"] = "Масштаб графика CPU (кликните для переключения: 1x, 2x, 4x, 6x, 8x, Авто)",
+                ["ScaleAuto"] = "Авто",
                 ["CpuCores"] = "🔳 Матрица ядер CPU (16/32)",
                 ["TopProcesses"] = "⚡ Топ-5 процессов по CPU",
                 ["RamGraph"] = "🧠 График RAM (Память)",
@@ -189,7 +220,7 @@ namespace RyzenQuietPro
             },
             ["en"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.03",
+                ["AppTitle"] = "RyzenQuiet PRO v4.04",
                 ["Silent"] = "Silent",
                 ["SilentFull"] = "🌿 Silent (99%)",
                 ["Boost"] = "Boost",
@@ -233,6 +264,34 @@ namespace RyzenQuietPro
                 ["StopwatchHysteresis"] = "Hysteresis delay",
                 ["StopwatchHysteresisTip"] = "Delay before stopping when power drops briefly (loading screens, transitions)",
                 ["Sec"] = "sec",
+                ["StopwatchAdd"] = "+ Add Stopwatch",
+                ["StopwatchEdit"] = "Edit",
+                ["StopwatchDelete"] = "Delete",
+                ["StopwatchName"] = "Stopwatch Name:",
+                ["StopwatchColor"] = "Accent Color:",
+                ["StopwatchTargetApp"] = "Target Application:",
+                ["StopwatchAllApps"] = "Any Application",
+                ["StopwatchAllAppsDesc"] = "Trigger on load from any application",
+                ["StopwatchSpecificAppDesc"] = "Trigger only for a specific application",
+                ["StopwatchSelectApp"] = "Select Application to Track",
+                ["StopwatchSelectAppBtn"] = "Select...",
+                ["StopwatchSearchProc"] = "Search running processes:",
+                ["StopwatchColApp"] = "Application",
+                ["StopwatchColProcs"] = "Processes",
+                ["StopwatchAppsFound"] = "applications found",
+                ["StopwatchNoneSelected"] = "No application selected",
+                ["StopwatchListTitle"] = "Stopwatches & App Triggers:",
+                ["StopwatchAnyProgram"] = "Any application",
+                ["StopwatchProcs"] = "procs",
+                ["StopwatchCustomColor"] = "Custom color...",
+                ["StopwatchShowOnCpuGraph"] = "Show load on CPU graph when running",
+                ["StopwatchScale_Auto"] = "Auto",
+                ["StopwatchScale_Off"] = "Off",
+                ["StopwatchScaleTip"] = "Process CPU curve scale (click to cycle: Auto, 2x, 4x, 8x, 16x, 1x, Off)",
+                ["Select"] = "Select",
+                ["Cancel"] = "Cancel",
+                ["Save"] = "Save",
+
 
                 ["TipInfo"] = "System Specs & Hardware Support",
                 ["TipPinOn"] = "Always On Top (Pinned)",
@@ -243,6 +302,9 @@ namespace RyzenQuietPro
 
                 ["MenuGraphs"] = "Graphs & Modules:",
                 ["CpuGraph"] = "📊 CPU Load Graph",
+                ["CpuGraphScaleTitle"] = "CPU Graph Scale:",
+                ["CpuGraphScaleTip"] = "CPU Graph Scale (click to toggle: 1x, 2x, 4x, 6x, 8x, Auto)",
+                ["ScaleAuto"] = "Auto",
                 ["CpuCores"] = "🔳 CPU Cores Heatmap (16/32)",
                 ["TopProcesses"] = "⚡ Top 5 CPU Processes",
                 ["RamGraph"] = "🧠 RAM Usage Graph",
@@ -345,7 +407,7 @@ namespace RyzenQuietPro
             },
             ["de"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.03",
+                ["AppTitle"] = "RyzenQuiet PRO v4.04",
                 ["Silent"] = "Leise",
                 ["SilentFull"] = "🌿 Leise (99%)",
                 ["Boost"] = "Boost",
@@ -466,7 +528,7 @@ namespace RyzenQuietPro
             },
             ["es"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.03",
+                ["AppTitle"] = "RyzenQuiet PRO v4.04",
                 ["Silent"] = "Silencioso",
                 ["SilentFull"] = "🌿 Silencioso (99%)",
                 ["Boost"] = "Turbo",
@@ -587,7 +649,7 @@ namespace RyzenQuietPro
             },
             ["fr"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.03",
+                ["AppTitle"] = "RyzenQuiet PRO v4.04",
                 ["Silent"] = "Silencieux",
                 ["SilentFull"] = "🌿 Silencieux (99%)",
                 ["Boost"] = "Turbo",
@@ -708,7 +770,7 @@ namespace RyzenQuietPro
             },
             ["ja"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.03",
+                ["AppTitle"] = "RyzenQuiet PRO v4.04",
                 ["Silent"] = "静音",
                 ["SilentFull"] = "🌿 静音モード (99%)",
                 ["Boost"] = "ブースト",
@@ -829,7 +891,7 @@ namespace RyzenQuietPro
             },
             ["pt"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.03",
+                ["AppTitle"] = "RyzenQuiet PRO v4.04",
                 ["Silent"] = "Silencioso",
                 ["SilentFull"] = "🌿 Silencioso (99%)",
                 ["Boost"] = "Turbo",
@@ -950,7 +1012,7 @@ namespace RyzenQuietPro
             },
             ["zh"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.03",
+                ["AppTitle"] = "RyzenQuiet PRO v4.04",
                 ["Silent"] = "静音",
                 ["SilentFull"] = "🌿 静音模式 (99%)",
                 ["Boost"] = "加速",

@@ -1,6 +1,6 @@
 @echo off
 setlocal
-set VERSION=v4.03
+set VERSION=v4.04
 
 rem Clear proxy environment variables to allow direct access
 set "HTTPS_PROXY="

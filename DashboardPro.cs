@@ -56,11 +56,19 @@ namespace RyzenQuietPro
         private Label _lblStopwatch = null!;
         private Label _lblStopwatchSub = null!;
         private SmoothPanel _pnlStopwatch = null!;
-        private Button _btnSwStart = null!;
-        private Button _btnSwAuto = null!;
-        private Button _btnSwStop = null!;
-        private Button _btnSwReset = null!;
+        private Button _btnSwDashboardAdd = null!;
+        private class StopwatchRowControls
+        {
+            public StopwatchItem Item { get; set; } = null!;
+            public Button BtnStart { get; set; } = null!;
+            public Button BtnAuto { get; set; } = null!;
+            public Button BtnStop { get; set; } = null!;
+            public Button BtnReset { get; set; } = null!;
+            public Button BtnScale { get; set; } = null!;
+        }
+        private readonly List<StopwatchRowControls> _stopwatchRowControls = new();
         private System.Windows.Forms.Timer? _stopwatchTimer;
+
 
         private ModuleSeparator _sepCpu = null!;
         private ModuleSeparator _sepRam = null!;
@@ -219,7 +227,7 @@ namespace RyzenQuietPro
             _stopwatchTimer.Tick += (s, e) => {
                 if (this.Visible && _settings.ShowStopwatch)
                 {
-                    if (_hardware.Stopwatch.IsRunning)
+                    if (_hardware.Stopwatch.Items.Any(i => i.IsRunning))
                     {
                         _pnlStopwatch.Invalidate();
                     }
@@ -351,7 +359,7 @@ namespace RyzenQuietPro
 
             _lblTitle = new Label
             {
-                Text = "RyzenQuiet PRO v4.03",
+                Text = Loc.Get("AppTitle"),
                 Font = new Font("Segoe UI", 10f, FontStyle.Bold),
                 ForeColor = Color.FromArgb(240, 240, 245),
                 Location = new Point(36, 8),
@@ -438,37 +446,33 @@ namespace RyzenQuietPro
             _pnlStopwatch.Paint += DrawStopwatchCard;
             this.Controls.Add(_pnlStopwatch);
 
-            _btnSwStart = CreateStopwatchButton(Loc.Get("StopwatchStart"), Color.FromArgb(80, 220, 140));
-            _btnSwStart.Click += (s, e) => {
-                _hardware.Stopwatch.Start();
-                UpdateStopwatchUI();
+            _btnSwDashboardAdd = new Button
+            {
+                Text = "+",
+                Font = new Font("Segoe UI", 9f, FontStyle.Bold),
+                ForeColor = Color.FromArgb(52, 211, 153),
+                BackColor = Color.FromArgb(28, 28, 36),
+                FlatStyle = FlatStyle.Flat,
+                Cursor = Cursors.Hand
             };
-            _pnlStopwatch.Controls.Add(_btnSwStart);
-
-            _btnSwAuto = CreateStopwatchButton(Loc.Get("StopwatchAuto"), Color.FromArgb(245, 158, 11));
-            _btnSwAuto.Click += (s, e) => {
-                _hardware.Stopwatch.ToggleAuto();
-                _settings.StopwatchAutoStartEnabled = _hardware.Stopwatch.IsAutoArmed;
-                _settings.Save();
-                UpdateStopwatchUI();
+            _btnSwDashboardAdd.FlatAppearance.BorderColor = Color.FromArgb(44, 44, 56);
+            _toolTip.SetToolTip(_btnSwDashboardAdd, Loc.Get("StopwatchAdd"));
+            _btnSwDashboardAdd.Click += (s, e) => {
+                using var dlg = new StopwatchEditDialog(null, _hardware.Processes);
+                if (dlg.ShowDialog(this) == DialogResult.OK)
+                {
+                    _settings.Stopwatches.Add(dlg.Profile);
+                    _settings.Save();
+                    _hardware.Stopwatch.SyncWithSettings(_settings);
+                    RebuildStopwatchControls();
+                    LayoutComponents();
+                    _pnlStopwatch.Invalidate();
+                }
             };
-            _pnlStopwatch.Controls.Add(_btnSwAuto);
+            this.Controls.Add(_btnSwDashboardAdd);
 
-            _btnSwStop = CreateStopwatchButton(Loc.Get("StopwatchStop"), Color.FromArgb(244, 63, 94));
-            _btnSwStop.Click += (s, e) => {
-                _hardware.Stopwatch.Stop();
-                UpdateStopwatchUI();
-            };
-            _pnlStopwatch.Controls.Add(_btnSwStop);
+            RebuildStopwatchControls();
 
-            _btnSwReset = CreateStopwatchButton(Loc.Get("StopwatchReset"), Color.FromArgb(160, 160, 175));
-            _btnSwReset.Click += (s, e) => {
-                _hardware.Stopwatch.Reset();
-                UpdateStopwatchUI();
-            };
-            _pnlStopwatch.Controls.Add(_btnSwReset);
-
-            UpdateStopwatchUI();
 
             // CPU Module
             _sepCpu = new ModuleSeparator(cpuColor);
@@ -481,6 +485,8 @@ namespace RyzenQuietPro
 
             _pnlCpuGraph = CreateGraphPanel();
             _pnlCpuGraph.Paint += DrawCpuGraph;
+            _pnlCpuGraph.Cursor = Cursors.Hand;
+            _pnlCpuGraph.MouseClick += (s, e) => ToggleCpuGraphScale();
             this.Controls.Add(_pnlCpuGraph);
 
             _pnlCoresMatrix = new SmoothPanel
@@ -800,9 +806,13 @@ namespace RyzenQuietPro
             if (activeGraphCount == 0) activeGraphCount = 1;
 
             int fixedH = 0;
+            int swCount = Math.Max(1, _hardware.Stopwatch.Items.Count);
+            int swRowH = 50;
+            int swGap = 4;
+            int swCardH = (swCount * swRowH) + ((swCount - 1) * swGap);
             if (_settings.ShowStopwatch)
             {
-                fixedH += 3 + 5 + 20 + 44 + 6; // separator + header + stopwatch card + gap
+                fixedH += 3 + 5 + 20 + swCardH + 6; // separator + header + stopwatch card + gap
             }
             if (showCpu)
             {
@@ -884,6 +894,7 @@ namespace RyzenQuietPro
             _sepStopwatch.Visible = showStopwatch;
             _lblStopwatch.Visible = showStopwatch;
             _lblStopwatchSub.Visible = showStopwatch;
+            _btnSwDashboardAdd.Visible = showStopwatch;
             _pnlStopwatch.Visible = showStopwatch;
 
             if (showStopwatch)
@@ -894,13 +905,15 @@ namespace RyzenQuietPro
 
                 _lblStopwatch.Location = new Point(marginX, curY);
                 _lblStopwatchSub.Location = new Point(marginX + 110, curY);
-                _lblStopwatchSub.Size = new Size(contentW - 110, 20);
+                _lblStopwatchSub.Size = new Size(contentW - 140, 20);
+
+                _btnSwDashboardAdd.Location = new Point(marginX + contentW - 24, curY);
+                _btnSwDashboardAdd.Size = new Size(24, 20);
                 curY += 20;
 
-                int swCardH = 44;
                 _pnlStopwatch.Location = new Point(marginX, curY);
                 _pnlStopwatch.Size = new Size(contentW, swCardH);
-                LayoutStopwatchButtons(contentW, swCardH);
+                LayoutStopwatchButtons(contentW, swRowH, swGap);
                 curY += swCardH + 6;
             }
 
@@ -1130,6 +1143,8 @@ namespace RyzenQuietPro
                 _settingsForm = new SettingsForm(_hardware, _settings, () => {
                     _hardware.Fans.DemoMode = _settings.EnableFanDemo;
                     _hardware.Fans.SetEnabled(_settings.EnableFanAddon);
+                    _hardware.Stopwatch.SyncWithSettings(_settings);
+                    RebuildStopwatchControls();
                     LayoutComponents();
                     this.Invalidate();
                     _onSettingsChanged?.Invoke();
@@ -1259,66 +1274,196 @@ namespace RyzenQuietPro
             return btn;
         }
 
-        private void LayoutStopwatchButtons(int panelW, int panelH)
+        private void RebuildStopwatchControls()
         {
-            if (_btnSwStart == null) return;
+            _pnlStopwatch.SuspendLayout();
+            _pnlStopwatch.Controls.Clear();
+            _stopwatchRowControls.Clear();
 
-            int btnCount = 4;
-            int gap = 4;
-            int startX = Math.Max(148, panelW - 220);
-            int availableW = panelW - startX - 8;
-            int btnW = Math.Max(42, (availableW - (gap * (btnCount - 1))) / btnCount);
+            foreach (var item in _hardware.Stopwatch.Items)
+            {
+                var curItem = item;
+                var rc = new StopwatchRowControls
+                {
+                    Item = curItem,
+                    BtnStart = CreateStopwatchButton(Loc.Get("StopwatchStart"), curItem.AccentColor),
+                    BtnAuto = CreateStopwatchButton(Loc.Get("StopwatchAuto"), Color.FromArgb(245, 158, 11)),
+                    BtnStop = CreateStopwatchButton(Loc.Get("StopwatchStop"), Color.FromArgb(244, 63, 94)),
+                    BtnReset = CreateStopwatchButton(Loc.Get("StopwatchReset"), Color.FromArgb(160, 160, 175)),
+                    BtnScale = CreateStopwatchButton("📈 Auto", curItem.AccentColor)
+                };
+
+                rc.BtnStart.Click += (s, e) => {
+                    curItem.Start();
+                    UpdateStopwatchUI();
+                };
+                rc.BtnAuto.Click += (s, e) => {
+                    curItem.ToggleAuto();
+                    _settings.Save();
+                    UpdateStopwatchUI();
+                };
+                rc.BtnStop.Click += (s, e) => {
+                    curItem.Stop();
+                    UpdateStopwatchUI();
+                };
+                rc.BtnReset.Click += (s, e) => {
+                    curItem.Reset();
+                    UpdateStopwatchUI();
+                };
+                rc.BtnScale.Click += (s, e) => {
+                    CycleStopwatchScale(curItem);
+                };
+
+                _pnlStopwatch.Controls.Add(rc.BtnStart);
+                _pnlStopwatch.Controls.Add(rc.BtnAuto);
+                _pnlStopwatch.Controls.Add(rc.BtnStop);
+                _pnlStopwatch.Controls.Add(rc.BtnReset);
+                _pnlStopwatch.Controls.Add(rc.BtnScale);
+
+                _stopwatchRowControls.Add(rc);
+            }
+
+            _pnlStopwatch.ResumeLayout(true);
+            UpdateStopwatchUI();
+        }
+
+        private void LayoutStopwatchButtons(int panelW, int rowH, int gap)
+        {
+            if (_stopwatchRowControls.Count == 0) return;
+
+            int actionBtnCount = 4;
+            int btnGap = 4;
+            int scaleBtnW = 54;
+            int actionBtnW = 36;
             int btnH = 26;
-            int btnY = (panelH - btnH) / 2;
 
-            _btnSwStart.Location = new Point(startX, btnY);
-            _btnSwStart.Size = new Size(btnW, btnH);
+            int totalButtonsW = (actionBtnW * actionBtnCount) + (btnGap * actionBtnCount) + scaleBtnW;
+            int startX = Math.Max(140, panelW - totalButtonsW - 4);
 
-            _btnSwAuto.Location = new Point(startX + btnW + gap, btnY);
-            _btnSwAuto.Size = new Size(btnW, btnH);
+            for (int i = 0; i < _stopwatchRowControls.Count; i++)
+            {
+                int rowY = i * (rowH + gap);
+                int btnY = rowY + (rowH - btnH) / 2;
+                var rc = _stopwatchRowControls[i];
 
-            _btnSwStop.Location = new Point(startX + (btnW + gap) * 2, btnY);
-            _btnSwStop.Size = new Size(btnW, btnH);
+                rc.BtnStart.Location = new Point(startX, btnY);
+                rc.BtnStart.Size = new Size(actionBtnW, btnH);
 
-            _btnSwReset.Location = new Point(startX + (btnW + gap) * 3, btnY);
-            _btnSwReset.Size = new Size(btnW, btnH);
+                rc.BtnAuto.Location = new Point(startX + (actionBtnW + btnGap), btnY);
+                rc.BtnAuto.Size = new Size(actionBtnW, btnH);
+
+                rc.BtnStop.Location = new Point(startX + (actionBtnW + btnGap) * 2, btnY);
+                rc.BtnStop.Size = new Size(actionBtnW, btnH);
+
+                rc.BtnReset.Location = new Point(startX + (actionBtnW + btnGap) * 3, btnY);
+                rc.BtnReset.Size = new Size(actionBtnW, btnH);
+
+                rc.BtnScale.Location = new Point(startX + (actionBtnW + btnGap) * 4, btnY);
+                rc.BtnScale.Size = new Size(scaleBtnW, btnH);
+            }
         }
 
         private void UpdateStopwatchUI()
         {
-            if (_btnSwStart == null) return;
+            if (_stopwatchRowControls.Count == 0) return;
 
-            bool running = _hardware.Stopwatch.IsRunning;
-            bool auto = _hardware.Stopwatch.IsAutoArmed;
+            foreach (var rc in _stopwatchRowControls)
+            {
+                var item = rc.Item;
+                bool running = item.IsRunning;
+                bool auto = item.IsAutoArmed;
 
-            if (running)
-            {
-                _btnSwStart.BackColor = Color.FromArgb(34, 197, 94);
-                _btnSwStart.ForeColor = Color.FromArgb(18, 18, 22);
-                _btnSwStart.FlatAppearance.BorderColor = Color.FromArgb(34, 197, 94);
-            }
-            else
-            {
-                _btnSwStart.BackColor = Color.FromArgb(28, 28, 36);
-                _btnSwStart.ForeColor = Color.FromArgb(80, 220, 140);
-                _btnSwStart.FlatAppearance.BorderColor = Color.FromArgb(44, 44, 56);
-            }
+                if (running)
+                {
+                    rc.BtnStart.BackColor = item.AccentColor;
+                    rc.BtnStart.ForeColor = Color.FromArgb(18, 18, 22);
+                    rc.BtnStart.FlatAppearance.BorderColor = item.AccentColor;
+                }
+                else
+                {
+                    rc.BtnStart.BackColor = Color.FromArgb(28, 28, 36);
+                    rc.BtnStart.ForeColor = item.AccentColor;
+                    rc.BtnStart.FlatAppearance.BorderColor = Color.FromArgb(44, 44, 56);
+                }
 
-            if (auto)
-            {
-                _btnSwAuto.BackColor = Color.FromArgb(245, 158, 11);
-                _btnSwAuto.ForeColor = Color.FromArgb(18, 18, 22);
-                _btnSwAuto.FlatAppearance.BorderColor = Color.FromArgb(245, 158, 11);
-            }
-            else
-            {
-                _btnSwAuto.BackColor = Color.FromArgb(28, 28, 36);
-                _btnSwAuto.ForeColor = Color.FromArgb(245, 158, 11);
-                _btnSwAuto.FlatAppearance.BorderColor = Color.FromArgb(44, 44, 56);
+                if (auto)
+                {
+                    rc.BtnAuto.BackColor = Color.FromArgb(245, 158, 11);
+                    rc.BtnAuto.ForeColor = Color.FromArgb(18, 18, 22);
+                    rc.BtnAuto.FlatAppearance.BorderColor = Color.FromArgb(245, 158, 11);
+                }
+                else
+                {
+                    rc.BtnAuto.BackColor = Color.FromArgb(28, 28, 36);
+                    rc.BtnAuto.ForeColor = Color.FromArgb(245, 158, 11);
+                    rc.BtnAuto.FlatAppearance.BorderColor = Color.FromArgb(44, 44, 56);
+                }
+
+                // Stopwatch Curve Scale button
+                int scale = item.Profile.ShowOnCpuGraph ? item.Profile.GraphScale : -1;
+                bool isGraphActive = (scale != -1);
+
+                string scaleText = scale switch
+                {
+                    0 => "📈 " + Loc.Get("StopwatchScale_Auto"),
+                    1 => "📈 1x",
+                    2 => "📈 x2",
+                    4 => "📈 x4",
+                    8 => "📈 x8",
+                    16 => "📈 x16",
+                    _ => "📈 " + Loc.Get("StopwatchScale_Off")
+                };
+                rc.BtnScale.Text = scaleText;
+
+                if (isGraphActive)
+                {
+                    rc.BtnScale.BackColor = Color.FromArgb(36, item.AccentColor.R, item.AccentColor.G, item.AccentColor.B);
+                    rc.BtnScale.ForeColor = item.AccentColor;
+                    rc.BtnScale.FlatAppearance.BorderColor = item.AccentColor;
+                }
+                else
+                {
+                    rc.BtnScale.BackColor = Color.FromArgb(24, 24, 32);
+                    rc.BtnScale.ForeColor = Color.FromArgb(125, 125, 140);
+                    rc.BtnScale.FlatAppearance.BorderColor = Color.FromArgb(46, 46, 58);
+                }
+
+                if (_toolTip != null) _toolTip.SetToolTip(rc.BtnScale, Loc.Get("StopwatchScaleTip"));
             }
 
             UpdateStopwatchSubHeader();
             _pnlStopwatch?.Invalidate();
+        }
+
+        private void CycleStopwatchScale(StopwatchItem item)
+        {
+            int current = item.Profile.ShowOnCpuGraph ? item.Profile.GraphScale : -1;
+            int next = current switch
+            {
+                -1 => 0,  // Off -> Auto
+                0 => 2,   // Auto -> 2x
+                2 => 4,   // 2x -> 4x
+                4 => 8,   // 4x -> 8x
+                8 => 16,  // 8x -> 16x
+                16 => 1,  // 16x -> 1x
+                1 => -1,  // 1x -> Off
+                _ => 0
+            };
+
+            if (next == -1)
+            {
+                item.Profile.ShowOnCpuGraph = false;
+                item.Profile.GraphScale = -1;
+            }
+            else
+            {
+                item.Profile.ShowOnCpuGraph = true;
+                item.Profile.GraphScale = next;
+            }
+
+            _settings.Save();
+            UpdateStopwatchUI();
+            _pnlCpuGraph?.Invalidate();
         }
 
         private void UpdateStopwatchSubHeader()
@@ -1335,12 +1480,15 @@ namespace RyzenQuietPro
                 _ => "Max"
             };
 
-            if (_hardware.Stopwatch.IsRunning)
+            int runningCount = _hardware.Stopwatch.Items.Count(i => i.IsRunning);
+            int armedCount = _hardware.Stopwatch.Items.Count(i => i.IsAutoArmed);
+
+            if (runningCount > 0)
             {
-                _lblStopwatchSub.Text = $"⚡ {Loc.Get("StopwatchRunning")} | {sourceName}: {pwrText}";
+                _lblStopwatchSub.Text = $"⚡ {Loc.Get("StopwatchRunning")} ({runningCount}) | {sourceName}: {pwrText}";
                 _lblStopwatchSub.ForeColor = Color.FromArgb(52, 211, 153);
             }
-            else if (_hardware.Stopwatch.IsAutoArmed)
+            else if (armedCount > 0)
             {
                 _lblStopwatchSub.Text = $"⚡ {Loc.Get("StopwatchArmed")} (> {_settings.StopwatchAutoStartWatts}W) | {sourceName}: {pwrText}";
                 _lblStopwatchSub.ForeColor = Color.FromArgb(245, 158, 11);
@@ -1359,44 +1507,104 @@ namespace RyzenQuietPro
             g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
 
             int w = _pnlStopwatch.Width;
-            int h = _pnlStopwatch.Height;
-            if (w <= 10 || h <= 10) return;
+            if (w <= 10) return;
 
-            using (var borderPen = new Pen(Color.FromArgb(36, 36, 46), 1f))
-            {
-                g.DrawRectangle(borderPen, 0, 0, w - 1, h - 1);
-            }
+            var items = _hardware.Stopwatch.Items;
+            if (items.Count == 0) return;
 
-            string timeStr = _hardware.Stopwatch.FormattedTime;
+            int swRowH = 50;
+            int swGap = 4;
 
-            Color digitColor;
-            if (_hardware.Stopwatch.IsRunning)
-            {
-                digitColor = Color.FromArgb(52, 211, 153); // Emerald
-            }
-            else if (_hardware.Stopwatch.IsAutoArmed)
-            {
-                digitColor = Color.FromArgb(245, 158, 11); // Amber
-            }
-            else if (_hardware.Stopwatch.Elapsed > TimeSpan.Zero)
-            {
-                digitColor = Color.FromArgb(240, 240, 248); // Crisp white
-            }
-            else
-            {
-                digitColor = Color.FromArgb(145, 145, 160); // Muted silver
-            }
+            using var fontTime = new Font("Consolas", 15f, FontStyle.Bold);
+            using var fontSub = new Font("Segoe UI", 8.0f);
+            using var borderPen = new Pen(Color.FromArgb(36, 36, 46), 1f);
 
-            using var font = new Font("Consolas", 17f, FontStyle.Bold);
-            using var brush = new SolidBrush(digitColor);
-
-            if (_hardware.Stopwatch.IsRunning)
+            for (int i = 0; i < items.Count; i++)
             {
-                using var glowBrush = new SolidBrush(Color.FromArgb(40, 52, 211, 153));
-                g.DrawString(timeStr, font, glowBrush, 11, 9);
-            }
+                var item = items[i];
+                int rowY = i * (swRowH + swGap);
 
-            g.DrawString(timeStr, font, brush, 10, 8);
+                // Row background border
+                g.DrawRectangle(borderPen, 0, rowY, w - 1, swRowH - 1);
+
+                // Left color accent bar
+                using (var colorBrush = new SolidBrush(item.AccentColor))
+                {
+                    g.FillRectangle(colorBrush, 2, rowY + 6, 3, swRowH - 12);
+                }
+
+                // Time String
+                string timeStr = item.FormattedTime;
+
+                Color digitColor;
+                if (item.IsRunning)
+                {
+                    digitColor = item.AccentColor;
+                }
+                else if (item.IsAutoArmed)
+                {
+                    digitColor = Color.FromArgb(245, 158, 11); // Amber
+                }
+                else if (item.Elapsed > TimeSpan.Zero)
+                {
+                    digitColor = Color.FromArgb(240, 240, 248); // Crisp white
+                }
+                else
+                {
+                    digitColor = Color.FromArgb(145, 145, 160); // Muted silver
+                }
+
+                if (item.IsRunning)
+                {
+                    using var glowBrush = new SolidBrush(Color.FromArgb(45, digitColor.R, digitColor.G, digitColor.B));
+                    g.DrawString(timeStr, fontTime, glowBrush, 11, rowY + 5);
+                }
+
+                using (var brush = new SolidBrush(digitColor))
+                {
+                    g.DrawString(timeStr, fontTime, brush, 10, rowY + 4);
+                }
+
+                // Subtitle: Target Program / Process Name (clean text, no broken glyphs)
+                string targetDisplay;
+                if (!string.IsNullOrWhiteSpace(item.Profile.TargetFriendlyName))
+                {
+                    targetDisplay = item.Profile.TargetFriendlyName;
+                }
+                else if (!string.IsNullOrWhiteSpace(item.Profile.TargetExe))
+                {
+                    targetDisplay = item.Profile.TargetExe;
+                }
+                else
+                {
+                    targetDisplay = Loc.Get("StopwatchAnyProgram");
+                }
+
+                string appDesc;
+                if (!string.IsNullOrWhiteSpace(item.Profile.Name) &&
+                    !item.Profile.Name.StartsWith("Stopwatch", StringComparison.OrdinalIgnoreCase) &&
+                    !item.Profile.Name.StartsWith("Секундомер", StringComparison.OrdinalIgnoreCase) &&
+                    !item.Profile.Name.Equals(targetDisplay, StringComparison.OrdinalIgnoreCase) &&
+                    !item.Profile.Name.Equals(item.Profile.TargetExe, StringComparison.OrdinalIgnoreCase))
+                {
+                    appDesc = $"{item.Profile.Name} • {targetDisplay}";
+                }
+                else
+                {
+                    appDesc = targetDisplay;
+                }
+
+                // Clip subtitle before buttons
+                int totalButtonsW = (36 * 4) + (4 * 4) + 54;
+                int startX = Math.Max(140, w - totalButtonsW - 4);
+                int maxTextW = Math.Max(50, startX - 15);
+                var subRect = new RectangleF(10, rowY + 28, maxTextW, 18);
+                using (var subBrush = new SolidBrush(Color.FromArgb(56, 189, 248)))
+                using (var sf = new StringFormat { Trimming = StringTrimming.EllipsisCharacter, FormatFlags = StringFormatFlags.NoWrap })
+                {
+                    g.DrawString(appDesc, fontSub, subBrush, subRect, sf);
+                }
+            }
         }
 
         private class GpuSubHeaderPanel : Control
@@ -2168,11 +2376,17 @@ namespace RyzenQuietPro
             _toolTip.SetToolTip(_btnPin, _alwaysOnTop ? Loc.Get("TipPinOn") : Loc.Get("TipPinOff"));
             _toolTip.SetToolTip(_btnDetach, _isDetached ? Loc.Get("TipDock") : Loc.Get("TipDetach"));
             _toolTip.SetToolTip(_btnClose, Loc.Get("TipClose"));
+            if (_pnlCpuGraph != null) _toolTip.SetToolTip(_pnlCpuGraph, Loc.Get("CpuGraphScaleTip"));
             if (_btnGear != null) _toolTip.SetToolTip(_btnGear, Loc.Get("MenuSettings"));
-            if (_btnSwStart != null) _toolTip.SetToolTip(_btnSwStart, Loc.Get("StopwatchStart"));
-            if (_btnSwAuto != null) _toolTip.SetToolTip(_btnSwAuto, Loc.Get("StopwatchAutoStartEnable"));
-            if (_btnSwStop != null) _toolTip.SetToolTip(_btnSwStop, Loc.Get("StopwatchStop"));
-            if (_btnSwReset != null) _toolTip.SetToolTip(_btnSwReset, Loc.Get("StopwatchReset"));
+            if (_btnSwDashboardAdd != null) _toolTip.SetToolTip(_btnSwDashboardAdd, Loc.Get("StopwatchAdd"));
+            foreach (var rc in _stopwatchRowControls)
+            {
+                _toolTip.SetToolTip(rc.BtnStart, Loc.Get("StopwatchStart"));
+                _toolTip.SetToolTip(rc.BtnAuto, Loc.Get("StopwatchAutoStartEnable"));
+                _toolTip.SetToolTip(rc.BtnStop, Loc.Get("StopwatchStop"));
+                _toolTip.SetToolTip(rc.BtnReset, Loc.Get("StopwatchReset"));
+                _toolTip.SetToolTip(rc.BtnScale, Loc.Get("StopwatchScaleTip"));
+            }
         }
 
         private void OnLanguageChanged()
@@ -2184,12 +2398,17 @@ namespace RyzenQuietPro
             }
             UpdateTooltips();
             UpdateModeUI();
+            if (_lblTitle != null) _lblTitle.Text = Loc.Get("AppTitle");
             if (_chkShowAllGpus != null) _chkShowAllGpus.Text = Loc.Get("ShowAllGpus");
             if (_lblStopwatch != null) _lblStopwatch.Text = "⏱ " + Loc.Get("Stopwatch");
-            if (_btnSwStart != null) _btnSwStart.Text = Loc.Get("StopwatchStart");
-            if (_btnSwAuto != null) _btnSwAuto.Text = Loc.Get("StopwatchAuto");
-            if (_btnSwStop != null) _btnSwStop.Text = Loc.Get("StopwatchStop");
-            if (_btnSwReset != null) _btnSwReset.Text = Loc.Get("StopwatchReset");
+            foreach (var rc in _stopwatchRowControls)
+            {
+                rc.BtnStart.Text = Loc.Get("StopwatchStart");
+                rc.BtnAuto.Text = Loc.Get("StopwatchAuto");
+                rc.BtnStop.Text = Loc.Get("StopwatchStop");
+                rc.BtnReset.Text = Loc.Get("StopwatchReset");
+            }
+            UpdateStopwatchUI();
             UpdateStopwatchSubHeader();
             UpdateMetricsUI();
             LayoutComponents();
@@ -2394,7 +2613,7 @@ namespace RyzenQuietPro
             if (_pnlFansGraph.Visible) _pnlFansGraph.Invalidate();
         }
 
-        private void DrawGraphInternal(Graphics g, Panel pnl, IReadOnlyList<float> history, Color strokeColor, Color topFill)
+        private void DrawGraphInternal(Graphics g, Panel pnl, IReadOnlyList<float> history, Color strokeColor, Color topFill, float maxPercent = 100f)
         {
             g.SmoothingMode = SmoothingMode.AntiAlias;
 
@@ -2414,9 +2633,10 @@ namespace RyzenQuietPro
 
             for (int i = 0; i < history.Count; i++)
             {
-                float val = Math.Clamp(history[i], 0f, 100f);
+                float val = Math.Clamp(history[i], 0f, maxPercent);
                 float x = i * stepX;
-                float y = h - (h * (val / 100f));
+                float norm = Math.Clamp(val / maxPercent, 0f, 1f);
+                float y = h - (h * norm);
                 points[i] = new PointF(x, y);
             }
 
@@ -2437,11 +2657,223 @@ namespace RyzenQuietPro
             g.DrawLines(linePen, points);
         }
 
+        private float GetCpuScaleMaxPercent(int scale)
+        {
+            if (scale == 2) return 50f;
+            if (scale == 4) return 25f;
+            if (scale == 6) return 16.67f;
+            if (scale == 8) return 12.5f;
+            if (scale == 0) // Auto scale
+            {
+                float peak = _hardware.Cpu.History.Count > 0 ? _hardware.Cpu.History.Max() : 10f;
+                foreach (var sw in _hardware.Stopwatch.Items)
+                {
+                    if (sw.Profile.ShowOnCpuGraph && sw.HasRecordedHistory)
+                    {
+                        var snap = sw.GetCpuHistorySnapshot();
+                        foreach (var v in snap)
+                        {
+                            if (v.HasValue && v.Value > peak) peak = v.Value;
+                        }
+                    }
+                }
+                float autoMax = Math.Max(10f, (float)Math.Ceiling((peak * 1.15f) / 5f) * 5f);
+                return Math.Min(100f, autoMax);
+            }
+            return 100f; // 1x
+        }
+
+        private void ToggleCpuGraphScale()
+        {
+            int next = _settings.CpuGraphScale switch
+            {
+                1 => 2,
+                2 => 4,
+                4 => 6,
+                6 => 8,
+                8 => 0,
+                0 => 1,
+                _ => 1
+            };
+            _settings.CpuGraphScale = next;
+            _settings.Save();
+            _pnlCpuGraph.Invalidate();
+        }
+
+        private void DrawCpuScaleBadge(Graphics g, Panel pnl, float maxPercent)
+        {
+            int w = pnl.Width;
+            int scale = _settings.CpuGraphScale;
+
+            string badgeText = scale switch
+            {
+                2 => "x2 (50%)",
+                4 => "x4 (25%)",
+                6 => "x6 (17%)",
+                8 => "x8 (12.5%)",
+                0 => $"Auto ({maxPercent:F0}%)",
+                _ => "1x (100%)"
+            };
+
+            using var font = new Font("Segoe UI", 7.0f, FontStyle.Bold);
+            var sz = g.MeasureString(badgeText, font);
+            int badgeW = (int)Math.Ceiling(sz.Width) + 8;
+            int badgeH = 15;
+            int badgeX = w - badgeW - 6;
+            int badgeY = 3;
+
+            var badgeRect = new Rectangle(badgeX, badgeY, badgeW, badgeH);
+
+            Color bgCol = (scale != 1) ? Color.FromArgb(200, 24, 30, 42) : Color.FromArgb(160, 20, 22, 28);
+            Color borderCol = (scale != 1) ? Color.FromArgb(56, 189, 248) : Color.FromArgb(50, 55, 68);
+            Color textCol = (scale != 1) ? Color.FromArgb(56, 189, 248) : Color.FromArgb(130, 135, 150);
+
+            using (var bgBrush = new SolidBrush(bgCol))
+            using (var borderPen = new Pen(borderCol, 1f))
+            {
+                g.FillRectangle(bgBrush, badgeRect);
+                g.DrawRectangle(borderPen, badgeRect);
+            }
+
+            using var textBrush = new SolidBrush(textCol);
+            var sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+            g.DrawString(badgeText, font, textBrush, badgeRect, sf);
+        }
+
         private void DrawCpuGraph(object? sender, PaintEventArgs e)
         {
             Color stroke = _isQuietMode ? Color.FromArgb(80, 220, 140) : Color.FromArgb(250, 180, 80);
             Color fill = _isQuietMode ? Color.FromArgb(80, 40, 180, 100) : Color.FromArgb(80, 240, 160, 40);
-            DrawGraphInternal(e.Graphics, _pnlCpuGraph, _hardware.Cpu.History, stroke, fill);
+            float maxPercent = GetCpuScaleMaxPercent(_settings.CpuGraphScale);
+
+            DrawGraphInternal(e.Graphics, _pnlCpuGraph, _hardware.Cpu.History, stroke, fill, maxPercent);
+
+            // Overlay curve for stopwatches that have ShowOnCpuGraph enabled and recorded history
+            // Stays continuously visible even when stopped!
+            foreach (var sw in _hardware.Stopwatch.Items)
+            {
+                if (sw.Profile.ShowOnCpuGraph && sw.HasRecordedHistory)
+                {
+                    DrawStopwatchCpuCurve(e.Graphics, _pnlCpuGraph, sw, maxPercent);
+                }
+            }
+
+            // Draw Scale Badge in top-right corner
+            DrawCpuScaleBadge(e.Graphics, _pnlCpuGraph, maxPercent);
+        }
+
+        private void DrawStopwatchCpuCurve(Graphics g, Panel pnl, StopwatchItem sw, float maxPercent)
+        {
+            int w = pnl.Width;
+            int h = pnl.Height;
+            if (w <= 1 || h <= 1) return;
+
+            if (!sw.Profile.ShowOnCpuGraph || sw.Profile.GraphScale == -1) return;
+
+            var history = sw.GetCpuHistorySnapshot();
+            int totalPoints = _hardware.Cpu.History.Count;
+            if (totalPoints < 2 || history.Count == 0) return;
+
+            float stepX = (float)w / (totalPoints - 1);
+
+            // Determine independent scale for this stopwatch curve
+            int scale = sw.Profile.GraphScale;
+            float effectiveMax;
+
+            if (scale == 0) // Auto: automatically adapt to peak workload of this app
+            {
+                float peak = 0f;
+                foreach (var v in history)
+                {
+                    if (v.HasValue && v.Value > peak) peak = v.Value;
+                }
+
+                // If app is producing load (e.g. 3% in Illustrator),
+                // scale so the peak reaches ~75% of the graph height!
+                effectiveMax = Math.Max(1.0f, peak * 1.35f);
+            }
+            else if (scale > 1) // 2x, 4x, 8x, 16x magnification relative to CPU scale
+            {
+                effectiveMax = Math.Max(0.5f, maxPercent / scale);
+            }
+            else // 1x: 1:1 with main CPU scale
+            {
+                effectiveMax = maxPercent;
+            }
+
+            // Collect active points from history aligned to totalPoints at the right edge
+            var pts = new List<PointF>();
+            float? latestVal = null;
+
+            for (int i = 0; i < history.Count; i++)
+            {
+                int gIdx = (totalPoints - 1) - (history.Count - 1 - i);
+                if (gIdx < 0) continue;
+
+                var val = history[i];
+                if (val.HasValue)
+                {
+                    float x = gIdx * stepX;
+                    float norm = Math.Clamp(val.Value / effectiveMax, 0f, 1f);
+                    float y = h - (h * norm);
+                    pts.Add(new PointF(x, y));
+                    latestVal = val.Value;
+                }
+            }
+
+            if (pts.Count < 2)
+            {
+                if (pts.Count == 1)
+                {
+                    using var dotBrush = new SolidBrush(sw.AccentColor);
+                    g.FillEllipse(dotBrush, pts[0].X - 2, pts[0].Y - 2, 4, 4);
+                }
+                return;
+            }
+
+            // Translucent fill under stopwatch curve
+            using (var path = new GraphicsPath())
+            {
+                path.AddLines(pts.ToArray());
+                path.AddLine(pts[^1].X, h, pts[0].X, h);
+                path.CloseFigure();
+
+                Color stroke = sw.AccentColor;
+                Color topFill = Color.FromArgb(45, stroke.R, stroke.G, stroke.B);
+                Color botFill = Color.FromArgb(5, stroke.R, stroke.G, stroke.B);
+                using var brush = new LinearGradientBrush(new Point(0, 0), new Point(0, h), topFill, botFill);
+                g.FillPath(brush, path);
+            }
+
+            // Draw vibrant curve line
+            using var pen = new Pen(sw.AccentColor, 2f);
+            pen.LineJoin = LineJoin.Round;
+            pen.StartCap = LineCap.Round;
+            pen.EndCap = LineCap.Round;
+            g.DrawLines(pen, pts.ToArray());
+
+            // Draw live end-point indicator with current % value
+            if (latestVal.HasValue && pts.Count > 0)
+            {
+                var lastPt = pts[^1];
+                using var dotBrush = new SolidBrush(sw.AccentColor);
+                g.FillEllipse(dotBrush, lastPt.X - 3, lastPt.Y - 3, 6, 6);
+
+                if (latestVal.Value >= 0.1f)
+                {
+                    string valText = $"{latestVal.Value:F1}%";
+                    using var valFont = new Font("Segoe UI", 7.0f, FontStyle.Bold);
+                    var valSz = g.MeasureString(valText, valFont);
+                    float tagX = Math.Max(2, lastPt.X - valSz.Width - 6);
+                    float tagY = Math.Clamp(lastPt.Y - valSz.Height / 2, 2, h - valSz.Height - 2);
+
+                    using var tagBgBrush = new SolidBrush(Color.FromArgb(190, 20, 22, 28));
+                    g.FillRectangle(tagBgBrush, tagX - 2, tagY - 1, valSz.Width + 4, valSz.Height + 2);
+
+                    using var textBrush = new SolidBrush(sw.AccentColor);
+                    g.DrawString(valText, valFont, textBrush, tagX, tagY);
+                }
+            }
         }
 
         private void DrawRamGraph(object? sender, PaintEventArgs e)
@@ -3759,7 +4191,7 @@ namespace RyzenQuietPro
                     g.DrawString(proc.RamFormatted, fontRam, brushRam, ramRect, ramFormat);
 
                     // CPU % right-aligned before RAM
-                    int cpuW = 52;
+                    int cpuW = 58;
                     int cpuX = ramX - cpuW - 4;
                     var cpuRect = new Rectangle(cpuX, y, cpuW, rowH);
                     var cpuFormat = new StringFormat { Alignment = StringAlignment.Far, LineAlignment = StringAlignment.Center };

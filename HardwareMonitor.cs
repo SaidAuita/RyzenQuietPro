@@ -16,6 +16,7 @@ namespace RyzenQuietPro
 
         private readonly AppSettings _settings;
         private System.Threading.Timer? _timer;
+        private int _isSampling = 0;
         public event Action? MetricsUpdated;
 
         public float CurrentCpuPowerWatts => Fans.CpuPowerWatts > 0 ? Fans.CpuPowerWatts : Cpu.EstimatedPowerWatts;
@@ -45,10 +46,7 @@ namespace RyzenQuietPro
             Processes = new ProcessMonitor();
             Fans = new FanMonitorClient();
             GpuTuning = new GpuTuningManager(this, appSettings);
-            Stopwatch = new StopwatchManager
-            {
-                IsAutoArmed = appSettings.StopwatchAutoStartEnabled
-            };
+            Stopwatch = new StopwatchManager(appSettings);
         }
 
         public void Start(int intervalMs = 1000)
@@ -65,8 +63,15 @@ namespace RyzenQuietPro
 
         public void Sample()
         {
+            if (Interlocked.CompareExchange(ref _isSampling, 1, 0) != 0)
+            {
+                return; // Prior tick is still executing, skip overlapping tick
+            }
+
             try
             {
+                Processes.HasActiveAppTriggers = Stopwatch.HasAppTriggers || Stopwatch.Items.Any(i => i.Profile.ShowOnCpuGraph && i.Profile.GraphScale != -1 && i.IsRunning);
+
                 Cpu.Sample();
                 Ram.Sample();
                 Gpu.Sample();
@@ -82,14 +87,38 @@ namespace RyzenQuietPro
                     _settings.StopwatchAutoStartWatts,
                     _settings.StopwatchAutoStopWatts,
                     _settings.StopwatchHysteresisSeconds,
-                    1.0f
+                    1.0f,
+                    Processes
                 );
+
+                // Record CPU samples for stopwatches
+                foreach (var sw in Stopwatch.Items)
+                {
+                    if (sw.Profile.ShowOnCpuGraph && sw.Profile.GraphScale != -1)
+                    {
+                        if (sw.IsRunning)
+                        {
+                            float cpuVal = !string.IsNullOrWhiteSpace(sw.Profile.TargetExe)
+                                ? (float)Processes.GetAppCpuPercent(sw.Profile.TargetExe)
+                                : Cpu.TotalCpuUsage;
+                            sw.RecordCpuSample(cpuVal);
+                        }
+                        else if (sw.HasRecordedHistory)
+                        {
+                            sw.RecordCpuSample(0f);
+                        }
+                    }
+                }
 
                 MetricsUpdated?.Invoke();
             }
             catch (Exception ex)
             {
                 Logger.Log($"HardwareMonitor sample error: {ex.Message}");
+            }
+            finally
+            {
+                Interlocked.Exchange(ref _isSampling, 0);
             }
         }
 

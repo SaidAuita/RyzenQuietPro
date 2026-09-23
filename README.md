@@ -1,33 +1,35 @@
 <div align="center">
 
-# ⚡ RyzenQuiet PRO (v4.03)
-**Sleek, lightweight hardware HUD & power-plan optimizer for Windows with AMD Ryzen CPB toggle, GPU power limiting & acoustic tuning, enhanced multi-disk telemetry with process drill-down, and modular fan monitoring.**
+# ⚡ RyzenQuiet PRO (v4.04)
+**Sleek, lightweight hardware HUD & power-plan optimizer for Windows with AMD Ryzen CPB toggle, GPU power limiting & acoustic tuning, multi-stopwatch per-app process profiling with per-counter scaling, enhanced multi-disk telemetry, and modular fan monitoring.**
 
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011%20(64--bit)-blue.svg)](#)
 [![.NET](https://img.shields.io/badge/.NET-8.0-purple.svg)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/Release-v4.03-orange.svg)](https://github.com/SaidAuita/RyzenQuietPro/releases)
+[![Release](https://img.shields.io/badge/Release-v4.04-orange.svg)](https://github.com/SaidAuita/RyzenQuietPro/releases)
 [![Telemetry](https://img.shields.io/badge/Telemetry-Zero%20%2F%20100%25%20Offline-brightgreen.svg)](#)
 
 <br/>
 
 <p align="center">
-  <img src="images/RyzenQuietPro-v4_1.png" alt="RyzenQuiet PRO Main Desktop HUD & Real-Time Telemetry" width="360" />
+  <img src="images/RyzenQuietPro-v4_5.png" alt="RyzenQuiet PRO v4.04 Multi-Stopwatch & Per-App Process Profiling HUD" width="370" />
   &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="images/RyzenQuietPro-v4_1pl.png" alt="GPU Power Limit & Real-Time Fan Tachometer Telemetry" width="360" />
+  <img src="images/RyzenQuietPro-v4_1.png" alt="RyzenQuiet PRO Main Desktop HUD & Real-Time Telemetry" width="370" />
 </p>
 <p align="center">
   <img src="images/RyzenQuietPro-v4_4.png" alt="Multi-Disk Mode with Interactive Legend & Top I/O Processes Drill-Down" width="360" />
   &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="images/RyzenQuietPro-v4_2.png" alt="GPU Acoustic & Power Tuning Settings Dialog with Background Dimming" width="330" />
+  <img src="images/RyzenQuietPro-v4_1pl.png" alt="GPU Power Limit & Real-Time Fan Tachometer Telemetry" width="360" />
 </p>
 <p align="center">
-  <img src="images/RyzenQuietPro-v4_3.png" alt="Hardware Specifications & System Diagnostics" width="370" />
+  <img src="images/RyzenQuietPro-v4_2.png" alt="GPU Acoustic & Power Tuning Settings Dialog with Background Dimming" width="340" />
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="images/RyzenQuietPro-v4_3.png" alt="Hardware Specifications & System Diagnostics" width="380" />
 </p>
 
 <br/>
 
-[**Download Standalone (~72 MB)**](https://ph-cu-s.com/tools/ryzenquietpro) &bull; [**Download Lite (~1.4 MB)**](https://ph-cu-s.com/tools/ryzenquietpro) &bull; [**Official Website**](https://ph-cu-s.com/tools/ryzenquietpro)
+[**Download Standalone (~73 MB)**](https://ph-cu-s.com/tools/ryzenquietpro) &bull; [**Download Lite (~1.8 MB)**](https://ph-cu-s.com/tools/ryzenquietpro) &bull; [**Official Website**](https://ph-cu-s.com/tools/ryzenquietpro)
 
 <br/>
 
@@ -85,13 +87,16 @@ All subsystem graphs share a synchronized 60-second historical canvas rendered w
     * To read CPU Cooler, AIO Pump, and Chassis fans, download and install PawnIO once: [**pawnio.eu**](https://pawnio.eu/) (or direct installer [**PawnIO_setup.exe**](https://github.com/namazso/PawnIO.Setup/releases/latest/download/PawnIO_setup.exe)).
     * GPU fans (NVIDIA NVAPI / AMD ADL) work out-of-the-box without requiring any kernel drivers.
 
-### 4. ⏱️ Hardware Stopwatch & Benchmark Timer (v4.0)
-* **High-Precision Telemetry Stopwatch:** Microsecond-accurate hardware timer (`hh:mm:ss.f`) anchored at the top of the HUD for timing gaming benchmarks, 3D rendering jobs, shader compiles, and encode passes.
-* **Full Manual Controls:** Large high-contrast digits with instantaneous Start (`▶`), Pause/Stop (`⏸`), Reset (`↺`), and Armed Auto-Start (`⚡`).
-* **Power-Triggered Auto-Start & Auto-Stop:** Automatically starts timing when system power consumption crosses a target wattage threshold [W], and automatically pauses when power drops below cutoff [W].
+### 4. ⏱️ Multi-Stopwatch, Per-App Profiling & Per-Counter Scaling (v4.04)
+* **Multi-Instance Independent Timers:** Add unlimited concurrent stopwatch counters via the `[+]` button with custom titles, personalized palette colors, and individual application bindings.
+* **Per-App Process Association & Smart Aggregation:** Bind a stopwatch directly to any application (Adobe Photoshop, Illustrator, InDesign, Blender, Visual Studio, DaVinci Resolve, etc.). The engine automatically aggregates and sums CPU % and RAM across all child and background helper processes belonging to that application suite.
+* **Targeted App Power Auto-Start (`⚡`):** Automatic workload trigger arms the stopwatch to count only active execution time when the target app performs intensive computations, exports, or rendering (target app CPU ≥ 0.5% or system power exceeds threshold), seamlessly pausing during user idle.
+* **Interactive Process Selector & Profile Editor:** Search and select running tasks with smart grouping (`ProcessSelectDialog`) and customize display name, bound executable, and HUD accent color (`StopwatchEditDialog`).
+* **Per-Counter GUI Scaling (`[⊞ Auto]`, `[⊞ x2]` ... `[⊞ x16]`):** Dedicated scale toggles located right inside each stopwatch row in the HUD. Magnify low-usage processes (such as Adobe Illustrator at 3.5%) by up to 16x for crisp visual curve analysis without altering the main CPU timeline scale.
+* **Synchronized Process Curve Overlay with Live Badges:** Color-matched process load curves are drawn directly over the synchronized 60-second CPU graph, complete with real-time percentage badges (`● 46.0%`, `● 3.5%`) on the leading edge.
+* **High-Concurrency Engine:** Hardened with thread-safe re-entrancy guards (`Interlocked.CompareExchange`), non-blocking lock patterns, and `ConcurrentDictionary` to ensure silky smooth performance, zero GUI freezes, and lock-free dictionary access even under intense multi-core loads.
+* **Multi-Source Criteria Switcher:** Select whether power triggers listen to `Target App`, `CPU`, `GPU`, `CPU + GPU` (combined load), or `Any (Max)` (whichever component spikes first).
 * **Anti-Fluctuation Hysteresis Filter:** Configurable delay (1–10 seconds) prevents premature stopping during brief momentary dips in load (such as game level loading or render pass transitions).
-* **Multi-Source Criteria Switcher:** Select whether power triggers listen to `CPU`, `GPU`, `CPU + GPU` (combined load), or `Any (Max)` (whichever component spikes first).
-* **Full Modular Control:** Easily hide or show the stopwatch card via the Settings dialog without affecting monitoring performance.
 
 ### 5. 📌 Detachable Floating HUD / Desktop Widget
 * **Docked Mode:** Anchored next to the Windows system tray; smoothly slides out when clicking the tray icon and auto-hides when clicking away.
@@ -112,7 +117,10 @@ All subsystem graphs share a synchronized 60-second historical canvas rendered w
 | Shortcut / Button | Action |
 |---|---|
 | <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Q</kbd> | Toggle **Quiet Mode (99%)** / **Boost Mode (100%)** |
-| `⏱` **Stopwatch** | Start (`▶`), pause (`⏸`), reset (`↺`), or arm auto-start (`⚡`) by CPU/GPU power load |
+| `⏱` **Stopwatch** | Start (`▶`), pause (`⏸`), reset (`↺`), or arm auto-start (`⚡`) by CPU/GPU power load or target app |
+| `[+]` **Header** | Add a new independent stopwatch counter with custom app binding & color |
+| `[⊞ Scale]` **Button** | Cycle individual counter curve zoom (`Auto`, `x2`, `x4`, `x8`, `x16`, `1x`, `Off`) |
+| **Right-Click Timer** | Edit stopwatch profile (change app target, name, color) or remove counter |
 | `⤢` / `⤡` | Detach into floating desktop widget / Dock to tray flyout |
 | `📌` | Toggle **Always-On-Top** over full-screen games & windows |
 | `⚙` | Open visibility menu to show/hide individual modules & graphs |
@@ -125,8 +133,8 @@ All subsystem graphs share a synchronized 60-second historical canvas rendered w
 
 | Edition | Size | Description |
 |---|---|---|
-| **Standalone** *(Recommended)* | ~70 MB | Single executable with embedded .NET 8 runtime. Runs out-of-the-box on any Windows 10/11 x64 PC with zero dependencies. |
-| **Lite Edition** | ~1.2 MB | Ultra-compact single binary. Requires Microsoft .NET 8 Desktop Runtime installed. |
+| **Standalone** *(Recommended)* | ~73 MB | Single executable with embedded .NET 8 runtime. Runs out-of-the-box on any Windows 10/11 x64 PC with zero dependencies. |
+| **Lite Edition** | ~1.8 MB | Ultra-compact single binary. Requires Microsoft .NET 8 Desktop Runtime installed. |
 | **Fan Service Addon** | ~5 MB | Optional background service (`plugins\FanService\RyzenQuiet.FanService.exe`) for motherboard & CPU fan RPM monitoring with zero AV false positives. |
 
 > Downloads are available directly on [**ph-cu-s.com/tools/ryzenquietpro**](https://ph-cu-s.com/tools/ryzenquietpro) or on the [**GitHub Releases**](https://github.com/SaidAuita/RyzenQuietPro/releases) page.
@@ -176,8 +184,8 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 <a name="русский"></a>
 <div align="center">
 
-# ⚡ RyzenQuiet PRO (v4.03) — Описание на русском
-**Стильный, легковесный аппаратный HUD-монитор и менеджер профилей питания для Windows с мгновенным отключением CPB у процессоров AMD Ryzen, акустическим контролем и ограничением мощности видеокарт (GPU Power Limiting), расширенным мониторингом накопителей с раскрытием процессов I/O и модульным мониторингом вентиляторов.**
+# ⚡ RyzenQuiet PRO (v4.04) — Описание на русском
+**Стильный, легковесный аппаратный HUD-монитор и менеджер профилей питания для Windows с мгновенным отключением CPB у процессоров AMD Ryzen, акустическим контролем и ограничением мощности видеокарт (GPU Power Limiting), мульти-секундомером с привязкой к приложениям и независимым масштабом графиков, расширенным мониторингом накопителей с раскрытием процессов I/O и модульным мониторингом вентиляторов.**
 
 </div>
 
@@ -227,13 +235,16 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
     * Для отображения кулера CPU, помпы СЖО и разъемов корпуса установите PawnIO с официального сайта: [**pawnio.eu**](https://pawnio.eu/) (прямой установщик: [**PawnIO_setup.exe**](https://github.com/namazso/PawnIO.Setup/releases/latest/download/PawnIO_setup.exe)).
     * Обороты кулеров видеокарты (NVIDIA NVAPI / AMD ADL) считываются сразу из коробки без установки драйверов ядра.
 
-### 4. ⏱️ Аппаратный секундомер и таймер бенчмарков (v4.0)
-* **Высокоточный таймер телеметрии:** Аппаратный таймер с миллисекундной точностью (`чч:мм:сс.д`), расположенный в верхней части оверлея над графиком процессора для замера времени рендеринга, компиляции шейдеров, экспорта видео или игровых сессий.
-* **Полное ручное управление:** Крупные контрастные цифры в стиле HUD с кнопками мгновенного запуска (`▶`), паузы/остановки (`⏸`), сброса (`↺`) и взвода автостарта (`⚡`).
-* **Автостарт и автостоп по мощности (Ватты):** Автоматический старт отсчета при превышении заданной мощности [W] и остановка при снижении нагрузки ниже порога [W].
+### 4. ⏱️ Мульти-секундомер, привязка к приложениям и независимый масштаб (v4.04)
+* **Неограниченное количество независимых таймеров:** Создание любого числа параллельных секундомеров (кнопка `[+]` в шапке) с индивидуальными названиями, фирменными цветами и привязкой к конкретным программам.
+* **Привязка к приложениям и умная агрегация процессов:** Возможность привязать секундомер к любому рабочему приложению (Adobe Photoshop, Illustrator, InDesign, Blender, Visual Studio, DaVinci Resolve и др.). Алгоритм интеллектуально находит и суммирует нагрузку CPU% и оперативную память RAM всех дочерних и служебных процессов выбранного пакета.
+* **Таргетированный автостарт по нагрузке приложения (`⚡`):** Автоматический запуск отсчета чистого времени работы, когда привязанная программа активно выполняет вычисления, экспорт или рендеринг (CPU процесса ≥ 0.5% или превышен порог мощности), с автоматической паузой при простое.
+* **Диалог выбора процессов и редактор профиля:** Удобный поиск запущенных процессов с группировкой по приложениям (`ProcessSelectDialog`), а также детальный редактор секундомера (`StopwatchEditDialog`) с выбором кастомного цвета из палитры, названия и привязанного `.exe`.
+* **Индивидуальный масштаб графиков прямо в GUI (`[⊞ Auto]`, `[⊞ x2]` ... `[⊞ x16]`):** Персональные кнопки масштабирования прямо в строке каждого секундомера в интерфейсе. Позволяют наглядно увеличить кривую даже для легких фоновых процессов (например, нагрузка Illustrator в 3.5% масштабируется в 16 раз в отдельную четкую кривую) независимо от основного графика процессора.
+* **Синхронное наложение кривых процессов с живыми бейджами:** Цветные кривые нагрузки отслеживаемых программ прорисовываются прямо поверх общего 60-секундного графика CPU с цветным маркером и живым процентом нагрузки (`● 46.0%`, `● 3.5%`) на правом конце кривой.
+* **Высокопроизводительный потокобезопасный движок:** Защита от реентрабельности (`Interlocked.CompareExchange`), неблокирующий сбор метрик и потокобезопасные коллекции исключают любые зависания интерфейса и сбои мониторинга при активном переключении масштабов.
+* **Гибкий выбор критерия нагрузки:** Переключатель источника мощности автостарта — `Target App`, `CPU`, `GPU`, `CPU + GPU` (суммарная мощность системы) или `Любой (Max)` (по первому превысившему порог компоненту).
 * **Защита от ложных остановок (Гистерезис):** Настраиваемая задержка (1–10 секунд) предотвращает преждевременную остановку таймера при кратковременных просадках нагрузки (например, во время смены сцен в бенчмарках или экранов загрузки в играх).
-* **Гибкий выбор критерия нагрузки:** Переключатель источника мощности автостарта — `CPU`, `GPU`, `CPU + GPU` (суммарная мощность системы) или `Любой (Max)` (по первому превысившему порог компоненту).
-* **Модульное отключение:** Возможность скрыть или показать панель секундомера в любой момент в окне настроек.
 
 ### 5. 📌 Плавающий виджет на рабочий стол / HUD
 * **Режим трея (Docked):** Аккуратная всплывающая панель около системного трея, открывающаяся по клику на значок и скрывающаяся при клике в любое другое место.
@@ -254,7 +265,10 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 | Сочетание / Кнопка | Действие |
 |---|---|
 | <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Q</kbd> | Переключение между **Тихим режимом (99%)** и **Boost (100%)** |
-| `⏱` **Секундомер** | Старт (`▶`), пауза (`⏸`), сброс (`↺`) или взвод автостарта (`⚡`) по мощности CPU/GPU |
+| `⏱` **Секундомер** | Старт (`▶`), пауза (`⏸`), сброс (`↺`) или взвод автостарта (`⚡`) по мощности CPU/GPU или приложению |
+| `[+]` **В шапке таймеров** | Добавить новый независимый секундомер с привязкой к программе и выбором цвета |
+| `[⊞ Scale]` **Кнопка** | Циклическое переключение персонального масштаба кривой (`Auto`, `x2`, `x4`, `x8`, `x16`, `1x`, `Off`) |
+| **Правый клик по таймеру** | Редактировать профиль секундомера (сменить приложение, имя, цвет) или удалить счетчик |
 | `⤢` / `⤡` | Открепить в плавающий виджет на рабочий стол / Прикрепить к трею |
 | `📌` | Закрепить оверлей поверх всех окон (Always-On-Top) |
 | `⚙` | Меню видимости графиков, тюнинга GPU и списка процессов |
@@ -267,8 +281,8 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 
 | Редакция | Размер | Описание |
 |---|---|---|
-| **Standalone** *(Рекомендуется)* | ~72 МБ | Единый исполняемый файл со встроенной сжатой средой .NET 8. Работает из коробки на любой Windows 10/11 x64 без установки дополнительного ПО. |
-| **Lite Edition** | ~1.4 МБ | Ультралегкий компактный файл. Требует установленного в системе Microsoft .NET 8 Desktop Runtime. |
+| **Standalone** *(Рекомендуется)* | ~73 МБ | Единый исполняемый файл со встроенной сжатой средой .NET 8. Работает из коробки на любой Windows 10/11 x64 без установки дополнительного ПО. |
+| **Lite Edition** | ~1.8 МБ | Ультралегкий компактный файл. Требует установленного в системе Microsoft .NET 8 Desktop Runtime. |
 
 > Скачать сборки можно на странице [**ph-cu-s.com/tools/ryzenquietpro**](https://ph-cu-s.com/tools/ryzenquietpro) или в разделе [**GitHub Releases**](https://github.com/SaidAuita/RyzenQuietPro/releases).
 

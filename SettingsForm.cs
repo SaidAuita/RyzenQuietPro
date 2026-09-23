@@ -75,8 +75,12 @@ namespace RyzenQuietPro
         private TrackBar _tbSwStopWatts = null!;
         private Label _lblSwHysteresis = null!;
         private TrackBar _tbSwHysteresis = null!;
+        private Label _lblSwListTitle = null!;
+        private Button _btnSwAdd = null!;
+        private Panel _pnlSwListContainer = null!;
 
         private readonly List<Panel> _allCards = new();
+
         private readonly List<Panel> _cardDividers = new();
         private readonly List<Button> _opacityPresetButtons = new();
         private Panel _pnlFailSafe = null!;
@@ -84,6 +88,8 @@ namespace RyzenQuietPro
         private Label _lblResizeGrip = null!;
 
         private CheckBox _chkCpuGraph = null!;
+        private Label _lblCpuScaleTitle = null!;
+        private readonly List<Button> _cpuScaleButtons = new();
         private CheckBox _chkCpuCores = null!;
         private CheckBox _chkTopProcesses = null!;
         private CheckBox _chkRamGraph = null!;
@@ -415,7 +421,8 @@ namespace RyzenQuietPro
 
             // ================= 2. GRAPHS & MODULES CARD =================
             // Single vertical column (1 row per item) - spacious and slender
-            int cardGraphsH = multiGpu ? 552 : 522;
+            int baseOff = 28;
+            int cardGraphsH = multiGpu ? 552 + baseOff : 522 + baseOff;
             var cardGraphs = CreateCard(cardX, curY, cardW, cardGraphsH);
             _pnlBody.Controls.Add(cardGraphs);
 
@@ -433,24 +440,79 @@ namespace RyzenQuietPro
             });
             cardGraphs.Controls.Add(_chkStopwatch);
 
-            _chkCpuGraph = CreateCheckbox(Loc.Get("CpuGraph"), chkX, chkY + (chkGap * 1), _settings.ShowCpuGraph, v => _settings.ShowCpuGraph = v);
-            _chkCpuCores = CreateCheckbox(Loc.Get("CpuCores"), chkX, chkY + (chkGap * 2), _settings.ShowCpuCores, v => _settings.ShowCpuCores = v);
-            _chkTopProcesses = CreateCheckbox(Loc.Get("TopProcesses"), chkX, chkY + (chkGap * 3), _settings.ShowTopProcesses, v => {
+            _chkCpuGraph = CreateCheckbox(Loc.Get("CpuGraph"), chkX, chkY + (chkGap * 1), _settings.ShowCpuGraph, v => {
+                _settings.ShowCpuGraph = v;
+                _settings.Save();
+                _onSettingsUpdated?.Invoke();
+            });
+            cardGraphs.Controls.Add(_chkCpuGraph);
+
+            // CPU Scale Row
+            int scaleRowY = chkY + (chkGap * 1) + 24;
+            _lblCpuScaleTitle = new Label
+            {
+                Text = Loc.Get("CpuGraphScaleTitle"),
+                Font = new Font("Segoe UI", 8.0f, FontStyle.Bold),
+                ForeColor = Color.FromArgb(170, 170, 185),
+                Location = new Point(chkX + 16, scaleRowY + 3),
+                AutoSize = true
+            };
+            cardGraphs.Controls.Add(_lblCpuScaleTitle);
+
+            (string label, int val)[] scaleOptions = new[]
+            {
+                ("1x", 1),
+                ("2x", 2),
+                ("4x", 4),
+                ("6x", 6),
+                ("8x", 8),
+                (Loc.Get("ScaleAuto"), 0)
+            };
+
+            int scBtnX = chkX + 155;
+            int scBtnW = Math.Max(32, (cardW - 28 - scBtnX - (scaleOptions.Length - 1) * 4) / scaleOptions.Length);
+            foreach (var opt in scaleOptions)
+            {
+                var btn = new Button
+                {
+                    Text = opt.label,
+                    Font = new Font("Segoe UI", 7.5f, FontStyle.Bold),
+                    Size = new Size(scBtnW, 21),
+                    Location = new Point(scBtnX, scaleRowY),
+                    FlatStyle = FlatStyle.Flat,
+                    Cursor = Cursors.Hand,
+                    Tag = opt.val
+                };
+                btn.FlatAppearance.BorderSize = 1;
+                btn.Click += (s, e) => {
+                    _settings.CpuGraphScale = (int)((Button)s!).Tag!;
+                    _settings.Save();
+                    UpdateCpuScaleButtonsHighlight();
+                    _onSettingsUpdated?.Invoke();
+                };
+                cardGraphs.Controls.Add(btn);
+                _cpuScaleButtons.Add(btn);
+                scBtnX += scBtnW + 4;
+            }
+            UpdateCpuScaleButtonsHighlight();
+
+            _chkCpuCores = CreateCheckbox(Loc.Get("CpuCores"), chkX, chkY + (chkGap * 2) + baseOff, _settings.ShowCpuCores, v => _settings.ShowCpuCores = v);
+            _chkTopProcesses = CreateCheckbox(Loc.Get("TopProcesses"), chkX, chkY + (chkGap * 3) + baseOff, _settings.ShowTopProcesses, v => {
                 _settings.ShowTopProcesses = v;
                 _hardware.Processes.IsEnabled = v;
             });
-            _chkRamGraph = CreateCheckbox(Loc.Get("RamGraph"), chkX, chkY + (chkGap * 4), _settings.ShowRamGraph, v => _settings.ShowRamGraph = v);
-            _chkGpuGraph = CreateCheckbox(Loc.Get("GpuGraph"), chkX, chkY + (chkGap * 5), _settings.ShowGpuGraph, v => _settings.ShowGpuGraph = v);
-            _chkGpuTemp = CreateCheckbox(Loc.Get("GpuTemp"), chkX, chkY + (chkGap * 6), _settings.ShowGpuTempLine, v => _settings.ShowGpuTempLine = v);
-            _chkGpuFan = CreateCheckbox(Loc.Get("GpuFan"), chkX, chkY + (chkGap * 7), _settings.ShowGpuFanSpeed, v => _settings.ShowGpuFanSpeed = v);
-            _chkVramGraph = CreateCheckbox(Loc.Get("VramGraph"), chkX, chkY + (chkGap * 8), _settings.ShowVramGraph, v => _settings.ShowVramGraph = v);
-            _chkDiskGraph = CreateCheckbox(Loc.Get("DiskGraph"), chkX, chkY + (chkGap * 9), _settings.ShowDiskGraph, v => {
+            _chkRamGraph = CreateCheckbox(Loc.Get("RamGraph"), chkX, chkY + (chkGap * 4) + baseOff, _settings.ShowRamGraph, v => _settings.ShowRamGraph = v);
+            _chkGpuGraph = CreateCheckbox(Loc.Get("GpuGraph"), chkX, chkY + (chkGap * 5) + baseOff, _settings.ShowGpuGraph, v => _settings.ShowGpuGraph = v);
+            _chkGpuTemp = CreateCheckbox(Loc.Get("GpuTemp"), chkX, chkY + (chkGap * 6) + baseOff, _settings.ShowGpuTempLine, v => _settings.ShowGpuTempLine = v);
+            _chkGpuFan = CreateCheckbox(Loc.Get("GpuFan"), chkX, chkY + (chkGap * 7) + baseOff, _settings.ShowGpuFanSpeed, v => _settings.ShowGpuFanSpeed = v);
+            _chkVramGraph = CreateCheckbox(Loc.Get("VramGraph"), chkX, chkY + (chkGap * 8) + baseOff, _settings.ShowVramGraph, v => _settings.ShowVramGraph = v);
+            _chkDiskGraph = CreateCheckbox(Loc.Get("DiskGraph"), chkX, chkY + (chkGap * 9) + baseOff, _settings.ShowDiskGraph, v => {
                 _settings.ShowDiskGraph = v;
                 _chkEnhancedDiskMode.Enabled = v;
                 _settings.Save();
                 _onSettingsUpdated?.Invoke();
             });
-            _chkEnhancedDiskMode = CreateCheckbox(Loc.Get("EnhancedDiskMode"), chkX + 16, chkY + (chkGap * 10), _settings.EnhancedDiskMode, v => {
+            _chkEnhancedDiskMode = CreateCheckbox(Loc.Get("EnhancedDiskMode"), chkX + 16, chkY + (chkGap * 10) + baseOff, _settings.EnhancedDiskMode, v => {
                 _settings.EnhancedDiskMode = v;
                 _settings.Save();
                 _onSettingsUpdated?.Invoke();
@@ -458,7 +520,7 @@ namespace RyzenQuietPro
             _chkEnhancedDiskMode.Enabled = _settings.ShowDiskGraph;
 
             // Tier 1: Checkbox on left + Active/Start status button on right + Folder button
-            int fanY = chkY + (chkGap * 11);
+            int fanY = chkY + (chkGap * 11) + baseOff;
             _chkFanGraph = CreateCheckbox(Loc.Get("FanGraph"), chkX, fanY + 3, _settings.ShowFanGraph, v => {
                 _settings.ShowFanGraph = v;
                 _settings.Save();
@@ -725,7 +787,7 @@ namespace RyzenQuietPro
             curY += cardGraphsH + 8;
 
             // ================= 2b. STOPWATCH & AUTO-START CARD =================
-            int cardSwH = 282;
+            int cardSwH = 445;
             var cardSw = CreateCard(cardX, curY, cardW, cardSwH);
             _pnlBody.Controls.Add(cardSw);
 
@@ -907,7 +969,48 @@ namespace RyzenQuietPro
             _toolTip.SetToolTip(_tbSwHysteresis, Loc.Get("StopwatchHysteresisTip"));
             cardSw.Controls.Add(_tbSwHysteresis);
 
+            // Stopwatch Profiles Management Section
+            int swListY = swHystY + 46;
+            _lblSwListTitle = CreateSectionHeader("⏱ " + Loc.Get("StopwatchListTitle"), 12, swListY);
+            cardSw.Controls.Add(_lblSwListTitle);
+
+            _btnSwAdd = new Button
+            {
+                Text = Loc.Get("StopwatchAdd"),
+                Font = new Font("Segoe UI", 8.0f, FontStyle.Bold),
+                Size = new Size(130, 24),
+                Location = new Point(cardW - 14 - 130, swListY - 2),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.FromArgb(34, 197, 94),
+                ForeColor = Color.FromArgb(18, 18, 22),
+                Cursor = Cursors.Hand
+            };
+            _btnSwAdd.FlatAppearance.BorderSize = 0;
+            _btnSwAdd.Click += (s, e) => {
+                using var dlg = new StopwatchEditDialog(null, _hardware.Processes);
+                if (dlg.ShowDialog(this) == DialogResult.OK)
+                {
+                    _settings.Stopwatches.Add(dlg.Profile);
+                    _settings.Save();
+                    _hardware.Stopwatch.SyncWithSettings(_settings);
+                    PopulateStopwatchList(_pnlSwListContainer, cardW - 28);
+                    _onSettingsUpdated?.Invoke();
+                }
+            };
+            cardSw.Controls.Add(_btnSwAdd);
+
+            _pnlSwListContainer = new Panel
+            {
+                Location = new Point(14, swListY + 26),
+                Size = new Size(cardW - 28, 125),
+                AutoScroll = true,
+                BackColor = Color.Transparent
+            };
+            cardSw.Controls.Add(_pnlSwListContainer);
+            PopulateStopwatchList(_pnlSwListContainer, cardW - 28);
+
             curY += cardSwH + 8;
+
 
             // ================= 2c. GPU ACOUSTIC & POWER TUNING CARD =================
             int cardGpuH = 312;
@@ -1458,6 +1561,133 @@ namespace RyzenQuietPro
             }
         }
 
+        private void PopulateStopwatchList(Panel pnlList, int width)
+        {
+            pnlList.SuspendLayout();
+            pnlList.Controls.Clear();
+
+            int rowY = 0;
+            int rowH = 34;
+            int gap = 4;
+            int rowW = Math.Max(200, width - 6);
+
+            for (int i = 0; i < _settings.Stopwatches.Count; i++)
+            {
+                var profile = _settings.Stopwatches[i];
+                var row = new Panel
+                {
+                    Location = new Point(0, rowY),
+                    Size = new Size(rowW, rowH),
+                    BackColor = Color.FromArgb(26, 26, 36)
+                };
+
+                var colorBar = new Panel
+                {
+                    Location = new Point(4, 5),
+                    Size = new Size(6, rowH - 10),
+                    BackColor = StopwatchItem.ParseColor(profile.ColorHex, Color.FromArgb(52, 211, 153))
+                };
+                row.Controls.Add(colorBar);
+
+                string displayName = !string.IsNullOrWhiteSpace(profile.Name)
+                    ? profile.Name
+                    : (!string.IsNullOrWhiteSpace(profile.TargetFriendlyName) ? profile.TargetFriendlyName : (!string.IsNullOrWhiteSpace(profile.TargetExe) ? profile.TargetExe : Loc.Get("StopwatchAnyProgram")));
+
+                var lblName = new Label
+                {
+                    Text = displayName,
+                    Location = new Point(14, 7),
+                    Size = new Size(110, 20),
+                    Font = new Font("Segoe UI", 8.5f, FontStyle.Bold),
+                    ForeColor = Color.FromArgb(240, 240, 248),
+                    AutoEllipsis = true
+                };
+                row.Controls.Add(lblName);
+
+                string targetDesc = string.IsNullOrWhiteSpace(profile.TargetExe)
+                    ? Loc.Get("StopwatchAnyProgram")
+                    : (!string.IsNullOrWhiteSpace(profile.TargetFriendlyName) ? profile.TargetFriendlyName : profile.TargetExe);
+
+                if (profile.ShowOnCpuGraph && profile.GraphScale != -1)
+                {
+                    string scaleTag = profile.GraphScale switch
+                    {
+                        0 => Loc.Get("StopwatchScale_Auto"),
+                        1 => "1x",
+                        _ => $"x{profile.GraphScale}"
+                    };
+                    targetDesc += $" [📈 {scaleTag}]";
+                }
+
+                var lblTarget = new Label
+                {
+                    Text = targetDesc,
+                    Location = new Point(118, 7),
+                    Size = new Size(Math.Max(50, rowW - 118 - 105), 20),
+                    Font = new Font("Segoe UI", 8.0f),
+                    ForeColor = Color.FromArgb(56, 189, 248),
+                    AutoEllipsis = true
+                };
+                _toolTip.SetToolTip(lblTarget, targetDesc);
+                row.Controls.Add(lblTarget);
+
+                var btnEdit = new Button
+                {
+                    Text = Loc.Get("StopwatchEdit"),
+                    Location = new Point(rowW - 98, 4),
+                    Size = new Size(64, 25),
+                    FlatStyle = FlatStyle.Flat,
+                    BackColor = Color.FromArgb(38, 38, 50),
+                    ForeColor = Color.FromArgb(220, 220, 235),
+                    Font = new Font("Segoe UI", 8.0f),
+                    Cursor = Cursors.Hand
+                };
+                btnEdit.FlatAppearance.BorderColor = Color.FromArgb(55, 55, 70);
+                var currentProfile = profile;
+                btnEdit.Click += (s, e) => {
+                    using var dlg = new StopwatchEditDialog(currentProfile, _hardware.Processes);
+                    if (dlg.ShowDialog(this) == DialogResult.OK)
+                    {
+                        _settings.Save();
+                        _hardware.Stopwatch.SyncWithSettings(_settings);
+                        PopulateStopwatchList(pnlList, width);
+                        _onSettingsUpdated?.Invoke();
+                    }
+                };
+                row.Controls.Add(btnEdit);
+
+                var btnDel = new Button
+                {
+                    Text = "✕",
+                    Location = new Point(rowW - 30, 4),
+                    Size = new Size(26, 25),
+                    FlatStyle = FlatStyle.Flat,
+                    BackColor = Color.FromArgb(38, 38, 50),
+                    ForeColor = Color.FromArgb(244, 63, 94),
+                    Font = new Font("Segoe UI", 8.5f, FontStyle.Bold),
+                    Cursor = Cursors.Hand,
+                    Enabled = _settings.Stopwatches.Count > 1
+                };
+                btnDel.FlatAppearance.BorderColor = Color.FromArgb(55, 55, 70);
+                btnDel.Click += (s, e) => {
+                    if (_settings.Stopwatches.Count > 1)
+                    {
+                        _settings.Stopwatches.Remove(currentProfile);
+                        _settings.Save();
+                        _hardware.Stopwatch.SyncWithSettings(_settings);
+                        PopulateStopwatchList(pnlList, width);
+                        _onSettingsUpdated?.Invoke();
+                    }
+                };
+                row.Controls.Add(btnDel);
+
+                pnlList.Controls.Add(row);
+                rowY += rowH + gap;
+            }
+
+            pnlList.ResumeLayout(true);
+        }
+
         private void RelayoutCards()
         {
             if (_pnlBody == null || _allCards.Count == 0) return;
@@ -1505,6 +1735,12 @@ namespace RyzenQuietPro
             if (_tbSwStopWatts != null) _tbSwStopWatts.Width = cardW - 28;
             if (_tbSwHysteresis != null) _tbSwHysteresis.Width = cardW - 28;
             if (_lblSwSourceDesc != null) _lblSwSourceDesc.Width = cardW - 28;
+            if (_btnSwAdd != null) _btnSwAdd.Left = cardW - 14 - _btnSwAdd.Width;
+            if (_pnlSwListContainer != null)
+            {
+                _pnlSwListContainer.Width = cardW - 28;
+                PopulateStopwatchList(_pnlSwListContainer, cardW - 28);
+            }
 
             if (_swSourceButtons.Count > 0)
             {
@@ -1516,8 +1752,19 @@ namespace RyzenQuietPro
                 }
             }
 
+
             // Graphs Card elements
             if (_btnResetGraphs != null) _btnResetGraphs.Width = cardW - 28;
+            if (_cpuScaleButtons.Count > 0)
+            {
+                int scBtnX = 14 + 155;
+                int scBtnW = Math.Max(30, (cardW - 28 - scBtnX - (_cpuScaleButtons.Count - 1) * 4) / _cpuScaleButtons.Count);
+                for (int i = 0; i < _cpuScaleButtons.Count; i++)
+                {
+                    _cpuScaleButtons[i].Width = scBtnW;
+                    _cpuScaleButtons[i].Left = scBtnX + i * (scBtnW + 4);
+                }
+            }
             if (_btnFanToggle != null) _btnFanToggle.Left = cardW - 140;
             if (_btnFanFolder != null) _btnFanFolder.Left = cardW - 30;
             if (_chkFanGraph != null) _chkFanGraph.Width = cardW - 148;
@@ -1610,6 +1857,9 @@ namespace RyzenQuietPro
             if (_lblSwHysteresis != null) _lblSwHysteresis.Text = $"{Loc.Get("StopwatchHysteresis")}: {_settings.StopwatchHysteresisSeconds} {Loc.Get("Sec")}";
             if (_toolTip != null && _tbSwHysteresis != null) _toolTip.SetToolTip(_tbSwHysteresis, Loc.Get("StopwatchHysteresisTip"));
             if (_toolTip != null && _lblSwHysteresis != null) _toolTip.SetToolTip(_lblSwHysteresis, Loc.Get("StopwatchHysteresisTip"));
+            if (_lblSwListTitle != null) _lblSwListTitle.Text = "⏱ " + Loc.Get("StopwatchListTitle");
+            if (_btnSwAdd != null) _btnSwAdd.Text = Loc.Get("StopwatchAdd");
+            if (_pnlSwListContainer != null) PopulateStopwatchList(_pnlSwListContainer, _pnlSwListContainer.Width);
 
             foreach (var btn in _swSourceButtons)
             {
@@ -1640,6 +1890,15 @@ namespace RyzenQuietPro
             if (_chkShowAllGpus != null) _chkShowAllGpus.Text = Loc.Get("ShowAllGpus");
 
             _btnResetGraphs.Text = "⚡ " + Loc.Get("ShowAllGraphs");
+            if (_lblCpuScaleTitle != null) _lblCpuScaleTitle.Text = Loc.Get("CpuGraphScaleTitle");
+            foreach (var btn in _cpuScaleButtons)
+            {
+                if (btn.Tag is int val && val == 0)
+                {
+                    btn.Text = Loc.Get("ScaleAuto");
+                }
+            }
+            UpdateCpuScaleButtonsHighlight();
 
             foreach (var btn in _trayButtons)
             {
@@ -1692,6 +1951,26 @@ namespace RyzenQuietPro
             UpdateFanModeUI();
             UpdateFanStatusUI();
             UpdateGpuTuningCardUI();
+        }
+
+        private void UpdateCpuScaleButtonsHighlight()
+        {
+            foreach (var btn in _cpuScaleButtons)
+            {
+                bool isSelected = (btn.Tag is int v && v == _settings.CpuGraphScale);
+                if (isSelected)
+                {
+                    btn.BackColor = Color.FromArgb(38, 54, 75);
+                    btn.ForeColor = Color.FromArgb(56, 189, 248);
+                    btn.FlatAppearance.BorderColor = Color.FromArgb(56, 189, 248);
+                }
+                else
+                {
+                    btn.BackColor = Color.FromArgb(24, 24, 32);
+                    btn.ForeColor = Color.FromArgb(140, 140, 155);
+                    btn.FlatAppearance.BorderColor = Color.FromArgb(45, 45, 58);
+                }
+            }
         }
 
         private void UpdateGpuTuningCardUI()

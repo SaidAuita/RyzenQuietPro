@@ -31,9 +31,12 @@ namespace RyzenQuietPro
         public int StopwatchAutoStartWatts { get; set; } = 50;
         public int StopwatchAutoStopWatts { get; set; } = 30;
         public int StopwatchHysteresisSeconds { get; set; } = 3;
+        public System.Collections.Generic.List<StopwatchProfile> Stopwatches { get; set; } = new();
+
 
         // Visible Modules & Graphs
         public bool ShowCpuGraph { get; set; } = true;
+        public int CpuGraphScale { get; set; } = 1; // 1 = 1x (100%), 2 = 2x (50%), 4 = 4x (25%), 6 = 6x (16.7%), 8 = 8x (12.5%), 0 = Auto
         public bool ShowCpuCores { get; set; } = true;
         public bool ShowRamGraph { get; set; } = true;
         public bool ShowGpuGraph { get; set; } = true;
@@ -124,20 +127,46 @@ namespace RyzenQuietPro
 
         public static AppSettings Load()
         {
+            AppSettings settings;
             try
             {
                 if (File.Exists(SettingsFile))
                 {
                     string json = File.ReadAllText(SettingsFile);
-                    var settings = JsonSerializer.Deserialize<AppSettings>(json);
-                    if (settings != null) return settings;
+                    settings = JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
+                }
+                else
+                {
+                    settings = new AppSettings();
                 }
             }
             catch (Exception ex)
             {
                 Logger.Log($"Failed to load settings: {ex.Message}");
+                settings = new AppSettings();
             }
-            return new AppSettings();
+
+            settings.EnsureDefaultStopwatch();
+            return settings;
+        }
+
+        public void EnsureDefaultStopwatch()
+        {
+            Stopwatches ??= new();
+            if (Stopwatches.Count == 0)
+            {
+                Stopwatches.Add(new StopwatchProfile
+                {
+                    Id = Guid.NewGuid().ToString("N"),
+                    Name = "",
+                    TargetExe = "",
+                    TargetFriendlyName = "",
+                    ColorHex = "#34D399", // Emerald
+                    IsAutoArmed = StopwatchAutoStartEnabled,
+                    ShowOnCpuGraph = true,
+                    GraphScale = 0
+                });
+            }
         }
 
         public void Save()
@@ -153,5 +182,17 @@ namespace RyzenQuietPro
                 Logger.Log($"Failed to save settings: {ex.Message}");
             }
         }
+    }
+
+    public class StopwatchProfile
+    {
+        public string Id { get; set; } = Guid.NewGuid().ToString("N");
+        public string Name { get; set; } = "";
+        public string TargetExe { get; set; } = ""; // Empty string = Any program / Global power
+        public string TargetFriendlyName { get; set; } = "";
+        public string ColorHex { get; set; } = "#34D399";
+        public bool IsAutoArmed { get; set; } = false;
+        public bool ShowOnCpuGraph { get; set; } = true;
+        public int GraphScale { get; set; } = 0; // 0 = Auto, 1 = 1x, 2 = 2x, 4 = 4x, 8 = 8x, 16 = 16x, -1 = Off
     }
 }
