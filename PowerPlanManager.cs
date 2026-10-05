@@ -110,6 +110,60 @@ namespace RyzenQuietPro
             return Mode.Unknown;
         }
 
+        public static bool SetDiskIdleTimeout(int minutes)
+        {
+            try
+            {
+                int safeMinutes = Math.Max(0, minutes);
+                int seconds = safeMinutes * 60;
+
+                // 1. Direct change via /change
+                RunPowerCfg($"/change disk-timeout-ac {safeMinutes}");
+                RunPowerCfg($"/change disk-timeout-dc {safeMinutes}");
+
+                // 2. Set index in SUB_DISK (0012ee47-9041-4b5d-9b77-535fba8b1442) DISKIDLE (6738e2c4-e8a5-4a42-b16a-e040e769756e)
+                const string SubDisk = "0012ee47-9041-4b5d-9b77-535fba8b1442";
+                const string DiskIdle = "6738e2c4-e8a5-4a42-b16a-e040e769756e";
+                RunPowerCfg($"/setacvalueindex SCHEME_CURRENT {SubDisk} {DiskIdle} {seconds}");
+                RunPowerCfg($"/setdcvalueindex SCHEME_CURRENT {SubDisk} {DiskIdle} {seconds}");
+
+                // 3. Activate current scheme so it takes effect instantly
+                RunPowerCfg("/setactive SCHEME_CURRENT");
+
+                Logger.Log($"Applied disk idle timeout: {safeMinutes} min ({seconds} sec)");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.Log($"Exception setting disk idle timeout to {minutes} min: {ex.Message}");
+                return false;
+            }
+        }
+
+        public static int GetDiskIdleTimeoutMinutes()
+        {
+            try
+            {
+                const string SubDisk = "0012ee47-9041-4b5d-9b77-535fba8b1442";
+                var result = RunPowerCfg($"/query SCHEME_CURRENT {SubDisk}");
+                if (result.ExitCode == 0)
+                {
+                    var matches = Regex.Matches(result.StdOut, @"0x([0-9a-fA-F]+)");
+                    if (matches.Count >= 2)
+                    {
+                        string hexValue = matches[matches.Count - 2].Groups[1].Value;
+                        int seconds = Convert.ToInt32(hexValue, 16);
+                        return seconds / 60;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Log($"Error reading disk idle timeout: {ex.Message}");
+            }
+            return -1;
+        }
+
         public struct ProcessResult
         {
             public int ExitCode;

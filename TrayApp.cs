@@ -24,6 +24,11 @@ namespace RyzenQuietPro
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
         private static extern bool DestroyIcon(IntPtr handle);
 
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        private static extern uint RegisterWindowMessage(string lpString);
+
+        private static readonly uint WM_SHOW_DASHBOARD_MSG = RegisterWindowMessage("RyzenQuietPro_ShowDashboard");
+
         private NotifyIcon _notifyIcon = null!;
         private ContextMenuStrip _contextMenu = null!;
         private ToolStripMenuItem _openDashItem = null!;
@@ -333,7 +338,11 @@ namespace RyzenQuietPro
 
         protected override void WndProc(ref Message m)
         {
-            if (m.Msg == WM_HOTKEY && m.WParam.ToInt32() == HOTKEY_ID)
+            if (m.Msg == (int)WM_SHOW_DASHBOARD_MSG)
+            {
+                ShowDashboard();
+            }
+            else if (m.Msg == WM_HOTKEY && m.WParam.ToInt32() == HOTKEY_ID)
             {
                 ToggleMode();
             }

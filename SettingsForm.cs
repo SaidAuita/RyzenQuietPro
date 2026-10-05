@@ -79,6 +79,22 @@ namespace RyzenQuietPro
         private Button _btnSwAdd = null!;
         private Panel _pnlSwListContainer = null!;
 
+        // HDD Awake Schedule Controls
+        private Label _lblSecHdd = null!;
+        private CheckBox _chkHddSchedule = null!;
+        private Panel _pnlHddControls = null!;
+        private Label _lblHddWorkHours = null!;
+        private ComboBox _cbHddStart = null!;
+        private Label _lblHddDash = null!;
+        private ComboBox _cbHddEnd = null!;
+        private CheckBox _chkHddWorkDaysOnly = null!;
+        private Label _lblHddOffHours = null!;
+        private readonly List<Button> _hddOffHoursPresetButtons = new();
+        private CheckBox _chkHddKeepAlive = null!;
+        private Panel _sepHdd = null!;
+        private Button _btnHddWakeNow = null!;
+        private Label _lblHddWakeStatus = null!;
+
         private readonly List<Panel> _allCards = new();
 
         private readonly List<Panel> _cardDividers = new();
@@ -1262,6 +1278,245 @@ namespace RyzenQuietPro
 
             curY += cardGpuH + 8;
 
+            // ================= HDD AWAKE SCHEDULE CARD =================
+            int cardHddH = 268;
+            var cardHdd = CreateCard(cardX, curY, cardW, cardHddH);
+            _pnlBody.Controls.Add(cardHdd);
+
+            _lblSecHdd = CreateSectionHeader(Loc.Get("HddScheduleModule"), 12, 8);
+            cardHdd.Controls.Add(_lblSecHdd);
+
+            _chkHddSchedule = CreateCheckbox(Loc.Get("HddScheduleEnable"), 14, 30, _settings.HddScheduleEnabled, v => {
+                _settings.HddScheduleEnabled = v;
+                _hardware.HddSchedule.ApplyImmediate();
+                UpdateHddCardUI();
+            });
+            cardHdd.Controls.Add(_chkHddSchedule);
+
+            _pnlHddControls = new Panel
+            {
+                Location = new Point(14, 56),
+                Size = new Size(cardW - 28, 204),
+                BackColor = Color.Transparent
+            };
+            cardHdd.Controls.Add(_pnlHddControls);
+
+            // Row 1: Work hours range
+            _lblHddWorkHours = new Label
+            {
+                Text = Loc.Get("HddWorkHours"),
+                Font = new Font("Segoe UI", 8.25f),
+                ForeColor = Color.FromArgb(200, 200, 215),
+                Location = new Point(0, 5),
+                AutoSize = true
+            };
+            _pnlHddControls.Controls.Add(_lblHddWorkHours);
+
+            _cbHddStart = new ComboBox
+            {
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                DrawMode = DrawMode.OwnerDrawFixed,
+                Font = new Font("Segoe UI", 8.5f),
+                BackColor = Color.FromArgb(24, 24, 32),
+                ForeColor = Color.FromArgb(56, 189, 248),
+                FlatStyle = FlatStyle.Flat,
+                Location = new Point(cardW - 28 - 156, 1),
+                Size = new Size(72, 26),
+                ItemHeight = 20,
+                Cursor = Cursors.Hand
+            };
+            _cbHddStart.DrawItem += (s, e) => {
+                if (e.Index < 0) return;
+                var cb = (ComboBox)s!;
+                bool isSelected = (e.State & DrawItemState.Selected) != 0;
+                Color bg = isSelected ? Color.FromArgb(38, 56, 80) : Color.FromArgb(24, 24, 32);
+                Color fg = isSelected ? Color.White : Color.FromArgb(56, 189, 248);
+                using var b = new SolidBrush(bg);
+                e.Graphics.FillRectangle(b, e.Bounds);
+                string text = cb.Items[e.Index]?.ToString() ?? "";
+                TextRenderer.DrawText(e.Graphics, text, cb.Font, e.Bounds, fg,
+                    TextFormatFlags.VerticalCenter | TextFormatFlags.HorizontalCenter | TextFormatFlags.NoPadding);
+            };
+
+            _cbHddEnd = new ComboBox
+            {
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                DrawMode = DrawMode.OwnerDrawFixed,
+                Font = new Font("Segoe UI", 8.5f),
+                BackColor = Color.FromArgb(24, 24, 32),
+                ForeColor = Color.FromArgb(56, 189, 248),
+                FlatStyle = FlatStyle.Flat,
+                Location = new Point(cardW - 28 - 72, 1),
+                Size = new Size(72, 26),
+                ItemHeight = 20,
+                Cursor = Cursors.Hand
+            };
+            _cbHddEnd.DrawItem += (s, e) => {
+                if (e.Index < 0) return;
+                var cb = (ComboBox)s!;
+                bool isSelected = (e.State & DrawItemState.Selected) != 0;
+                Color bg = isSelected ? Color.FromArgb(38, 56, 80) : Color.FromArgb(24, 24, 32);
+                Color fg = isSelected ? Color.White : Color.FromArgb(56, 189, 248);
+                using var b = new SolidBrush(bg);
+                e.Graphics.FillRectangle(b, e.Bounds);
+                string text = cb.Items[e.Index]?.ToString() ?? "";
+                TextRenderer.DrawText(e.Graphics, text, cb.Font, e.Bounds, fg,
+                    TextFormatFlags.VerticalCenter | TextFormatFlags.HorizontalCenter | TextFormatFlags.NoPadding);
+            };
+
+            _lblHddDash = new Label
+            {
+                Text = "—",
+                Font = new Font("Segoe UI", 8.25f, FontStyle.Bold),
+                ForeColor = Color.FromArgb(140, 140, 155),
+                Location = new Point(cardW - 28 - 84, 4),
+                Size = new Size(12, 20),
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+
+            for (int h = 0; h < 24; h++)
+            {
+                string timeStr = $"{h:D2}:00";
+                _cbHddStart.Items.Add(timeStr);
+                _cbHddEnd.Items.Add(timeStr);
+            }
+            _cbHddStart.SelectedIndex = Math.Clamp(_settings.HddWorkStartHour, 0, 23);
+            _cbHddEnd.SelectedIndex = Math.Clamp(_settings.HddWorkEndHour, 0, 23);
+
+            _cbHddStart.SelectedIndexChanged += (s, e) => {
+                if (_cbHddStart.SelectedIndex >= 0)
+                {
+                    _settings.HddWorkStartHour = _cbHddStart.SelectedIndex;
+                    _settings.HddWorkStartMinute = 0;
+                    _settings.Save();
+                    _hardware.HddSchedule.ApplyImmediate();
+                }
+            };
+            _cbHddEnd.SelectedIndexChanged += (s, e) => {
+                if (_cbHddEnd.SelectedIndex >= 0)
+                {
+                    _settings.HddWorkEndHour = _cbHddEnd.SelectedIndex;
+                    _settings.HddWorkEndMinute = 0;
+                    _settings.Save();
+                    _hardware.HddSchedule.ApplyImmediate();
+                }
+            };
+
+            _pnlHddControls.Controls.Add(_cbHddStart);
+            _pnlHddControls.Controls.Add(_lblHddDash);
+            _pnlHddControls.Controls.Add(_cbHddEnd);
+
+            // Row 2: Workdays only
+            _chkHddWorkDaysOnly = CreateCheckbox(Loc.Get("HddWorkDaysOnly"), 0, 34, _settings.HddWorkDaysOnly, v => {
+                _settings.HddWorkDaysOnly = v;
+                _hardware.HddSchedule.ApplyImmediate();
+            });
+            _pnlHddControls.Controls.Add(_chkHddWorkDaysOnly);
+
+            // Row 3: Off-Hours timeout label
+            _lblHddOffHours = new Label
+            {
+                Text = Loc.Get("HddOffHoursTimeout"),
+                Font = new Font("Segoe UI", 8.25f),
+                ForeColor = Color.FromArgb(200, 200, 215),
+                Location = new Point(0, 66),
+                AutoSize = true
+            };
+            _pnlHddControls.Controls.Add(_lblHddOffHours);
+
+            // Row 4: 5 Preset buttons full-width
+            int[] hddTimeoutPresets = new[] { 10, 15, 20, 30, 60 };
+            int totalBtnW = cardW - 28;
+            int hddBtnGap = 5;
+            int hddBtnW = (totalBtnW - (hddTimeoutPresets.Length - 1) * hddBtnGap) / hddTimeoutPresets.Length;
+            for (int i = 0; i < hddTimeoutPresets.Length; i++)
+            {
+                int p = hddTimeoutPresets[i];
+                int btnLeft = i * (hddBtnW + hddBtnGap);
+                int btnWidth = (i == hddTimeoutPresets.Length - 1) ? (totalBtnW - btnLeft) : hddBtnW;
+                var pBtn = new Button
+                {
+                    Text = $"{p}m",
+                    Font = new Font("Segoe UI", 8.25f, FontStyle.Bold),
+                    Size = new Size(btnWidth, 26),
+                    Location = new Point(btnLeft, 88),
+                    FlatStyle = FlatStyle.Flat,
+                    BackColor = (_settings.HddOffHoursTimeoutMinutes == p) ? Color.FromArgb(56, 189, 248) : Color.FromArgb(28, 28, 36),
+                    ForeColor = (_settings.HddOffHoursTimeoutMinutes == p) ? Color.FromArgb(18, 18, 24) : Color.FromArgb(170, 170, 185),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    Padding = Padding.Empty,
+                    Cursor = Cursors.Hand,
+                    Tag = p
+                };
+                pBtn.FlatAppearance.BorderSize = 0;
+                int targetMin = p;
+                pBtn.Click += (s, e) => {
+                    _settings.HddOffHoursTimeoutMinutes = targetMin;
+                    _settings.Save();
+                    _hardware.HddSchedule.ApplyImmediate();
+                    UpdateHddTimeoutButtonsHighlight();
+                };
+                _pnlHddControls.Controls.Add(pBtn);
+                _hddOffHoursPresetButtons.Add(pBtn);
+            }
+
+            // Row 5: Keep-Alive pulse
+            _chkHddKeepAlive = CreateCheckbox(Loc.Get("HddKeepAlivePulse"), 0, 122, _settings.HddKeepAlivePulse, v => {
+                _settings.HddKeepAlivePulse = v;
+            });
+            _toolTip.SetToolTip(_chkHddKeepAlive, Loc.Get("HddKeepAliveTip"));
+            _pnlHddControls.Controls.Add(_chkHddKeepAlive);
+
+            // Row 6: Divider
+            _sepHdd = new Panel
+            {
+                Location = new Point(0, 154),
+                Size = new Size(cardW - 28, 1),
+                BackColor = Color.FromArgb(44, 44, 56)
+            };
+            _pnlHddControls.Controls.Add(_sepHdd);
+
+            // Row 7: Action Button & Status
+            _btnHddWakeNow = new Button
+            {
+                Text = Loc.Get("HddWakeNow"),
+                Font = new Font("Segoe UI", 8.25f, FontStyle.Bold),
+                Size = new Size(180, 28),
+                Location = new Point(0, 164),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.FromArgb(28, 36, 48),
+                ForeColor = Color.FromArgb(56, 189, 248),
+                TextAlign = ContentAlignment.MiddleCenter,
+                Cursor = Cursors.Hand
+            };
+            _btnHddWakeNow.FlatAppearance.BorderColor = Color.FromArgb(44, 60, 80);
+            _btnHddWakeNow.Click += async (s, e) => {
+                _btnHddWakeNow.Enabled = false;
+                _lblHddWakeStatus.Text = Loc.Get("HddWaking");
+                _lblHddWakeStatus.ForeColor = Color.FromArgb(245, 158, 11);
+                await _hardware.HddSchedule.WakeUpAllHddsAsync();
+                _lblHddWakeStatus.Text = Loc.Get("HddWoken");
+                _lblHddWakeStatus.ForeColor = Color.FromArgb(34, 197, 94);
+                _btnHddWakeNow.Enabled = true;
+            };
+            _pnlHddControls.Controls.Add(_btnHddWakeNow);
+
+            _lblHddWakeStatus = new Label
+            {
+                Text = _hardware.HddSchedule.GetStatusString(),
+                Font = new Font("Segoe UI", 8f),
+                ForeColor = Color.FromArgb(160, 160, 175),
+                Location = new Point(188, 168),
+                Size = new Size(cardW - 28 - 190, 20),
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+            _pnlHddControls.Controls.Add(_lblHddWakeStatus);
+
+            UpdateHddCardUI();
+            UpdateHddTimeoutButtonsHighlight();
+
+            curY += cardHddH + 8;
+
             // ================= 3. TRAY ICON CARD =================
             var cardTray = CreateCard(cardX, curY, cardW, 70);
             _pnlBody.Controls.Add(cardTray);
@@ -1622,8 +1877,8 @@ namespace RyzenQuietPro
                 var lblTarget = new Label
                 {
                     Text = targetDesc,
-                    Location = new Point(118, 7),
-                    Size = new Size(Math.Max(50, rowW - 118 - 105), 20),
+                    Location = new Point(128, 7),
+                    Size = new Size(Math.Max(50, rowW - 128 - 110), 20),
                     Font = new Font("Segoe UI", 8.0f),
                     ForeColor = Color.FromArgb(56, 189, 248),
                     AutoEllipsis = true
@@ -1634,14 +1889,17 @@ namespace RyzenQuietPro
                 var btnEdit = new Button
                 {
                     Text = Loc.Get("StopwatchEdit"),
-                    Location = new Point(rowW - 98, 4),
-                    Size = new Size(64, 25),
+                    Location = new Point(rowW - 104, 3),
+                    Size = new Size(70, 28),
                     FlatStyle = FlatStyle.Flat,
                     BackColor = Color.FromArgb(38, 38, 50),
                     ForeColor = Color.FromArgb(220, 220, 235),
-                    Font = new Font("Segoe UI", 8.0f),
+                    Font = new Font("Segoe UI", 8.25f),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    Padding = new Padding(0, 1, 0, 0),
                     Cursor = Cursors.Hand
                 };
+                btnEdit.FlatAppearance.BorderSize = 1;
                 btnEdit.FlatAppearance.BorderColor = Color.FromArgb(55, 55, 70);
                 var currentProfile = profile;
                 btnEdit.Click += (s, e) => {
@@ -1659,15 +1917,18 @@ namespace RyzenQuietPro
                 var btnDel = new Button
                 {
                     Text = "✕",
-                    Location = new Point(rowW - 30, 4),
-                    Size = new Size(26, 25),
+                    Location = new Point(rowW - 30, 3),
+                    Size = new Size(26, 28),
                     FlatStyle = FlatStyle.Flat,
                     BackColor = Color.FromArgb(38, 38, 50),
                     ForeColor = Color.FromArgb(244, 63, 94),
                     Font = new Font("Segoe UI", 8.5f, FontStyle.Bold),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    Padding = Padding.Empty,
                     Cursor = Cursors.Hand,
                     Enabled = _settings.Stopwatches.Count > 1
                 };
+                btnDel.FlatAppearance.BorderSize = 1;
                 btnDel.FlatAppearance.BorderColor = Color.FromArgb(55, 55, 70);
                 btnDel.Click += (s, e) => {
                     if (_settings.Stopwatches.Count > 1)
@@ -1812,6 +2073,30 @@ namespace RyzenQuietPro
                 div.Width = cardW - 24;
             }
 
+            // HDD Awake Schedule elements
+            if (_pnlHddControls != null) _pnlHddControls.Width = cardW - 28;
+            if (_cbHddEnd != null) _cbHddEnd.Left = cardW - 28 - 72;
+            if (_lblHddDash != null) _lblHddDash.Left = cardW - 28 - 84;
+            if (_cbHddStart != null) _cbHddStart.Left = cardW - 28 - 156;
+            if (_hddOffHoursPresetButtons.Count > 0)
+            {
+                int totalHddBtnsW = cardW - 28;
+                int btnGap = 5;
+                int hddBtnW = (totalHddBtnsW - (_hddOffHoursPresetButtons.Count - 1) * btnGap) / _hddOffHoursPresetButtons.Count;
+                for (int i = 0; i < _hddOffHoursPresetButtons.Count; i++)
+                {
+                    int btnLeft = i * (hddBtnW + btnGap);
+                    _hddOffHoursPresetButtons[i].Left = btnLeft;
+                    _hddOffHoursPresetButtons[i].Top = 88;
+                    _hddOffHoursPresetButtons[i].Width = (i == _hddOffHoursPresetButtons.Count - 1)
+                        ? (totalHddBtnsW - btnLeft)
+                        : hddBtnW;
+                    _hddOffHoursPresetButtons[i].Height = 26;
+                }
+            }
+            if (_sepHdd != null) _sepHdd.Width = cardW - 28;
+            if (_lblHddWakeStatus != null) _lblHddWakeStatus.Width = Math.Max(50, cardW - 28 - 190);
+
             // Footer close button
             if (_btnClose != null)
             {
@@ -1940,6 +2225,16 @@ namespace RyzenQuietPro
                 _gpuPowerPresetButtons[i].Text = $"{Loc.Get(powerPresets[i].key)} ({powerPresets[i].w}W)";
             }
 
+            if (_lblSecHdd != null) _lblSecHdd.Text = Loc.Get("HddScheduleModule");
+            if (_chkHddSchedule != null) _chkHddSchedule.Text = Loc.Get("HddScheduleEnable");
+            if (_lblHddWorkHours != null) _lblHddWorkHours.Text = Loc.Get("HddWorkHours");
+            if (_chkHddWorkDaysOnly != null) _chkHddWorkDaysOnly.Text = Loc.Get("HddWorkDaysOnly");
+            if (_lblHddOffHours != null) _lblHddOffHours.Text = Loc.Get("HddOffHoursTimeout");
+            if (_chkHddKeepAlive != null) _chkHddKeepAlive.Text = Loc.Get("HddKeepAlivePulse");
+            if (_toolTip != null && _chkHddKeepAlive != null) _toolTip.SetToolTip(_chkHddKeepAlive, Loc.Get("HddKeepAliveTip"));
+            if (_btnHddWakeNow != null) _btnHddWakeNow.Text = Loc.Get("HddWakeNow");
+            if (_lblHddWakeStatus != null) _lblHddWakeStatus.Text = _hardware.HddSchedule.GetStatusString();
+
             if (_btnSpecs != null)
             {
                 _btnSpecs.Text = "ℹ";
@@ -1951,6 +2246,29 @@ namespace RyzenQuietPro
             UpdateFanModeUI();
             UpdateFanStatusUI();
             UpdateGpuTuningCardUI();
+            UpdateHddCardUI();
+            UpdateHddTimeoutButtonsHighlight();
+        }
+
+        private void UpdateHddCardUI()
+        {
+            if (_chkHddSchedule == null) return;
+            bool enabled = _chkHddSchedule.Checked;
+            if (_pnlHddControls != null) _pnlHddControls.Enabled = enabled;
+            if (_lblHddWakeStatus != null)
+            {
+                _lblHddWakeStatus.Text = _hardware.HddSchedule.GetStatusString();
+            }
+        }
+
+        private void UpdateHddTimeoutButtonsHighlight()
+        {
+            foreach (var btn in _hddOffHoursPresetButtons)
+            {
+                bool isSelected = (btn.Tag is int v && v == _settings.HddOffHoursTimeoutMinutes);
+                btn.BackColor = isSelected ? Color.FromArgb(56, 189, 248) : Color.FromArgb(24, 24, 32);
+                btn.ForeColor = isSelected ? Color.FromArgb(18, 18, 24) : Color.FromArgb(170, 170, 185);
+            }
         }
 
         private void UpdateCpuScaleButtonsHighlight()

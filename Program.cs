@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows.Forms;
 
@@ -7,6 +8,14 @@ namespace RyzenQuietPro
     static class Program
     {
         private static Mutex? _mutex;
+
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        private static extern uint RegisterWindowMessage(string lpString);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+
+        private const int HWND_BROADCAST = 0xffff;
 
         [STAThread]
         static void Main()
@@ -23,7 +32,13 @@ namespace RyzenQuietPro
 
             if (!createdNew)
             {
-                Logger.Log("Another instance of RyzenQuietPro is already running. Exiting.");
+                Logger.Log("Another instance of RyzenQuietPro is already running. Signaling existing instance to show dashboard.");
+                try
+                {
+                    uint msg = RegisterWindowMessage("RyzenQuietPro_ShowDashboard");
+                    PostMessage((IntPtr)HWND_BROADCAST, msg, IntPtr.Zero, IntPtr.Zero);
+                }
+                catch { }
                 return;
             }
 

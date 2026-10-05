@@ -48,6 +48,16 @@ namespace RyzenQuietPro
         public bool DiskLegendExpanded { get; set; } = false;
         public System.Collections.Generic.List<string> HiddenDiskIds { get; set; } = new();
 
+        // HDD Awake & Sleep Schedule
+        public bool HddScheduleEnabled { get; set; } = true;
+        public int HddWorkStartHour { get; set; } = 7;
+        public int HddWorkStartMinute { get; set; } = 0;
+        public int HddWorkEndHour { get; set; } = 17;
+        public int HddWorkEndMinute { get; set; } = 0;
+        public bool HddWorkDaysOnly { get; set; } = true; // Monday to Friday
+        public int HddOffHoursTimeoutMinutes { get; set; } = 20; // Default off-hours timeout
+        public bool HddKeepAlivePulse { get; set; } = true; // Prevent internal APM firmware spin-down
+
         public bool IsDiskVisible(string diskId, string instanceName)
         {
             if (HiddenDiskIds == null || HiddenDiskIds.Count == 0) return true;

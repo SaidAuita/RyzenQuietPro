@@ -13,6 +13,7 @@ namespace RyzenQuietPro
         public FanMonitorClient Fans { get; }
         public GpuTuningManager GpuTuning { get; }
         public StopwatchManager Stopwatch { get; }
+        public HddScheduleManager HddSchedule { get; }
 
         private readonly AppSettings _settings;
         private System.Threading.Timer? _timer;
@@ -47,6 +48,7 @@ namespace RyzenQuietPro
             Fans = new FanMonitorClient();
             GpuTuning = new GpuTuningManager(this, appSettings);
             Stopwatch = new StopwatchManager(appSettings);
+            HddSchedule = new HddScheduleManager(appSettings, this);
         }
 
         public void Start(int intervalMs = 1000)
@@ -110,6 +112,8 @@ namespace RyzenQuietPro
                     }
                 }
 
+                HddSchedule.CheckSchedule();
+
                 MetricsUpdated?.Invoke();
             }
             catch (Exception ex)
@@ -130,6 +134,7 @@ namespace RyzenQuietPro
             Disk.Dispose();
             Processes.Dispose();
             Fans.Dispose();
+            HddSchedule.Dispose();
         }
     }
 }

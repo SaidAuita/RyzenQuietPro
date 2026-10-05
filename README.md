@@ -1,12 +1,12 @@
 <div align="center">
 
-# ⚡ RyzenQuiet PRO (v4.04)
-**Sleek, lightweight hardware HUD & power-plan optimizer for Windows with AMD Ryzen CPB toggle, GPU power limiting & acoustic tuning, multi-stopwatch per-app process profiling with per-counter scaling, enhanced multi-disk telemetry, and modular fan monitoring.**
+# ⚡ RyzenQuiet PRO (v4.05)
+**Sleek, lightweight hardware HUD & power-plan optimizer for Windows with AMD Ryzen CPB toggle, GPU power limiting & acoustic tuning, multi-stopwatch per-app process profiling with per-counter scaling, automated HDD awake schedule & keep-alive, enhanced multi-disk telemetry, and modular fan monitoring.**
 
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011%20(64--bit)-blue.svg)](#)
 [![.NET](https://img.shields.io/badge/.NET-8.0-purple.svg)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/Release-v4.04-orange.svg)](https://github.com/SaidAuita/RyzenQuietPro/releases)
+[![Release](https://img.shields.io/badge/Release-v4.05-orange.svg)](https://github.com/SaidAuita/RyzenQuietPro/releases)
 [![Telemetry](https://img.shields.io/badge/Telemetry-Zero%20%2F%20100%25%20Offline-brightgreen.svg)](#)
 
 <br/>
@@ -98,17 +98,30 @@ All subsystem graphs share a synchronized 60-second historical canvas rendered w
 * **Multi-Source Criteria Switcher:** Select whether power triggers listen to `Target App`, `CPU`, `GPU`, `CPU + GPU` (combined load), or `Any (Max)` (whichever component spikes first).
 * **Anti-Fluctuation Hysteresis Filter:** Configurable delay (1–10 seconds) prevents premature stopping during brief momentary dips in load (such as game level loading or render pass transitions).
 
-### 5. 📌 Detachable Floating HUD / Desktop Widget
+### 5. 💽 Automated HDD Awake Schedule & Anti-Spin-Down Keep-Alive (v4.05)
+* **Working Hours Schedule:** Configure working hours (e.g. 07:00–17:00, Monday–Friday) where Windows power plan disk sleep timeout is automatically set to `0` (never sleep), keeping all spindle motors spinning without blocking user workflows or program exits.
+* **Off-Hours Acoustic Silence:** Reverts disk idle timeout back to user preset (10, 15, 20, 30, 60 minutes) during evenings and weekends so secondary storage drives spin down silently.
+* **Firmware APM Keep-Alive Pulse:** Sends a lightweight non-destructive query to physical volume roots every 90 seconds during work hours to prevent aggressive hardware APM firmware from parking heads or spinning down motors.
+* **Instant Spin-Up Action (`⚡ Wake Now`):** Parallel non-blocking spin-up of all connected hard disk drives in background threads with real-time UI status indicator.
+* **HUD Indicator & Tooltips:** Live status icon (`⚡` Awake / `🌙` Standby Allowed) right on the DISK header in the main HUD with detailed status tooltip.
+
+### 6. 📌 Detachable Floating HUD / Desktop Widget
 * **Docked Mode:** Anchored next to the Windows system tray; smoothly slides out when clicking the tray icon and auto-hides when clicking away.
 * **Detached Widget (`⤢`):** Undock into an independent desktop widget with free mouse dragging, **Always-On-Top** (`📌`), adjustable opacity slider (40% to 100%), and persistent position/size memory across reboots.
 
-### 6. ⚙ Dynamic Tray Badge, Resizable Settings & Fan Management
+### 7. ⚙ Dynamic Tray Badge, Resizable Settings & Fan Management
 * **Dynamic Tray Icon:** Live percentage badge rendered directly onto the system tray icon (choose between CPU %, GPU %, or RAM %).
 * **Smart Tooltip:** Multi-line status tooltip showing current power mode and all subsystem stats at a glance.
 * **Resizable Settings Dialog:** Smooth interactive edge/corner resizing and bottom-right `◢` grip handle, widened to 500px to eliminate horizontal scrollbars, auto-saving your preferred dialog width to `settings.json`.
 * **Fan Service Status & Controls:** Restored `• Active` green badge with hover-to-stop interaction, clean service toggling, and isolated test/demo mode.
 * **Single Centered Vector Gear:** Clean 6-tooth vector settings cog centered right between CPU and GPU controls.
 * **Zero Telemetry & Portable:** Pure Win32 / NVML / PDH APIs, no third-party kernel drivers, no background network calls. Preferences stored in `%LOCALAPPDATA%\RyzenQuietPro\settings.json`.
+
+### 8. 🌐 Full Multilingual Support & High-DPI UI Polish (v4.05)
+* **8 Native Languages:** Instant runtime language switching between English (`en`), Russian (`ru`), German (`de`), Spanish (`es`), French (`fr`), Japanese (`ja`), Portuguese (`pt`), and Chinese (`zh`) with full coverage across all modules, dialogs, and tooltips.
+* **PerMonitorV2 High-DPI Typography:** Enhanced GDI+ text rendering with custom OwnerDraw controls, generous button clearances, and proportional card layouts, ensuring digits and localized text labels never clip on 125%/150%/200% Windows scaling.
+* **Single-Instance IPC Activation:** Built-in mutex guard and Windows broadcast message (`RyzenQuietPro_ShowDashboard`) smoothly restores and foregrounds the existing dashboard when launching the app shortcut while already running in the background.
+* **Multi-Monitor Safe Positioning:** Dynamic screen boundary clamping automatically recovers and repositions the HUD within visible working areas if a secondary monitor is disconnected or resolution changes.
 
 ---
 
@@ -184,8 +197,8 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 <a name="русский"></a>
 <div align="center">
 
-# ⚡ RyzenQuiet PRO (v4.04) — Описание на русском
-**Стильный, легковесный аппаратный HUD-монитор и менеджер профилей питания для Windows с мгновенным отключением CPB у процессоров AMD Ryzen, акустическим контролем и ограничением мощности видеокарт (GPU Power Limiting), мульти-секундомером с привязкой к приложениям и независимым масштабом графиков, расширенным мониторингом накопителей с раскрытием процессов I/O и модульным мониторингом вентиляторов.**
+# ⚡ RyzenQuiet PRO (v4.05) — Описание на русском
+**Стильный, легковесный аппаратный HUD-монитор и менеджер профилей питания для Windows с мгновенным отключением CPB у процессоров AMD Ryzen, акустическим контролем и ограничением мощности видеокарт (GPU Power Limiting), мульти-секундомером с привязкой к приложениям и независимым масштабом графиков, автоматическим расписанием работы HDD без сна и защитой от остановки шпинделей, расширенным мониторингом накопителей с раскрытием процессов I/O и модульным мониторингом вентиляторов.**
 
 </div>
 
@@ -246,17 +259,30 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 * **Гибкий выбор критерия нагрузки:** Переключатель источника мощности автостарта — `Target App`, `CPU`, `GPU`, `CPU + GPU` (суммарная мощность системы) или `Любой (Max)` (по первому превысившему порог компоненту).
 * **Защита от ложных остановок (Гистерезис):** Настраиваемая задержка (1–10 секунд) предотвращает преждевременную остановку таймера при кратковременных просадках нагрузки (например, во время смены сцен в бенчмарках или экранов загрузки в играх).
 
-### 5. 📌 Плавающий виджет на рабочий стол / HUD
+### 5. 💽 Автоматическое расписание работы HDD без сна и защита от парковки (v4.05)
+* **Работа по расписанию:** Настройка рабочих часов (по умолчанию с 07:00 до 17:00 с понедельника по пятницу), во время которых тайм-аут сна дисков в схеме электропитания Windows автоматически выставляется в `0` (никогда не усыплять). Шпиндели дисков остаются постоянно раскрученными, исключая любые задержки и микрофризы при закрытии программ (Photoshop, FastStone Capture, IDE и др.).
+* **Акустическая тишина в нерабочее время:** Автоматический возврат к тайм-ауту энергосбережения (10, 15, 20, 30, 60 минут) по вечерам и в выходные дни для бесшумного сна вторичных накопителей.
+* **Импульс бодрствования Keep-Alive (защита от APM):** Фоновый опрос корневых каталогов физических дисков каждые 90 секунд в рабочее время для предотвращения принудительной остановки шпинделей прошивками дисков (Western Digital, Toshiba и др.).
+* **Мгновенная раскрутка всех HDD (`⚡ Раскрутить диски`):** Параллельная неблокирующая раскрутка всех подключенных жестких дисков в фоне по кнопке с цветовой индикацией статуса.
+* **Индикация в HUD:** Иконка режима (`⚡` Бодрствование / `🌙` Разрешен сон) прямо в заголовке накопителей (DISK) основного окна с подробной подсказкой при наведении.
+
+### 6. 📌 Плавающий виджет на рабочий стол / HUD
 * **Режим трея (Docked):** Аккуратная всплывающая панель около системного трея, открывающаяся по клику на значок и скрывающаяся при клике в любое другое место.
 * **Плавающий виджет (`⤢`):** Открепление в независимое окно с плавным перетаскиванием мышью, режимом **Поверх всех окон** (`📌`), ползунком прозрачности (от 40% до 100%) и сохранением координат и размеров на экране.
 
-### 6. ⚙ Динамический бейдж в трее, масштабируемые настройки и управление службой
+### 7. ⚙ Динамический бейдж в трее, масштабируемые настройки и управление службой
 * **Живой значок в трее:** Отображение процента загрузки (CPU %, GPU % или RAM %) прямо на иконке в трее (32×32 px).
 * **Информативная подсказка:** Многострочный тултип при наведении со всеми показателями системы.
 * **Масштабируемое окно настроек:** Свободное изменение размеров окна мышью за края, углы или за маркер `◢` в правом нижнем углу, увеличенная ширина (500px) без горизонтальных полос прокрутки и сохранение выбранных размеров в `settings.json`.
 * **Индикация и управление службой кулеров:** Понятный статус `• Active` с зеленой подсветкой и возможностью мягкой остановки при наведении, разделение реального мониторинга и симуляции/демо-режима.
-* **Векторная шестеренка:** Центрированная кнопка настроек в правом блоке режимов.
+* **Single Centered Vector Gear:** Clean 6-tooth vector settings cog centered right between CPU and GPU controls.
 * **100% оффлайн и чистый код:** Никаких сторонних драйверов уровня ядра, никакой фоновой аналитики и телеметрии, настройки сохраняются локально в `%LOCALAPPDATA%\RyzenQuietPro\settings.json`.
+
+### 8. 🌐 Полная мультиязычность и оптимизация под High-DPI экраны (v4.05)
+* **8 встроенных языков:** Мгновенное переключение интерфейса без перезапуска между русским (`ru`), английским (`en`), немецким (`de`), испанским (`es`), французским (`fr`), японским (`ja`), португальским (`pt`) и китайским (`zh`) для всех окон, настроек и подсказок.
+* **Адаптация под High-DPI экраны (PerMonitorV2):** Специализированная кастомная отрисовка элементов управления (OwnerDraw) и увеличенные границы кнопок гарантируют идеально четкое отображение шрифтов и цифр без срезания краев при любом масштабировании Windows (125%, 150%, 200%).
+* **Активация уже запущенного экземпляра (IPC):** Защита от дубликатов процессов через системный мьютекс и межпроцессное оповещение `RyzenQuietPro_ShowDashboard`, которое автоматически разворачивает и выводит на передний план окно программы при повторном запуске ярлыка.
+* **Защита от ухода за пределы экрана:** Автоматический контроль экранных координат возвращает оверлей в видимую область рабочего стола при отключении внешних мониторов или смене разрешения.
 
 ---
 
@@ -301,8 +327,8 @@ build.bat
 ```
 
 Исполняемые файлы будут скомпилированы в каталог `build\`:
-* `build\RyzenQuietPro-v4.0.exe` (Standalone)
-* `build\RyzenQuietPro-v4.0-Lite.exe` (Lite)
+* `build\RyzenQuietPro-v4.05.exe` (Standalone)
+* `build\RyzenQuietPro-v4.05-Lite.exe` (Lite)
 * `build\plugins\FanService\RyzenQuiet.FanService.exe` (Fan Monitor Addon)
 
 ---

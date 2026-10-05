@@ -2416,12 +2416,35 @@ namespace RyzenQuietPro
 
         public void ShowDashboard()
         {
+            if (this.WindowState == FormWindowState.Minimized)
+            {
+                this.WindowState = FormWindowState.Normal;
+            }
+
             if (_isDetached && _settings.WindowX >= 0 && _settings.WindowY >= 0)
             {
-                var scr = Screen.FromPoint(new Point(_settings.WindowX, _settings.WindowY));
-                int x = Math.Clamp(_settings.WindowX, scr.WorkingArea.Left, scr.WorkingArea.Right - this.Width);
-                int y = Math.Clamp(_settings.WindowY, scr.WorkingArea.Top, scr.WorkingArea.Bottom - this.Height);
-                this.Location = new Point(x, y);
+                var pt = new Point(_settings.WindowX, _settings.WindowY);
+                bool isOnScreen = false;
+                foreach (var s in Screen.AllScreens)
+                {
+                    if (s.WorkingArea.Contains(pt))
+                    {
+                        isOnScreen = true;
+                        break;
+                    }
+                }
+
+                if (isOnScreen)
+                {
+                    var scr = Screen.FromPoint(pt);
+                    int x = Math.Clamp(_settings.WindowX, scr.WorkingArea.Left, scr.WorkingArea.Right - this.Width);
+                    int y = Math.Clamp(_settings.WindowY, scr.WorkingArea.Top, scr.WorkingArea.Bottom - this.Height);
+                    this.Location = new Point(x, y);
+                }
+                else
+                {
+                    PositionAtTray();
+                }
             }
             else
             {
@@ -2564,7 +2587,14 @@ namespace RyzenQuietPro
             // 5. DISK
             _lblDisk.Text = Loc.Get("Disk");
             string diskIdleText = (_hardware.Disk.PeakActiveDisk == "Idle") ? Loc.Get("Idle") : _hardware.Disk.PeakActiveDisk;
-            _lblDiskSub.Text = $"R:{_hardware.Disk.ReadMbPerSec:F1} W:{_hardware.Disk.WriteMbPerSec:F1} MB/s [{diskIdleText}]";
+            string hddSchedIcon = _settings.HddScheduleEnabled ? (_hardware.HddSchedule.IsWorkHours ? " ⚡" : " 🌙") : "";
+            _lblDiskSub.Text = $"R:{_hardware.Disk.ReadMbPerSec:F1} W:{_hardware.Disk.WriteMbPerSec:F1} MB/s [{diskIdleText}]{hddSchedIcon}";
+            if (_settings.HddScheduleEnabled)
+            {
+                string tip = $"{Loc.Get("HddScheduleModule")}: {_hardware.HddSchedule.GetStatusString()}";
+                _toolTip.SetToolTip(_lblDiskSub, tip);
+                _toolTip.SetToolTip(_lblDisk, tip);
+            }
 
             // 6. FANS
             if (_settings.ShowFanGraph)

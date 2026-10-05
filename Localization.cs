@@ -28,7 +28,7 @@ namespace RyzenQuietPro
         {
             ["ru"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.04",
+                ["AppTitle"] = "RyzenQuiet PRO v4.05",
                 ["Silent"] = "Тихий",
                 ["SilentFull"] = "🌿 Тихий (99%)",
                 ["Boost"] = "Турбо",
@@ -132,6 +132,21 @@ namespace RyzenQuietPro
                 ["DiskProcessesIdle"] = "Нет активной нагрузки на накопители",
                 ["ResmonBtn"] = "Монитор ↗",
                 ["TipDiskClick"] = "Кликните на диск, чтобы увидеть процессы",
+                
+                // HDD Awake Schedule
+                ["HddScheduleModule"] = "💽 Расписание бодрствования HDD",
+                ["HddScheduleEnable"] = "Включить режим бодрствования HDD (без сна)",
+                ["HddWorkHours"] = "Рабочие часы (без сна):",
+                ["HddWorkDaysOnly"] = "Только по будням (Пн - Пт)",
+                ["HddOffHoursTimeout"] = "Сон дисков в нерабочее время:",
+                ["HddKeepAlivePulse"] = "Поддерживать шпиндели раскрученными (Keep-Alive APM)",
+                ["HddKeepAliveTip"] = "Легкий фоновый опрос каждые 90 сек в рабочие часы для предотвращения самовольной парковки головок в прошивках WD/Toshiba",
+                ["HddStatus_Awake"] = "Бодрствуют",
+                ["HddStatus_Standby"] = "Сон ({0} мин)",
+                ["HddWakeNow"] = "⚡ Разбудить диски сейчас",
+                ["HddWaking"] = "Раскрутка шпинделей...",
+                ["HddWoken"] = "Все диски бодрствуют",
+
                 ["FanGraph"] = "❄️ График кулеров (RPM) [Дополнение]",
                 ["ShowAllGraphs"] = "Показать все графики",
                 
@@ -220,7 +235,7 @@ namespace RyzenQuietPro
             },
             ["en"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.04",
+                ["AppTitle"] = "RyzenQuiet PRO v4.05",
                 ["Silent"] = "Silent",
                 ["SilentFull"] = "🌿 Silent (99%)",
                 ["Boost"] = "Boost",
@@ -321,6 +336,21 @@ namespace RyzenQuietPro
                 ["DiskProcessesIdle"] = "No active disk I/O activity",
                 ["ResmonBtn"] = "Resmon ↗",
                 ["TipDiskClick"] = "Click drive to see processes",
+                
+                // HDD Awake Schedule
+                ["HddScheduleModule"] = "💽 HDD Awake Schedule",
+                ["HddScheduleEnable"] = "Enable scheduled HDD awake mode (no sleep)",
+                ["HddWorkHours"] = "Work hours (no sleep):",
+                ["HddWorkDaysOnly"] = "Workdays only (Mon - Fri)",
+                ["HddOffHoursTimeout"] = "Off-hours disk sleep timeout:",
+                ["HddKeepAlivePulse"] = "Keep spindles spinning (Prevent APM firmware sleep)",
+                ["HddKeepAliveTip"] = "Lightweight background pulse every 90 sec during work hours to prevent WD/Toshiba firmware from self-parking heads",
+                ["HddStatus_Awake"] = "Awake",
+                ["HddStatus_Standby"] = "Standby ({0} min)",
+                ["HddWakeNow"] = "⚡ Wake Up Disks Now",
+                ["HddWaking"] = "Spinning up spindles...",
+                ["HddWoken"] = "All disks awake",
+
                 ["FanGraph"] = "❄️ Fan Speed Graph (RPM) [Addon]",
                 ["ShowAllGraphs"] = "Show All Graphs",
 
@@ -407,7 +437,7 @@ namespace RyzenQuietPro
             },
             ["de"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.04",
+                ["AppTitle"] = "RyzenQuiet PRO v4.05",
                 ["Silent"] = "Leise",
                 ["SilentFull"] = "🌿 Leise (99%)",
                 ["Boost"] = "Boost",
@@ -442,6 +472,21 @@ namespace RyzenQuietPro
                 ["GpuFan"] = "💨 GPU-Lüftergeschwindigkeit",
                 ["VramGraph"] = "📼 VRAM-Diagramm",
                 ["DiskGraph"] = "💽 Festplatten-Aktivität (SSD/HDD)",
+
+                // HDD Awake Schedule
+                ["HddScheduleModule"] = "💽 HDD-Wachplan",
+                ["HddScheduleEnable"] = "Geplanten HDD-Wachmodus aktivieren (kein Ruhezustand)",
+                ["HddWorkHours"] = "Arbeitszeiten (kein Ruhezustand):",
+                ["HddWorkDaysOnly"] = "Nur an Werktagen (Mo - Fr)",
+                ["HddOffHoursTimeout"] = "HDD-Ruhezustand außerhalb der Arbeitszeit:",
+                ["HddKeepAlivePulse"] = "Spindeln aktiv halten (APM-Firmware-Ruhezustand verhindern)",
+                ["HddKeepAliveTip"] = "Leichter Hintergrundimpuls alle 90 Sek. während der Arbeitszeit, um ein Parken der Köpfe durch die Firmware zu verhindern",
+                ["HddStatus_Awake"] = "Aktiv",
+                ["HddStatus_Standby"] = "Ruhezustand ({0} Min)",
+                ["HddWakeNow"] = "⚡ Festplatten jetzt aufwecken",
+                ["HddWaking"] = "Spindeln laufen an...",
+                ["HddWoken"] = "Alle Festplatten aktiv",
+
                 ["FanGraph"] = "❄️ Lüfter-Geschwindigkeit (RPM) [Addon]",
                 ["ShowAllGraphs"] = "Alle Diagramme anzeigen",
 
@@ -528,7 +573,7 @@ namespace RyzenQuietPro
             },
             ["es"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.04",
+                ["AppTitle"] = "RyzenQuiet PRO v4.05",
                 ["Silent"] = "Silencioso",
                 ["SilentFull"] = "🌿 Silencioso (99%)",
                 ["Boost"] = "Turbo",
@@ -563,6 +608,21 @@ namespace RyzenQuietPro
                 ["GpuFan"] = "💨 Velocidad ventilador GPU",
                 ["VramGraph"] = "📼 Gráfico de VRAM",
                 ["DiskGraph"] = "💽 Gráfico de Discos (SSD/HDD)",
+
+                // HDD Awake Schedule
+                ["HddScheduleModule"] = "💽 Horario de actividad HDD",
+                ["HddScheduleEnable"] = "Activar modo HDD despierto programado (sin suspensión)",
+                ["HddWorkHours"] = "Horas de trabajo (sin suspensión):",
+                ["HddWorkDaysOnly"] = "Solo días laborables (Lun - Vie)",
+                ["HddOffHoursTimeout"] = "Suspensión de disco fuera de horario:",
+                ["HddKeepAlivePulse"] = "Mantener platos girando (Evitar suspensión de firmware APM)",
+                ["HddKeepAliveTip"] = "Pulso ligero en segundo plano cada 90 s en horas laborales para evitar el aparcamiento automático de cabezales WD/Toshiba",
+                ["HddStatus_Awake"] = "Despiertos",
+                ["HddStatus_Standby"] = "Suspensión ({0} min)",
+                ["HddWakeNow"] = "⚡ Despertar discos ahora",
+                ["HddWaking"] = "Acelerando platos...",
+                ["HddWoken"] = "Todos los discos despiertos",
+
                 ["FanGraph"] = "❄️ Gráfico de ventiladores (RPM) [Addon]",
                 ["ShowAllGraphs"] = "Mostrar todos los gráficos",
 
@@ -649,7 +709,7 @@ namespace RyzenQuietPro
             },
             ["fr"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.04",
+                ["AppTitle"] = "RyzenQuiet PRO v4.05",
                 ["Silent"] = "Silencieux",
                 ["SilentFull"] = "🌿 Silencieux (99%)",
                 ["Boost"] = "Turbo",
@@ -684,6 +744,21 @@ namespace RyzenQuietPro
                 ["GpuFan"] = "💨 Vitesse ventilateur GPU",
                 ["VramGraph"] = "📼 Graphique VRAM",
                 ["DiskGraph"] = "💽 Activité des disques (SSD/HDD)",
+
+                // HDD Awake Schedule
+                ["HddScheduleModule"] = "💽 Planification d'activité HDD",
+                ["HddScheduleEnable"] = "Activer le mode HDD actif programmé (pas de veille)",
+                ["HddWorkHours"] = "Heures de travail (pas de veille) :",
+                ["HddWorkDaysOnly"] = "Jours ouvrables uniquement (Lun - Ven)",
+                ["HddOffHoursTimeout"] = "Mise en veille hors heures de travail :",
+                ["HddKeepAlivePulse"] = "Maintenir les disques en rotation (Éviter la veille APM)",
+                ["HddKeepAliveTip"] = "Légère impulsion toutes les 90 s pendant les heures de travail pour empêcher le parcage automatique des têtes",
+                ["HddStatus_Awake"] = "Actifs",
+                ["HddStatus_Standby"] = "Veille ({0} min)",
+                ["HddWakeNow"] = "⚡ Réveiller les disques maintenant",
+                ["HddWaking"] = "Rotation en cours...",
+                ["HddWoken"] = "Tous les disques sont actifs",
+
                 ["FanGraph"] = "❄️ Vitesse des ventilateurs (RPM) [Module]",
                 ["ShowAllGraphs"] = "Afficher tous les graphiques",
 
@@ -770,7 +845,7 @@ namespace RyzenQuietPro
             },
             ["ja"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.04",
+                ["AppTitle"] = "RyzenQuiet PRO v4.05",
                 ["Silent"] = "静音",
                 ["SilentFull"] = "🌿 静音モード (99%)",
                 ["Boost"] = "ブースト",
@@ -805,6 +880,21 @@ namespace RyzenQuietPro
                 ["GpuFan"] = "💨 GPUファン回転数",
                 ["VramGraph"] = "📼 ビデオメモリグラフ",
                 ["DiskGraph"] = "💽 ディスクアクセス (SSD/HDD)",
+
+                // HDD Awake Schedule
+                ["HddScheduleModule"] = "💽 HDD起動スケジュール",
+                ["HddScheduleEnable"] = "スケジュールされたHDDスリープ無効化を有効にする",
+                ["HddWorkHours"] = "稼働時間（スリープなし）:",
+                ["HddWorkDaysOnly"] = "平日のみ（月〜金）",
+                ["HddOffHoursTimeout"] = "時間外のHDDスリープ設定:",
+                ["HddKeepAlivePulse"] = "スピンドルの回転を維持（APMファームウェアのスリープ防止）",
+                ["HddKeepAliveTip"] = "WD/Toshibaのファームウェアが自動的にヘッドを退避するのを防ぐため、稼働時間中に90秒ごとに軽量ポーリングを実行します",
+                ["HddStatus_Awake"] = "起動中",
+                ["HddStatus_Standby"] = "スリープ（{0}分）",
+                ["HddWakeNow"] = "⚡ 今すぐディスクを起動",
+                ["HddWaking"] = "スピンアップ中...",
+                ["HddWoken"] = "すべてのディスクが起動完了",
+
                 ["FanGraph"] = "❄️ ファン回転数グラフ (RPM) [アドオン]",
                 ["ShowAllGraphs"] = "すべてのグラフを表示",
 
@@ -891,7 +981,7 @@ namespace RyzenQuietPro
             },
             ["pt"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.04",
+                ["AppTitle"] = "RyzenQuiet PRO v4.05",
                 ["Silent"] = "Silencioso",
                 ["SilentFull"] = "🌿 Silencioso (99%)",
                 ["Boost"] = "Turbo",
@@ -926,6 +1016,21 @@ namespace RyzenQuietPro
                 ["GpuFan"] = "💨 Ventoinhas da GPU",
                 ["VramGraph"] = "📼 Gráfico de VRAM",
                 ["DiskGraph"] = "💽 Atividade do Disco (SSD/HDD)",
+
+                // HDD Awake Schedule
+                ["HddScheduleModule"] = "💽 Agendamento de atividade HDD",
+                ["HddScheduleEnable"] = "Ativar modo HDD acordado programado (sem suspensão)",
+                ["HddWorkHours"] = "Horário de trabalho (sem suspensão):",
+                ["HddWorkDaysOnly"] = "Apenas dias úteis (Seg - Sex)",
+                ["HddOffHoursTimeout"] = "Suspensão do disco fora do horário:",
+                ["HddKeepAlivePulse"] = "Manter discos girando (Evitar suspensão de firmware APM)",
+                ["HddKeepAliveTip"] = "Pulso leve em segundo plano a cada 90 s em horário de trabalho para evitar estacionamento de cabeças em WD/Toshiba",
+                ["HddStatus_Awake"] = "Acordados",
+                ["HddStatus_Standby"] = "Suspensão ({0} min)",
+                ["HddWakeNow"] = "⚡ Acordar discos agora",
+                ["HddWaking"] = "Acelerando discos...",
+                ["HddWoken"] = "Todos os discos acordados",
+
                 ["FanGraph"] = "❄️ Gráfico de ventoinhas (RPM) [Addon]",
                 ["ShowAllGraphs"] = "Mostrar todos os gráficos",
 
@@ -1012,7 +1117,7 @@ namespace RyzenQuietPro
             },
             ["zh"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.04",
+                ["AppTitle"] = "RyzenQuiet PRO v4.05",
                 ["Silent"] = "静音",
                 ["SilentFull"] = "🌿 静音模式 (99%)",
                 ["Boost"] = "加速",
@@ -1047,6 +1152,21 @@ namespace RyzenQuietPro
                 ["GpuFan"] = "💨 显卡风扇转速",
                 ["VramGraph"] = "📼 显存占用图表",
                 ["DiskGraph"] = "💽 磁盘读写活动 (SSD/HDD)",
+
+                // HDD Awake Schedule
+                ["HddScheduleModule"] = "💽 HDD 保持唤醒计划",
+                ["HddScheduleEnable"] = "启用按计划的 HDD 保持唤醒模式（不休眠）",
+                ["HddWorkHours"] = "工作时间（不休眠）:",
+                ["HddWorkDaysOnly"] = "仅工作日（周一至周五）",
+                ["HddOffHoursTimeout"] = "非工作时间硬盘休眠超时:",
+                ["HddKeepAlivePulse"] = "保持主轴旋转（防止 APM 固件自行休眠）",
+                ["HddKeepAliveTip"] = "工作时间内每 90 秒轻量轮询一次，防止 WD/Toshiba 硬盘固件自行停放磁头",
+                ["HddStatus_Awake"] = "保持唤醒",
+                ["HddStatus_Standby"] = "休眠（{0} 分钟）",
+                ["HddWakeNow"] = "⚡ 立即唤醒所有硬盘",
+                ["HddWaking"] = "正在加速主轴...",
+                ["HddWoken"] = "所有硬盘已唤醒",
+
                 ["FanGraph"] = "❄️ 风扇转速图表 (RPM) [附加组件]",
                 ["ShowAllGraphs"] = "显示所有图表",
 
