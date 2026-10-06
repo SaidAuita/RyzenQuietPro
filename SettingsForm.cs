@@ -992,14 +992,16 @@ namespace RyzenQuietPro
             // Stopwatch Profiles Management Section
             int swListY = swHystY + 46;
             _lblSwListTitle = CreateSectionHeader("⏱ " + Loc.Get("StopwatchListTitle"), 12, swListY);
+            _lblSwListTitle.MaximumSize = new Size(cardW - 14 - 125, 24);
+            _lblSwListTitle.AutoEllipsis = true;
             cardSw.Controls.Add(_lblSwListTitle);
 
             _btnSwAdd = new Button
             {
                 Text = Loc.Get("StopwatchAdd"),
                 Font = new Font("Segoe UI", 8.25f, FontStyle.Bold),
-                Size = new Size(130, 28),
-                Location = new Point(cardW - 14 - 130, swListY - 4),
+                Size = new Size(120, 28),
+                Location = new Point(cardW - 14 - 120, swListY - 4),
                 FlatStyle = FlatStyle.Flat,
                 BackColor = Color.FromArgb(34, 197, 94),
                 ForeColor = Color.FromArgb(18, 18, 22),
@@ -1852,6 +1854,18 @@ namespace RyzenQuietPro
                 };
                 row.Controls.Add(colorBar);
 
+                var currentProfile = profile;
+                var chkVisible = new CheckBox
+                {
+                    Checked = profile.IsVisible,
+                    Location = new Point(14, 8),
+                    Size = new Size(18, 18),
+                    Cursor = Cursors.Hand,
+                    BackColor = Color.Transparent
+                };
+                _toolTip.SetToolTip(chkVisible, Loc.Get("StopwatchVisibleTip"));
+                row.Controls.Add(chkVisible);
+
                 string displayName = !string.IsNullOrWhiteSpace(profile.Name)
                     ? profile.Name
                     : (!string.IsNullOrWhiteSpace(profile.TargetFriendlyName) ? profile.TargetFriendlyName : (!string.IsNullOrWhiteSpace(profile.TargetExe) ? profile.TargetExe : Loc.Get("StopwatchAnyProgram")));
@@ -1859,10 +1873,10 @@ namespace RyzenQuietPro
                 var lblName = new Label
                 {
                     Text = displayName,
-                    Location = new Point(14, 7),
-                    Size = new Size(110, 20),
+                    Location = new Point(36, 7),
+                    Size = new Size(100, 20),
                     Font = new Font("Segoe UI", 8.5f, FontStyle.Bold),
-                    ForeColor = Color.FromArgb(240, 240, 248),
+                    ForeColor = profile.IsVisible ? Color.FromArgb(240, 240, 248) : Color.FromArgb(120, 120, 135),
                     AutoEllipsis = true
                 };
                 row.Controls.Add(lblName);
@@ -1885,20 +1899,30 @@ namespace RyzenQuietPro
                 var lblTarget = new Label
                 {
                     Text = targetDesc,
-                    Location = new Point(128, 7),
-                    Size = new Size(Math.Max(50, rowW - 128 - 110), 20),
+                    Location = new Point(140, 7),
+                    Size = new Size(Math.Max(40, rowW - 140 - 116), 20),
                     Font = new Font("Segoe UI", 8.0f),
-                    ForeColor = Color.FromArgb(56, 189, 248),
+                    ForeColor = profile.IsVisible ? Color.FromArgb(56, 189, 248) : Color.FromArgb(90, 100, 115),
                     AutoEllipsis = true
                 };
                 _toolTip.SetToolTip(lblTarget, targetDesc);
                 row.Controls.Add(lblTarget);
 
+                chkVisible.CheckedChanged += (s, e) => {
+                    currentProfile.IsVisible = chkVisible.Checked;
+                    _settings.Save();
+                    _hardware.Stopwatch.SyncWithSettings(_settings);
+                    _onSettingsUpdated?.Invoke();
+
+                    lblName.ForeColor = currentProfile.IsVisible ? Color.FromArgb(240, 240, 248) : Color.FromArgb(120, 120, 135);
+                    lblTarget.ForeColor = currentProfile.IsVisible ? Color.FromArgb(56, 189, 248) : Color.FromArgb(90, 100, 115);
+                };
+
                 var btnEdit = new Button
                 {
                     Text = Loc.Get("StopwatchEdit"),
-                    Location = new Point(rowW - 104, 3),
-                    Size = new Size(70, 28),
+                    Location = new Point(rowW - 110, 3),
+                    Size = new Size(76, 28),
                     FlatStyle = FlatStyle.Flat,
                     BackColor = Color.FromArgb(38, 38, 50),
                     ForeColor = Color.FromArgb(220, 220, 235),
@@ -1909,7 +1933,6 @@ namespace RyzenQuietPro
                 };
                 btnEdit.FlatAppearance.BorderSize = 1;
                 btnEdit.FlatAppearance.BorderColor = Color.FromArgb(55, 55, 70);
-                var currentProfile = profile;
                 btnEdit.Click += (s, e) => {
                     using var dlg = new StopwatchEditDialog(currentProfile, _hardware.Processes);
                     if (dlg.ShowDialog(this) == DialogResult.OK)

@@ -18,6 +18,7 @@ namespace RyzenQuietPro
         private Label _lblTargetApp = null!;
         private Button _btnPickApp = null!;
         private CheckBox _chkShowOnCpuGraph = null!;
+        private CheckBox _chkIsVisible = null!;
         private Button[] _scaleButtons = Array.Empty<Button>();
         private int _selectedGraphScale = 0;
 
@@ -64,7 +65,7 @@ namespace RyzenQuietPro
         private void InitializeComponents()
         {
             this.Text = _isNew ? Loc.Get("StopwatchAdd") : Loc.Get("StopwatchEdit");
-            this.Size = new Size(470, 500);
+            this.Size = new Size(470, 525);
             this.StartPosition = FormStartPosition.CenterParent;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
@@ -295,6 +296,21 @@ namespace RyzenQuietPro
             _chkShowOnCpuGraph.CheckedChanged += (s, e) => UpdateScaleButtonsHighlight();
             UpdateScaleButtonsHighlight();
 
+            curY += scBtnH + 12;
+
+            // 5. Visibility Checkbox
+            _chkIsVisible = new CheckBox
+            {
+                Text = Loc.Get("StopwatchVisibleInGui"),
+                Location = new Point(pad, curY),
+                Size = new Size(this.ClientSize.Width - (pad * 2), 24),
+                Checked = _profile.IsVisible,
+                ForeColor = Color.FromArgb(220, 220, 235),
+                Font = new Font("Segoe UI", 9f),
+                Cursor = Cursors.Hand
+            };
+            this.Controls.Add(_chkIsVisible);
+
             // Bottom Buttons
             int btnW = 100;
             int btnH = 30;
@@ -443,6 +459,7 @@ namespace RyzenQuietPro
             _profile.ColorHex = _selectedColorHex;
             _profile.ShowOnCpuGraph = _chkShowOnCpuGraph.Checked;
             _profile.GraphScale = _chkShowOnCpuGraph.Checked ? _selectedGraphScale : -1;
+            _profile.IsVisible = _chkIsVisible.Checked;
 
             if (_rbAllApps.Checked)
             {

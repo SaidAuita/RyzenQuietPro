@@ -326,7 +326,7 @@ namespace RyzenQuietPro
 
         private void InitializeTrayIcon()
         {
-            bool hddAwake = _hardware.HddSchedule.IsWorkHoursActive;
+            bool hddAwake = _hardware.HddSchedule.IsDisksAwake;
             Icon initialIcon = _isQuietMode
                 ? (hddAwake ? _quietHddIcon : _quietIcon)
                 : (hddAwake ? _normalHddIcon : _normalIcon);
@@ -472,7 +472,7 @@ namespace RyzenQuietPro
             }
             else
             {
-                bool hddAwake = _hardware.HddSchedule.IsWorkHoursActive;
+                bool hddAwake = _hardware.HddSchedule.IsDisksAwake;
                 if (hddAwake != _lastHddAwakeState)
                 {
                     _lastHddAwakeState = hddAwake;
@@ -500,7 +500,7 @@ namespace RyzenQuietPro
                 return;
             }
 
-            _lastHddAwakeState = _hardware.HddSchedule.IsWorkHoursActive;
+            _lastHddAwakeState = _hardware.HddSchedule.IsDisksAwake;
             UpdateTrayState();
         }
 
@@ -545,7 +545,7 @@ namespace RyzenQuietPro
                     g.DrawString(text, font, textBrush, rect, sf);
 
                     // HDD Awake indicator: green square in top-left corner
-                    if (_hardware.HddSchedule.IsWorkHoursActive)
+                    if (_hardware.HddSchedule.IsDisksAwake)
                     {
                         int sqSize = Math.Max(3, iconSize / 4);
                         g.FillRectangle(shadowBrush, 0, 0, sqSize + 1, sqSize + 1);
@@ -572,7 +572,7 @@ namespace RyzenQuietPro
 
         private void UpdateTrayState()
         {
-            bool hddAwake = _hardware.HddSchedule.IsWorkHoursActive;
+            bool hddAwake = _hardware.HddSchedule.IsDisksAwake;
             _lastHddAwakeState = hddAwake;
 
             Icon currentStaticIcon = _isQuietMode

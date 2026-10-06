@@ -14,10 +14,12 @@ namespace RyzenQuietPro
         private bool _hasInitialized = false;
         private int _keepAliveCounter = 0;
         private bool _isWakingUp = false;
+        private DateTime? _manualWakeUntil = null;
 
         public bool IsWakingUp => _isWakingUp;
         public bool IsWorkHours => _isCurrentlyWorkHours;
         public bool IsWorkHoursActive => _isCurrentlyWorkHours && _settings.HddScheduleEnabled;
+        public bool IsDisksAwake => IsWorkHoursActive || (_manualWakeUntil.HasValue && DateTime.Now < _manualWakeUntil.Value);
 
         public event Action? StatusChanged;
 
@@ -66,6 +68,12 @@ namespace RyzenQuietPro
                     _keepAliveCounter = 0;
                     _ = Task.Run(SendKeepAlivePulse);
                 }
+            }
+
+            if (_manualWakeUntil.HasValue && DateTime.Now >= _manualWakeUntil.Value)
+            {
+                _manualWakeUntil = null;
+                StatusChanged?.Invoke();
             }
         }
 
@@ -116,6 +124,9 @@ namespace RyzenQuietPro
 
             try
             {
+                _manualWakeUntil = DateTime.Now.AddMinutes(Math.Max(5, _settings.HddOffHoursTimeoutMinutes));
+                StatusChanged?.Invoke();
+
                 await Task.Run(() =>
                 {
                     Logger.Log("[HDD Schedule] Waking up all fixed disks in background...");
@@ -181,6 +192,10 @@ namespace RyzenQuietPro
             if (_isCurrentlyWorkHours)
             {
                 return $"{Loc.Get("HddStatus_Awake")} (до {_settings.HddWorkEndHour:D2}:{_settings.HddWorkEndMinute:D2})";
+            }
+            else if (_manualWakeUntil.HasValue && DateTime.Now < _manualWakeUntil.Value)
+            {
+                return $"{Loc.Get("HddStatus_Awake")} (до {_manualWakeUntil.Value:HH:mm})";
             }
             else
             {

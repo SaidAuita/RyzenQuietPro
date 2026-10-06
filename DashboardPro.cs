@@ -839,13 +839,21 @@ namespace RyzenQuietPro
             if (activeGraphCount == 0) activeGraphCount = 1;
 
             int fixedH = 0;
-            int swCount = Math.Max(1, _hardware.Stopwatch.Items.Count);
+            var visibleSw = _hardware.Stopwatch.Items.Where(i => i.Profile.IsVisible).ToList();
+            int swCount = visibleSw.Count;
             int swRowH = 50;
             int swGap = 4;
-            int swCardH = (swCount * swRowH) + ((swCount - 1) * swGap);
+            int swCardH = swCount > 0 ? (swCount * swRowH) + ((swCount - 1) * swGap) : 0;
             if (_settings.ShowStopwatch)
             {
-                fixedH += 3 + 5 + 20 + swCardH + 6; // separator + header + stopwatch card + gap
+                if (swCount > 0)
+                {
+                    fixedH += 3 + 5 + 20 + swCardH + 6; // separator + header + stopwatch card + gap
+                }
+                else
+                {
+                    fixedH += 3 + 5 + 20 + 4; // separator + header when all hidden
+                }
             }
             if (showCpu)
             {
@@ -924,11 +932,12 @@ namespace RyzenQuietPro
 
             // --- STOPWATCH ---
             bool showStopwatch = _settings.ShowStopwatch;
+            bool hasVisibleSw = visibleSw.Count > 0;
             _sepStopwatch.Visible = showStopwatch;
             _lblStopwatch.Visible = showStopwatch;
             _lblStopwatchSub.Visible = showStopwatch;
             _btnSwDashboardAdd.Visible = showStopwatch;
-            _pnlStopwatch.Visible = showStopwatch;
+            _pnlStopwatch.Visible = showStopwatch && hasVisibleSw;
 
             if (showStopwatch)
             {
@@ -944,10 +953,17 @@ namespace RyzenQuietPro
                 _btnSwDashboardAdd.Size = new Size(24, 20);
                 curY += 20;
 
-                _pnlStopwatch.Location = new Point(marginX, curY);
-                _pnlStopwatch.Size = new Size(contentW, swCardH);
-                LayoutStopwatchButtons(contentW, swRowH, swGap);
-                curY += swCardH + 6;
+                if (hasVisibleSw)
+                {
+                    _pnlStopwatch.Location = new Point(marginX, curY);
+                    _pnlStopwatch.Size = new Size(contentW, swCardH);
+                    LayoutStopwatchButtons(contentW, swRowH, swGap);
+                    curY += swCardH + 6;
+                }
+                else
+                {
+                    curY += 4;
+                }
             }
 
             // --- CPU ---
@@ -1338,7 +1354,8 @@ namespace RyzenQuietPro
             _pnlStopwatch.Controls.Clear();
             _stopwatchRowControls.Clear();
 
-            foreach (var item in _hardware.Stopwatch.Items)
+            var visibleItems = _hardware.Stopwatch.Items.Where(i => i.Profile.IsVisible).ToList();
+            foreach (var item in visibleItems)
             {
                 var curItem = item;
                 var rc = new StopwatchRowControls
@@ -1538,8 +1555,16 @@ namespace RyzenQuietPro
                 _ => "Max"
             };
 
-            int runningCount = _hardware.Stopwatch.Items.Count(i => i.IsRunning);
-            int armedCount = _hardware.Stopwatch.Items.Count(i => i.IsAutoArmed);
+            var visibleItems = _hardware.Stopwatch.Items.Where(i => i.Profile.IsVisible).ToList();
+            if (visibleItems.Count == 0)
+            {
+                _lblStopwatchSub.Text = Loc.Get("StopwatchAllHidden");
+                _lblStopwatchSub.ForeColor = Color.FromArgb(135, 135, 150);
+                return;
+            }
+
+            int runningCount = visibleItems.Count(i => i.IsRunning);
+            int armedCount = visibleItems.Count(i => i.IsAutoArmed);
 
             if (runningCount > 0)
             {
@@ -1567,7 +1592,7 @@ namespace RyzenQuietPro
             int w = _pnlStopwatch.Width;
             if (w <= 10) return;
 
-            var items = _hardware.Stopwatch.Items;
+            var items = _hardware.Stopwatch.Items.Where(i => i.Profile.IsVisible).ToList();
             if (items.Count == 0) return;
 
             int swRowH = 50;
@@ -2660,8 +2685,8 @@ namespace RyzenQuietPro
             _lblDiskSub.Text = $"R:{_hardware.Disk.ReadMbPerSec:F1} W:{_hardware.Disk.WriteMbPerSec:F1} MB/s [{diskIdleText}]";
             if (_settings.HddScheduleEnabled)
             {
-                bool isWorkHours = _hardware.HddSchedule.IsWorkHours;
-                _lblHddStatus.ForeColor = isWorkHours ? Color.FromArgb(52, 211, 153) : Color.FromArgb(120, 120, 135);
+                bool isAwake = _hardware.HddSchedule.IsDisksAwake;
+                _lblHddStatus.ForeColor = isAwake ? Color.FromArgb(52, 211, 153) : Color.FromArgb(120, 120, 135);
                 string tip = $"{Loc.Get("HddScheduleModule")}: {_hardware.HddSchedule.GetStatusString()}";
                 _toolTip.SetToolTip(_lblHddStatus, tip);
                 _toolTip.SetToolTip(_lblDiskSub, tip);
@@ -2854,7 +2879,7 @@ namespace RyzenQuietPro
             // Stays continuously visible even when stopped!
             foreach (var sw in _hardware.Stopwatch.Items)
             {
-                if (sw.Profile.ShowOnCpuGraph && sw.HasRecordedHistory)
+                if (sw.Profile.IsVisible && sw.Profile.ShowOnCpuGraph && sw.HasRecordedHistory)
                 {
                     DrawStopwatchCpuCurve(e.Graphics, _pnlCpuGraph, sw, maxPercent);
                 }

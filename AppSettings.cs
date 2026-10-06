@@ -204,5 +204,6 @@ namespace RyzenQuietPro
         public bool IsAutoArmed { get; set; } = false;
         public bool ShowOnCpuGraph { get; set; } = true;
         public int GraphScale { get; set; } = 0; // 0 = Auto, 1 = 1x, 2 = 2x, 4 = 4x, 8 = 8x, 16 = 16x, -1 = Off
+        public bool IsVisible { get; set; } = true;
     }
 }
