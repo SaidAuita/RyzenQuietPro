@@ -437,7 +437,7 @@ namespace RyzenQuietPro
 
             // ================= 2. GRAPHS & MODULES CARD =================
             // Single vertical column (1 row per item) - spacious and slender
-            int baseOff = 28;
+            int baseOff = 34;
             int cardGraphsH = multiGpu ? 552 + baseOff : 522 + baseOff;
             var cardGraphs = CreateCard(cardX, curY, cardW, cardGraphsH);
             _pnlBody.Controls.Add(cardGraphs);
@@ -470,7 +470,7 @@ namespace RyzenQuietPro
                 Text = Loc.Get("CpuGraphScaleTitle"),
                 Font = new Font("Segoe UI", 8.0f, FontStyle.Bold),
                 ForeColor = Color.FromArgb(170, 170, 185),
-                Location = new Point(chkX + 16, scaleRowY + 3),
+                Location = new Point(chkX + 16, scaleRowY + 5),
                 AutoSize = true
             };
             cardGraphs.Controls.Add(_lblCpuScaleTitle);
@@ -492,10 +492,12 @@ namespace RyzenQuietPro
                 var btn = new Button
                 {
                     Text = opt.label,
-                    Font = new Font("Segoe UI", 7.5f, FontStyle.Bold),
-                    Size = new Size(scBtnW, 21),
+                    Font = new Font("Segoe UI", 8.0f, FontStyle.Bold),
+                    Size = new Size(scBtnW, 26),
                     Location = new Point(scBtnX, scaleRowY),
                     FlatStyle = FlatStyle.Flat,
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    Padding = Padding.Empty,
                     Cursor = Cursors.Hand,
                     Tag = opt.val
                 };
@@ -803,7 +805,7 @@ namespace RyzenQuietPro
             curY += cardGraphsH + 8;
 
             // ================= 2b. STOPWATCH & AUTO-START CARD =================
-            int cardSwH = 445;
+            int cardSwH = 450;
             var cardSw = CreateCard(cardX, curY, cardW, cardSwH);
             _pnlBody.Controls.Add(cardSw);
 
@@ -993,12 +995,14 @@ namespace RyzenQuietPro
             _btnSwAdd = new Button
             {
                 Text = Loc.Get("StopwatchAdd"),
-                Font = new Font("Segoe UI", 8.0f, FontStyle.Bold),
-                Size = new Size(130, 24),
-                Location = new Point(cardW - 14 - 130, swListY - 2),
+                Font = new Font("Segoe UI", 8.25f, FontStyle.Bold),
+                Size = new Size(130, 28),
+                Location = new Point(cardW - 14 - 130, swListY - 4),
                 FlatStyle = FlatStyle.Flat,
                 BackColor = Color.FromArgb(34, 197, 94),
                 ForeColor = Color.FromArgb(18, 18, 22),
+                TextAlign = ContentAlignment.MiddleCenter,
+                Padding = Padding.Empty,
                 Cursor = Cursors.Hand
             };
             _btnSwAdd.FlatAppearance.BorderSize = 0;
@@ -1017,7 +1021,7 @@ namespace RyzenQuietPro
 
             _pnlSwListContainer = new Panel
             {
-                Location = new Point(14, swListY + 26),
+                Location = new Point(14, swListY + 28),
                 Size = new Size(cardW - 28, 125),
                 AutoScroll = true,
                 BackColor = Color.Transparent
@@ -1896,7 +1900,7 @@ namespace RyzenQuietPro
                     ForeColor = Color.FromArgb(220, 220, 235),
                     Font = new Font("Segoe UI", 8.25f),
                     TextAlign = ContentAlignment.MiddleCenter,
-                    Padding = new Padding(0, 1, 0, 0),
+                    Padding = Padding.Empty,
                     Cursor = Cursors.Hand
                 };
                 btnEdit.FlatAppearance.BorderSize = 1;

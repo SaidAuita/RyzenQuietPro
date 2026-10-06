@@ -1,25 +1,27 @@
 @echo off
 setlocal
-set VERSION=v4.05
-
+set VERSION=v4.06
+ 
 rem Clear proxy environment variables to allow direct access
 set "HTTPS_PROXY="
 set "HTTP_PROXY="
 set "DOTNET_CLI_TELEMETRY_OPTOUT=1"
-
+ 
 if exist "%LOCALAPPDATA%\Microsoft\dotnet\dotnet.exe" (
     set "DOTNET_ROOT=%LOCALAPPDATA%\Microsoft\dotnet"
     set "PATH=%LOCALAPPDATA%\Microsoft\dotnet;%PATH%"
 )
-
+ 
 echo ==========================================
 echo Building RyzenQuiet PRO %VERSION%
 echo ==========================================
-
+ 
 rem Close running instance if any to allow replacing binary
 taskkill /F /IM RyzenQuietPro.exe >nul 2>&1
 taskkill /F /IM RyzenQuietPro-%VERSION%.exe >nul 2>&1
 taskkill /F /IM RyzenQuietPro-%VERSION%-Lite.exe >nul 2>&1
+taskkill /F /IM RyzenQuietPro-v4.05.exe >nul 2>&1
+taskkill /F /IM RyzenQuietPro-v4.05-Lite.exe >nul 2>&1
 taskkill /F /IM RyzenQuietPro-v4.04.exe >nul 2>&1
 taskkill /F /IM RyzenQuietPro-v4.04-Lite.exe >nul 2>&1
 taskkill /F /IM RyzenQuietPro-v3.0.exe >nul 2>&1

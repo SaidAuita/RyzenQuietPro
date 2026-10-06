@@ -1,12 +1,30 @@
 # PROJECT_STATUS: RyzenQuiet PRO
 
-## Текущая версия: v4.05
+## Текущая версия: v4.06
 - **Активная ветка Git**: `v4`
-- **Предыдущий релиз**: v4.04 (Multi-Stopwatch, Per-App Process Profiling, Independent Counter Curve Zoom & Scales)
+- **Предыдущий релиз**: v4.05 (Automated HDD awake schedule, APM keep-alive, multi-language support and UI fixes)
 
 ---
 
-## Текущая итерация: v4.05
+## Текущая итерация: v4.06
+- [x] **Исправление вертикального обрезания кнопок (UI Button Height Clipping Fixes)**:
+  - **Кнопки масштабирования графика CPU (`CPU Graph Scale: 1x, 2x, 4x, 6x, 8x, Auto`)**:
+    - Увеличена высота кнопок с 21px до 26px (`Size = new Size(scBtnW, 26)`).
+    - Шрифт поднят до `Segoe UI 8.0f Bold` с `TextAlign = ContentAlignment.MiddleCenter` и `Padding = Padding.Empty`.
+    - Вертикальное смещение заголовка `_lblCpuScaleTitle` выровнено по центру кнопок (`Location.Y = scaleRowY + 5`).
+    - Базовый вертикальный отступ группы графиков `baseOff` увеличен с 28px до 34px, что гарантирует свободный интервал (10px) перед чекбоксом матрицы ядер (`_chkCpuCores`) без наложения элементов при любом DPI.
+  - **Кнопка добавления секундомера/таймера (`_btnSwAdd`)**:
+    - Высота кнопки увеличена с 24px до 28px (`Size = new Size(130, 28)`), вертикально отцентрована с заголовком раздела (`swListY - 4`).
+    - Увеличен зазор до контейнера списка профилей (`_pnlSwListContainer` на `swListY + 28`), высота карточки `cardSwH` увеличена до 450px.
+    - Текст кнопки сокращен до лаконичного `+ Add` (en) и `+ Добавить` (ru), исключая перенос строк и срезание нижней части надписи.
+    - В строках списка секундомеров для кнопки `[Edit]` убран смещающий отступ `Padding(0, 1, 0, 0)`, устранено срезание нижней перекладины буквы "E" (глиф "Fdit").
+- [x] **Синхронизация версий и сборка**:
+  - Поднята версия `v4.06` в `RyzenQuietPro.csproj`, `RyzenQuiet.FanService.csproj`, `build.bat`, `Localization.cs`, `DashboardPro.cs`, `TrayApp.cs`, `README.md`.
+
+---
+
+## Предыдущие итерации:
+### Итерация: v4.05
 - [x] **Автоматическое расписание работы HDD без сна (HDD Awake Schedule)**:
   - Создан менеджер расписания `HddScheduleManager.cs`, выполняющий проверку времени в основном цикле `HardwareMonitor.Sample()` каждую секунду.
   - Поддержка настройки диапазона рабочих часов (по умолчанию с 07:00 до 17:00, с понедельника по пятницу `HddWorkDaysOnly`).

@@ -28,7 +28,7 @@ namespace RyzenQuietPro
         {
             ["ru"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.05",
+                ["AppTitle"] = "RyzenQuiet PRO v4.06",
                 ["Silent"] = "Тихий",
                 ["SilentFull"] = "🌿 Тихий (99%)",
                 ["Boost"] = "Турбо",
@@ -73,7 +73,7 @@ namespace RyzenQuietPro
                 ["StopwatchHysteresis"] = "Гистерезис (задержка)",
                 ["StopwatchHysteresisTip"] = "Задержка остановки при кратковременном падении мощности (смена сцен, загрузка)",
                 ["Sec"] = "сек",
-                ["StopwatchAdd"] = "+ Добавить секундомер",
+                ["StopwatchAdd"] = "+ Добавить",
                 ["StopwatchEdit"] = "Изменить",
                 ["StopwatchDelete"] = "Удалить",
                 ["StopwatchName"] = "Название секундомера:",
@@ -235,7 +235,7 @@ namespace RyzenQuietPro
             },
             ["en"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.05",
+                ["AppTitle"] = "RyzenQuiet PRO v4.06",
                 ["Silent"] = "Silent",
                 ["SilentFull"] = "🌿 Silent (99%)",
                 ["Boost"] = "Boost",
@@ -279,7 +279,7 @@ namespace RyzenQuietPro
                 ["StopwatchHysteresis"] = "Hysteresis delay",
                 ["StopwatchHysteresisTip"] = "Delay before stopping when power drops briefly (loading screens, transitions)",
                 ["Sec"] = "sec",
-                ["StopwatchAdd"] = "+ Add Stopwatch",
+                ["StopwatchAdd"] = "+ Add",
                 ["StopwatchEdit"] = "Edit",
                 ["StopwatchDelete"] = "Delete",
                 ["StopwatchName"] = "Stopwatch Name:",
@@ -437,7 +437,7 @@ namespace RyzenQuietPro
             },
             ["de"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.05",
+                ["AppTitle"] = "RyzenQuiet PRO v4.06",
                 ["Silent"] = "Leise",
                 ["SilentFull"] = "🌿 Leise (99%)",
                 ["Boost"] = "Boost",
@@ -573,7 +573,7 @@ namespace RyzenQuietPro
             },
             ["es"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.05",
+                ["AppTitle"] = "RyzenQuiet PRO v4.06",
                 ["Silent"] = "Silencioso",
                 ["SilentFull"] = "🌿 Silencioso (99%)",
                 ["Boost"] = "Turbo",
@@ -709,7 +709,7 @@ namespace RyzenQuietPro
             },
             ["fr"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.05",
+                ["AppTitle"] = "RyzenQuiet PRO v4.06",
                 ["Silent"] = "Silencieux",
                 ["SilentFull"] = "🌿 Silencieux (99%)",
                 ["Boost"] = "Turbo",
@@ -845,7 +845,7 @@ namespace RyzenQuietPro
             },
             ["ja"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.05",
+                ["AppTitle"] = "RyzenQuiet PRO v4.06",
                 ["Silent"] = "静音",
                 ["SilentFull"] = "🌿 静音モード (99%)",
                 ["Boost"] = "ブースト",
@@ -981,7 +981,7 @@ namespace RyzenQuietPro
             },
             ["pt"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.05",
+                ["AppTitle"] = "RyzenQuiet PRO v4.06",
                 ["Silent"] = "Silencioso",
                 ["SilentFull"] = "🌿 Silencioso (99%)",
                 ["Boost"] = "Turbo",
@@ -1117,7 +1117,7 @@ namespace RyzenQuietPro
             },
             ["zh"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.05",
+                ["AppTitle"] = "RyzenQuiet PRO v4.06",
                 ["Silent"] = "静音",
                 ["SilentFull"] = "🌿 静音模式 (99%)",
                 ["Boost"] = "加速",
