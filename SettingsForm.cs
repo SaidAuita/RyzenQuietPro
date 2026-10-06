@@ -93,6 +93,7 @@ namespace RyzenQuietPro
         private CheckBox _chkHddKeepAlive = null!;
         private Panel _sepHdd = null!;
         private Button _btnHddWakeNow = null!;
+        private Button _btnHddSleepNow = null!;
         private Label _lblHddWakeStatus = null!;
 
         private readonly List<Panel> _allCards = new();
@@ -176,6 +177,18 @@ namespace RyzenQuietPro
 
             InitializeComponents();
             Loc.LanguageChanged += RefreshLocalizedTexts;
+
+            Action onHddStatusChanged = () => {
+                if (this.IsHandleCreated && !this.IsDisposed)
+                {
+                    try { this.BeginInvoke((Action)UpdateHddCardUI); } catch { }
+                }
+            };
+            _hardware.HddSchedule.StatusChanged += onHddStatusChanged;
+            this.FormClosed += (s, e) => {
+                _hardware.HddSchedule.StatusChanged -= onHddStatusChanged;
+                Loc.LanguageChanged -= RefreshLocalizedTexts;
+            };
 
             _hardware.Fans.StatusChanged += () => {
                 if (this.IsHandleCreated && !this.IsDisposed)
@@ -1486,12 +1499,12 @@ namespace RyzenQuietPro
             };
             _pnlHddControls.Controls.Add(_sepHdd);
 
-            // Row 7: Action Button & Status
+            // Row 7: Action Buttons & Status
             _btnHddWakeNow = new Button
             {
                 Text = Loc.Get("HddWakeNow"),
                 Font = new Font("Segoe UI", 8.25f, FontStyle.Bold),
-                Size = new Size(180, 28),
+                Size = new Size(110, 28),
                 Location = new Point(0, 164),
                 FlatStyle = FlatStyle.Flat,
                 BackColor = Color.FromArgb(28, 36, 48),
@@ -1500,25 +1513,46 @@ namespace RyzenQuietPro
                 Cursor = Cursors.Hand
             };
             _btnHddWakeNow.FlatAppearance.BorderColor = Color.FromArgb(44, 60, 80);
+            _toolTip.SetToolTip(_btnHddWakeNow, Loc.Get("HddWakeTip"));
             _btnHddWakeNow.Click += async (s, e) => {
                 _btnHddWakeNow.Enabled = false;
                 _lblHddWakeStatus.Text = Loc.Get("HddWaking");
                 _lblHddWakeStatus.ForeColor = Color.FromArgb(245, 158, 11);
                 await _hardware.HddSchedule.WakeUpAllHddsAsync();
-                _lblHddWakeStatus.Text = Loc.Get("HddWoken");
-                _lblHddWakeStatus.ForeColor = Color.FromArgb(34, 197, 94);
+                UpdateHddCardUI();
                 _btnHddWakeNow.Enabled = true;
             };
             _pnlHddControls.Controls.Add(_btnHddWakeNow);
 
+            _btnHddSleepNow = new Button
+            {
+                Text = Loc.Get("HddSleepNow"),
+                Font = new Font("Segoe UI", 8.25f, FontStyle.Bold),
+                Size = new Size(95, 28),
+                Location = new Point(116, 164),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.FromArgb(32, 32, 42),
+                ForeColor = Color.FromArgb(180, 180, 200),
+                TextAlign = ContentAlignment.MiddleCenter,
+                Cursor = Cursors.Hand
+            };
+            _btnHddSleepNow.FlatAppearance.BorderColor = Color.FromArgb(48, 48, 62);
+            _toolTip.SetToolTip(_btnHddSleepNow, Loc.Get("HddSleepTip"));
+            _btnHddSleepNow.Click += (s, e) => {
+                _hardware.HddSchedule.PutDisksToSleep();
+                UpdateHddCardUI();
+            };
+            _pnlHddControls.Controls.Add(_btnHddSleepNow);
+
             _lblHddWakeStatus = new Label
             {
                 Text = _hardware.HddSchedule.GetStatusString(),
-                Font = new Font("Segoe UI", 8f),
-                ForeColor = Color.FromArgb(160, 160, 175),
-                Location = new Point(188, 168),
-                Size = new Size(cardW - 28 - 190, 20),
-                TextAlign = ContentAlignment.MiddleLeft
+                Font = new Font("Segoe UI", 8.25f),
+                ForeColor = _hardware.HddSchedule.IsDisksAwake ? Color.FromArgb(52, 211, 153) : Color.FromArgb(160, 160, 175),
+                Location = new Point(218, 168),
+                Size = new Size(Math.Max(50, cardW - 28 - 222), 20),
+                TextAlign = ContentAlignment.MiddleLeft,
+                AutoEllipsis = true
             };
             _pnlHddControls.Controls.Add(_lblHddWakeStatus);
 
@@ -2126,7 +2160,11 @@ namespace RyzenQuietPro
                 }
             }
             if (_sepHdd != null) _sepHdd.Width = cardW - 28;
-            if (_lblHddWakeStatus != null) _lblHddWakeStatus.Width = Math.Max(50, cardW - 28 - 190);
+            if (_lblHddWakeStatus != null)
+            {
+                _lblHddWakeStatus.Left = 218;
+                _lblHddWakeStatus.Width = Math.Max(50, cardW - 28 - 222);
+            }
 
             // Footer close button
             if (_btnClose != null)
@@ -2264,7 +2302,16 @@ namespace RyzenQuietPro
             if (_chkHddKeepAlive != null) _chkHddKeepAlive.Text = Loc.Get("HddKeepAlivePulse");
             if (_toolTip != null && _chkHddKeepAlive != null) _toolTip.SetToolTip(_chkHddKeepAlive, Loc.Get("HddKeepAliveTip"));
             if (_btnHddWakeNow != null) _btnHddWakeNow.Text = Loc.Get("HddWakeNow");
-            if (_lblHddWakeStatus != null) _lblHddWakeStatus.Text = _hardware.HddSchedule.GetStatusString();
+            if (_btnHddSleepNow != null) _btnHddSleepNow.Text = Loc.Get("HddSleepNow");
+            if (_toolTip != null && _btnHddWakeNow != null) _toolTip.SetToolTip(_btnHddWakeNow, Loc.Get("HddWakeTip"));
+            if (_toolTip != null && _btnHddSleepNow != null) _toolTip.SetToolTip(_btnHddSleepNow, Loc.Get("HddSleepTip"));
+            if (_lblHddWakeStatus != null)
+            {
+                _lblHddWakeStatus.Text = _hardware.HddSchedule.GetStatusString();
+                _lblHddWakeStatus.ForeColor = _hardware.HddSchedule.IsDisksAwake
+                    ? Color.FromArgb(52, 211, 153)
+                    : Color.FromArgb(160, 160, 175);
+            }
 
             if (_btnSpecs != null)
             {
@@ -2289,6 +2336,9 @@ namespace RyzenQuietPro
             if (_lblHddWakeStatus != null)
             {
                 _lblHddWakeStatus.Text = _hardware.HddSchedule.GetStatusString();
+                _lblHddWakeStatus.ForeColor = _hardware.HddSchedule.IsDisksAwake
+                    ? Color.FromArgb(52, 211, 153)
+                    : Color.FromArgb(160, 160, 175);
             }
         }
 

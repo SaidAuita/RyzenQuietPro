@@ -15,11 +15,13 @@ namespace RyzenQuietPro
         private int _keepAliveCounter = 0;
         private bool _isWakingUp = false;
         private DateTime? _manualWakeUntil = null;
+        private bool _manualSleepActive = false;
 
         public bool IsWakingUp => _isWakingUp;
         public bool IsWorkHours => _isCurrentlyWorkHours;
         public bool IsWorkHoursActive => _isCurrentlyWorkHours && _settings.HddScheduleEnabled;
-        public bool IsDisksAwake => IsWorkHoursActive || (_manualWakeUntil.HasValue && DateTime.Now < _manualWakeUntil.Value);
+        public bool IsManualSleep => _manualSleepActive;
+        public bool IsDisksAwake => !_manualSleepActive && (IsWorkHoursActive || (_manualWakeUntil.HasValue && DateTime.Now < _manualWakeUntil.Value));
 
         public event Action? StatusChanged;
 
@@ -47,6 +49,7 @@ namespace RyzenQuietPro
             {
                 _hasInitialized = true;
                 _isCurrentlyWorkHours = shouldBeWorkHours;
+                _manualSleepActive = false;
 
                 if (_isCurrentlyWorkHours)
                 {
@@ -59,7 +62,7 @@ namespace RyzenQuietPro
 
                 StatusChanged?.Invoke();
             }
-            else if (_isCurrentlyWorkHours && _settings.HddKeepAlivePulse)
+            else if (IsDisksAwake && _settings.HddKeepAlivePulse)
             {
                 // Pulse every ~90 seconds (assuming CheckSchedule is called once per second)
                 _keepAliveCounter++;
@@ -73,6 +76,10 @@ namespace RyzenQuietPro
             if (_manualWakeUntil.HasValue && DateTime.Now >= _manualWakeUntil.Value)
             {
                 _manualWakeUntil = null;
+                if (!_isCurrentlyWorkHours)
+                {
+                    OnOffHoursEntered();
+                }
                 StatusChanged?.Invoke();
             }
         }
@@ -124,7 +131,9 @@ namespace RyzenQuietPro
 
             try
             {
+                _manualSleepActive = false;
                 _manualWakeUntil = DateTime.Now.AddMinutes(Math.Max(5, _settings.HddOffHoursTimeoutMinutes));
+                PowerPlanManager.SetDiskIdleTimeout(0);
                 StatusChanged?.Invoke();
 
                 await Task.Run(() =>
@@ -157,6 +166,21 @@ namespace RyzenQuietPro
             }
         }
 
+        public void PutDisksToSleep()
+        {
+            _manualWakeUntil = null;
+            if (_isCurrentlyWorkHours)
+            {
+                _manualSleepActive = true;
+            }
+
+            int timeout = Math.Max(1, _settings.HddOffHoursTimeoutMinutes);
+            Logger.Log($"[HDD Schedule] Disks put to sleep manually. Setting disk idle timeout to {timeout} min.");
+            PowerPlanManager.SetDiskIdleTimeout(timeout);
+
+            StatusChanged?.Invoke();
+        }
+
         private void SendKeepAlivePulse()
         {
             try
@@ -187,6 +211,11 @@ namespace RyzenQuietPro
             if (_isWakingUp)
             {
                 return Loc.Get("HddWaking");
+            }
+
+            if (_manualSleepActive)
+            {
+                return $"{Loc.Get("HddStatus_Standby").Replace("{0}", _settings.HddOffHoursTimeoutMinutes.ToString())} ({Loc.Get("HddManual")})";
             }
 
             if (_isCurrentlyWorkHours)
