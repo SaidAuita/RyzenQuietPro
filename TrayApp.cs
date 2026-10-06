@@ -50,7 +50,10 @@ namespace RyzenQuietPro
         private Bitmap _normalBitmap = null!;
         private Icon _quietIcon = null!;
         private Icon _normalIcon = null!;
+        private Icon _quietHddIcon = null!;
+        private Icon _normalHddIcon = null!;
         private Icon? _currentDynamicIcon;
+        private bool _lastHddAwakeState;
 
         private bool _isQuietMode;
         private bool _isStartupEnabled;
@@ -94,6 +97,7 @@ namespace RyzenQuietPro
             );
 
             _hardware.MetricsUpdated += OnMetricsUpdated;
+            _hardware.HddSchedule.StatusChanged += OnHddScheduleStatusChanged;
             _hardware.Start(1000);
 
             if (_settings.GpuTuningEnabled)
@@ -125,6 +129,36 @@ namespace RyzenQuietPro
             _normalBitmap = AppIcons.NormalBitmap;
             _quietIcon = AppIcons.QuietIcon;
             _normalIcon = AppIcons.NormalIcon;
+            _quietHddIcon = CreateHddOverlayIcon(_quietIcon);
+            _normalHddIcon = CreateHddOverlayIcon(_normalIcon);
+        }
+
+        private static Icon CreateHddOverlayIcon(Icon baseIcon)
+        {
+            try
+            {
+                int iconSize = SystemInformation.SmallIconSize.Width;
+                if (iconSize <= 0) iconSize = 16;
+
+                using var srcBmp = baseIcon.ToBitmap();
+                using var bmp = new Bitmap(srcBmp, iconSize, iconSize);
+                using (var g = Graphics.FromImage(bmp))
+                {
+                    int sqSize = Math.Max(3, iconSize / 4);
+                    using var shadowBrush = new SolidBrush(Color.FromArgb(160, 0, 0, 0));
+                    g.FillRectangle(shadowBrush, 0, 0, sqSize + 1, sqSize + 1);
+
+                    using var greenBrush = new SolidBrush(Color.FromArgb(52, 211, 153));
+                    g.FillRectangle(greenBrush, 0, 0, sqSize, sqSize);
+                }
+
+                return AppIcons.IconFromBitmap(bmp);
+            }
+            catch (Exception ex)
+            {
+                Logger.Log($"CreateHddOverlayIcon error: {ex.Message}");
+                return (Icon)baseIcon.Clone();
+            }
         }
 
         private void InitializeContextMenu()
@@ -292,9 +326,14 @@ namespace RyzenQuietPro
 
         private void InitializeTrayIcon()
         {
+            bool hddAwake = _hardware.HddSchedule.IsWorkHoursActive;
+            Icon initialIcon = _isQuietMode
+                ? (hddAwake ? _quietHddIcon : _quietIcon)
+                : (hddAwake ? _normalHddIcon : _normalIcon);
+
             _notifyIcon = new NotifyIcon()
             {
-                Icon = _isQuietMode ? _quietIcon : _normalIcon,
+                Icon = initialIcon,
                 ContextMenuStrip = _contextMenu,
                 Visible = true,
                 Text = "RyzenQuiet PRO"
@@ -431,6 +470,15 @@ namespace RyzenQuietPro
                 };
                 RenderDynamicTrayIcon(metricValue);
             }
+            else
+            {
+                bool hddAwake = _hardware.HddSchedule.IsWorkHoursActive;
+                if (hddAwake != _lastHddAwakeState)
+                {
+                    _lastHddAwakeState = hddAwake;
+                    UpdateTrayState();
+                }
+            }
 
             // 3. Auto-quiet check
             if (_settings.AutoQuietOnIdle && !_isQuietMode)
@@ -442,6 +490,18 @@ namespace RyzenQuietPro
                     SwitchToMode(PowerPlanManager.Mode.Quiet);
                 }
             }
+        }
+
+        private void OnHddScheduleStatusChanged()
+        {
+            if (this.InvokeRequired)
+            {
+                this.BeginInvoke(new Action(OnHddScheduleStatusChanged));
+                return;
+            }
+
+            _lastHddAwakeState = _hardware.HddSchedule.IsWorkHoursActive;
+            UpdateTrayState();
         }
 
         private void RenderDynamicTrayIcon(float value)
@@ -483,6 +543,16 @@ namespace RyzenQuietPro
                     // Primary colored text (green or red)
                     using var textBrush = new SolidBrush(textColor);
                     g.DrawString(text, font, textBrush, rect, sf);
+
+                    // HDD Awake indicator: green square in top-left corner
+                    if (_hardware.HddSchedule.IsWorkHoursActive)
+                    {
+                        int sqSize = Math.Max(3, iconSize / 4);
+                        g.FillRectangle(shadowBrush, 0, 0, sqSize + 1, sqSize + 1);
+
+                        using var hddBrush = new SolidBrush(Color.FromArgb(52, 211, 153));
+                        g.FillRectangle(hddBrush, 0, 0, sqSize, sqSize);
+                    }
                 }
 
                 IntPtr hIcon = bmp.GetHicon();
@@ -502,13 +572,20 @@ namespace RyzenQuietPro
 
         private void UpdateTrayState()
         {
-            this.Icon = _isQuietMode ? _quietIcon : _normalIcon;
+            bool hddAwake = _hardware.HddSchedule.IsWorkHoursActive;
+            _lastHddAwakeState = hddAwake;
+
+            Icon currentStaticIcon = _isQuietMode
+                ? (hddAwake ? _quietHddIcon : _quietIcon)
+                : (hddAwake ? _normalHddIcon : _normalIcon);
+
+            this.Icon = currentStaticIcon;
             _quietMenuItem.Checked = _isQuietMode;
             _normalMenuItem.Checked = !_isQuietMode;
 
             if (!_settings.LiveTrayIcon)
             {
-                _notifyIcon.Icon = _isQuietMode ? _quietIcon : _normalIcon;
+                _notifyIcon.Icon = currentStaticIcon;
                 if (_currentDynamicIcon != null)
                 {
                     _currentDynamicIcon.Dispose();
@@ -560,6 +637,7 @@ namespace RyzenQuietPro
                 }
 
                 _hardware.MetricsUpdated -= OnMetricsUpdated;
+                _hardware.HddSchedule.StatusChanged -= OnHddScheduleStatusChanged;
                 _hardware.Dispose();
                 _dashboard?.Dispose();
 
@@ -571,6 +649,8 @@ namespace RyzenQuietPro
 
                 _contextMenu?.Dispose();
                 _currentDynamicIcon?.Dispose();
+                _quietHddIcon?.Dispose();
+                _normalHddIcon?.Dispose();
             }
             base.Dispose(disposing);
         }
