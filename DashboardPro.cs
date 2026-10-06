@@ -82,6 +82,7 @@ namespace RyzenQuietPro
         private Label _lblCpuSub = null!;
         private SmoothPanel _pnlCpuGraph = null!;
         private SmoothPanel _pnlCoresMatrix = null!;
+        private Label _btnCpuProcessesExpand = null!;
         private SmoothPanel _pnlTopProcesses = null!;
 
         private Label _lblRam = null!;
@@ -117,6 +118,7 @@ namespace RyzenQuietPro
 
         private Label _lblDisk = null!;
         private Label _lblDiskSub = null!;
+        private Label _lblHddStatus = null!;
         private Label _btnDiskExpand = null!;
         private DiskLegendPanel _pnlDiskLegend = null!;
         private SmoothPanel _pnlDiskGraph = null!;
@@ -496,6 +498,21 @@ namespace RyzenQuietPro
             _pnlCoresMatrix.Paint += DrawCoresMatrix;
             this.Controls.Add(_pnlCoresMatrix);
 
+            _btnCpuProcessesExpand = new Label
+            {
+                Text = _settings.ShowTopProcesses ? "▲" : "▼",
+                Font = new Font("Segoe UI", 7.5f, FontStyle.Bold),
+                ForeColor = cpuColor,
+                BackColor = Color.FromArgb(20, 24, 32),
+                TextAlign = ContentAlignment.MiddleCenter,
+                Cursor = Cursors.Hand,
+                Size = new Size(20, 22)
+            };
+            _btnCpuProcessesExpand.MouseEnter += (s, e) => _btnCpuProcessesExpand.BackColor = Color.FromArgb(32, 42, 56);
+            _btnCpuProcessesExpand.MouseLeave += (s, e) => _btnCpuProcessesExpand.BackColor = Color.FromArgb(20, 24, 32);
+            _btnCpuProcessesExpand.Click += (s, e) => ToggleCpuProcesses();
+            this.Controls.Add(_btnCpuProcessesExpand);
+
             _pnlTopProcesses = new SmoothPanel
             {
                 BackColor = Color.FromArgb(16, 16, 20),
@@ -569,6 +586,22 @@ namespace RyzenQuietPro
             _lblDiskSub = CreateMetricSubHeader("R:0.0 W:0.0 MB/s [Idle]");
             this.Controls.Add(_lblDisk);
             this.Controls.Add(_lblDiskSub);
+
+            _lblHddStatus = new Label
+            {
+                Text = "⚡",
+                Font = new Font("Segoe UI", 8.5f, FontStyle.Bold),
+                ForeColor = Color.FromArgb(52, 211, 153),
+                BackColor = Color.FromArgb(20, 24, 32),
+                TextAlign = ContentAlignment.MiddleCenter,
+                Cursor = Cursors.Hand,
+                Size = new Size(18, 18),
+                Visible = false
+            };
+            _lblHddStatus.MouseEnter += (s, e) => _lblHddStatus.BackColor = Color.FromArgb(32, 42, 56);
+            _lblHddStatus.MouseLeave += (s, e) => _lblHddStatus.BackColor = Color.FromArgb(20, 24, 32);
+            _lblHddStatus.Click += (s, e) => ShowSettingsDialog();
+            this.Controls.Add(_lblHddStatus);
 
             _btnDiskExpand = new Label
             {
@@ -923,6 +956,7 @@ namespace RyzenQuietPro
             _lblCpuSub.Visible = showCpu;
             _pnlCpuGraph.Visible = _settings.ShowCpuGraph;
             _pnlCoresMatrix.Visible = _settings.ShowCpuCores;
+            _btnCpuProcessesExpand.Visible = showCpu;
 
             if (showCpu)
             {
@@ -931,8 +965,9 @@ namespace RyzenQuietPro
                 curY += 5;
 
                 _lblCpu.Location = new Point(marginX, curY);
+                int cpuSubRightOffset = _settings.ShowCpuCores ? 0 : 24;
                 _lblCpuSub.Location = new Point(marginX + 95, curY);
-                _lblCpuSub.Size = new Size(contentW - 95, 20);
+                _lblCpuSub.Size = new Size(contentW - 95 - cpuSubRightOffset, 20);
                 curY += 20;
 
                 if (_settings.ShowCpuGraph)
@@ -945,8 +980,21 @@ namespace RyzenQuietPro
                 if (_settings.ShowCpuCores)
                 {
                     _pnlCoresMatrix.Location = new Point(marginX, curY);
-                    _pnlCoresMatrix.Size = new Size(contentW, 22);
+                    _pnlCoresMatrix.Size = new Size(contentW - 24, 22);
+
+                    _btnCpuProcessesExpand.Location = new Point(marginX + contentW - 20, curY);
+                    _btnCpuProcessesExpand.Size = new Size(20, 22);
+                    _btnCpuProcessesExpand.Text = _settings.ShowTopProcesses ? "▲" : "▼";
+                    _toolTip.SetToolTip(_btnCpuProcessesExpand, _settings.ShowTopProcesses ? Loc.Get("ProcessesCollapse") : Loc.Get("ProcessesExpand"));
+
                     curY += 22 + 4;
+                }
+                else
+                {
+                    _btnCpuProcessesExpand.Location = new Point(marginX + contentW - 20, curY - 20 + 1);
+                    _btnCpuProcessesExpand.Size = new Size(20, 18);
+                    _btnCpuProcessesExpand.Text = _settings.ShowTopProcesses ? "▲" : "▼";
+                    _toolTip.SetToolTip(_btnCpuProcessesExpand, _settings.ShowTopProcesses ? Loc.Get("ProcessesCollapse") : Loc.Get("ProcessesExpand"));
                 }
 
                 if (_settings.ShowTopProcesses)
@@ -965,6 +1013,7 @@ namespace RyzenQuietPro
             else
             {
                 _pnlTopProcesses.Visible = false;
+                _btnCpuProcessesExpand.Visible = false;
             }
 
             // --- RAM ---
@@ -1048,13 +1097,14 @@ namespace RyzenQuietPro
             }
 
             // --- DISK ---
-            // --- DISK ---
             bool enhancedDisk = _settings.EnhancedDiskMode;
             bool diskLegendOpen = enhancedDisk && _settings.DiskLegendExpanded;
+            bool showHddStatus = showDisk && _settings.HddScheduleEnabled;
             _sepDisk.Visible = showDisk;
             _lblDisk.Visible = showDisk;
             _lblDiskSub.Visible = showDisk;
             _btnDiskExpand.Visible = showDisk && enhancedDisk;
+            _lblHddStatus.Visible = showHddStatus;
             if (_pnlDiskLegend != null) _pnlDiskLegend.Visible = showDisk && diskLegendOpen;
             _pnlDiskGraph.Visible = showDisk;
 
@@ -1065,16 +1115,24 @@ namespace RyzenQuietPro
                 curY += 5;
 
                 _lblDisk.Location = new Point(marginX, curY);
-                int expandBtnW = enhancedDisk ? 24 : 0;
-                _lblDiskSub.Location = new Point(marginX + 95, curY);
-                _lblDiskSub.Size = new Size(contentW - 95 - expandBtnW, 20);
 
+                int rightOffset = 0;
                 if (enhancedDisk)
                 {
                     _btnDiskExpand.Location = new Point(marginX + contentW - 20, curY + 1);
                     _btnDiskExpand.Text = _settings.DiskLegendExpanded ? "▲" : "▼";
                     _toolTip.SetToolTip(_btnDiskExpand, _settings.DiskLegendExpanded ? Loc.Get("DiskLegendCollapse") : Loc.Get("DiskLegendExpand"));
+                    rightOffset += 24;
                 }
+
+                if (showHddStatus)
+                {
+                    _lblHddStatus.Location = new Point(marginX + contentW - rightOffset - 18, curY + 1);
+                    rightOffset += 22;
+                }
+
+                _lblDiskSub.Location = new Point(marginX + 95, curY);
+                _lblDiskSub.Size = new Size(Math.Max(50, contentW - 95 - rightOffset), 20);
                 curY += 20;
 
                 if (diskLegendOpen && _pnlDiskLegend != null)
@@ -2289,6 +2347,10 @@ namespace RyzenQuietPro
             {
                 _sepCpu.AccentColor = _isQuietMode ? Color.FromArgb(80, 220, 140) : Color.FromArgb(250, 180, 80);
             }
+            if (_btnCpuProcessesExpand != null)
+            {
+                _btnCpuProcessesExpand.ForeColor = _isQuietMode ? Color.FromArgb(80, 220, 140) : Color.FromArgb(250, 180, 80);
+            }
             UpdateModeUI();
         }
 
@@ -2386,6 +2448,14 @@ namespace RyzenQuietPro
                 _toolTip.SetToolTip(rc.BtnStop, Loc.Get("StopwatchStop"));
                 _toolTip.SetToolTip(rc.BtnReset, Loc.Get("StopwatchReset"));
                 _toolTip.SetToolTip(rc.BtnScale, Loc.Get("StopwatchScaleTip"));
+            }
+            if (_btnCpuProcessesExpand != null)
+            {
+                _toolTip.SetToolTip(_btnCpuProcessesExpand, _settings.ShowTopProcesses ? Loc.Get("ProcessesCollapse") : Loc.Get("ProcessesExpand"));
+            }
+            if (_lblHddStatus != null && _settings.HddScheduleEnabled)
+            {
+                _toolTip.SetToolTip(_lblHddStatus, $"{Loc.Get("HddScheduleModule")}: {_hardware.HddSchedule.GetStatusString()}");
             }
         }
 
@@ -2587,11 +2657,13 @@ namespace RyzenQuietPro
             // 5. DISK
             _lblDisk.Text = Loc.Get("Disk");
             string diskIdleText = (_hardware.Disk.PeakActiveDisk == "Idle") ? Loc.Get("Idle") : _hardware.Disk.PeakActiveDisk;
-            string hddSchedIcon = _settings.HddScheduleEnabled ? (_hardware.HddSchedule.IsWorkHours ? " ⚡" : " 🌙") : "";
-            _lblDiskSub.Text = $"R:{_hardware.Disk.ReadMbPerSec:F1} W:{_hardware.Disk.WriteMbPerSec:F1} MB/s [{diskIdleText}]{hddSchedIcon}";
+            _lblDiskSub.Text = $"R:{_hardware.Disk.ReadMbPerSec:F1} W:{_hardware.Disk.WriteMbPerSec:F1} MB/s [{diskIdleText}]";
             if (_settings.HddScheduleEnabled)
             {
+                bool isWorkHours = _hardware.HddSchedule.IsWorkHours;
+                _lblHddStatus.ForeColor = isWorkHours ? Color.FromArgb(52, 211, 153) : Color.FromArgb(120, 120, 135);
                 string tip = $"{Loc.Get("HddScheduleModule")}: {_hardware.HddSchedule.GetStatusString()}";
+                _toolTip.SetToolTip(_lblHddStatus, tip);
                 _toolTip.SetToolTip(_lblDiskSub, tip);
                 _toolTip.SetToolTip(_lblDisk, tip);
             }
@@ -3928,6 +4000,43 @@ namespace RyzenQuietPro
             using var tempPen = new Pen(GpuTempColor, 1.4f);
             tempPen.DashPattern = new float[] { 3.5f, 2.5f };
             g.DrawLines(tempPen, points);
+        }
+
+        private void ToggleCpuProcesses()
+        {
+            _settings.ShowTopProcesses = !_settings.ShowTopProcesses;
+            _btnCpuProcessesExpand.Text = _settings.ShowTopProcesses ? "▲" : "▼";
+            _toolTip.SetToolTip(_btnCpuProcessesExpand, _settings.ShowTopProcesses ? Loc.Get("ProcessesCollapse") : Loc.Get("ProcessesExpand"));
+
+            _hardware.Processes.IsEnabled = _settings.ShowTopProcesses || (_settings.ShowDiskGraph && _settings.EnhancedDiskMode);
+
+            int diffH = 94;
+            if (_settings.ShowTopProcesses)
+            {
+                var screen = Screen.FromControl(this);
+                if (this.Bottom + diffH > screen.WorkingArea.Bottom)
+                {
+                    int shiftUp = (this.Bottom + diffH) - screen.WorkingArea.Bottom;
+                    this.Top = Math.Max(screen.WorkingArea.Top, this.Top - shiftUp);
+                }
+                this.Height += diffH;
+            }
+            else
+            {
+                if (this.Height - diffH >= 480)
+                {
+                    this.Height -= diffH;
+                }
+                else
+                {
+                    this.Height = 480;
+                }
+            }
+
+            _settings.Save();
+            _settingsForm?.UpdateTopProcessesCheckbox();
+            LayoutComponents();
+            this.Invalidate();
         }
 
         private void ToggleDiskLegend()

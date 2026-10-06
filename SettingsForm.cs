@@ -518,6 +518,8 @@ namespace RyzenQuietPro
             _chkTopProcesses = CreateCheckbox(Loc.Get("TopProcesses"), chkX, chkY + (chkGap * 3) + baseOff, _settings.ShowTopProcesses, v => {
                 _settings.ShowTopProcesses = v;
                 _hardware.Processes.IsEnabled = v;
+                _settings.Save();
+                _onSettingsUpdated?.Invoke();
             });
             _chkRamGraph = CreateCheckbox(Loc.Get("RamGraph"), chkX, chkY + (chkGap * 4) + baseOff, _settings.ShowRamGraph, v => _settings.ShowRamGraph = v);
             _chkGpuGraph = CreateCheckbox(Loc.Get("GpuGraph"), chkX, chkY + (chkGap * 5) + baseOff, _settings.ShowGpuGraph, v => _settings.ShowGpuGraph = v);
@@ -1294,6 +1296,8 @@ namespace RyzenQuietPro
                 _settings.HddScheduleEnabled = v;
                 _hardware.HddSchedule.ApplyImmediate();
                 UpdateHddCardUI();
+                _settings.Save();
+                _onSettingsUpdated?.Invoke();
             });
             cardHdd.Controls.Add(_chkHddSchedule);
 
@@ -2525,6 +2529,14 @@ namespace RyzenQuietPro
             {
                 ReleaseCapture();
                 SendMessage(this.Handle, WM_NCLBUTTONDOWN, HT_CAPTION, 0);
+            }
+        }
+
+        public void UpdateTopProcessesCheckbox()
+        {
+            if (_chkTopProcesses != null && _chkTopProcesses.Checked != _settings.ShowTopProcesses)
+            {
+                _chkTopProcesses.Checked = _settings.ShowTopProcesses;
             }
         }
 
