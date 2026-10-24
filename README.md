@@ -191,13 +191,13 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 **[ID Dimension](https://github.com/SaidAuita/ID-Dimension)**
 * Automatic technical dimensioning, bounds, leader lines, and drafting scales for Adobe InDesign.
 
-### 💎 Professional Commercial Extensions
+### 💎 QR Code with Custom Shape Logo
 
 <table>
   <tr>
     <td align="center" width="50%">
       <a href="https://ph-cu-s.com/ai-code-pro">
-        <img src="images/qr-ai-code-pro.png" width="130" alt="QR Code - AI Code PRO" /><br/>
+        <img src="images/ai_code_pro.png" width="130" alt="AI Code PRO - Custom Shape Logo QR Code" /><br/>
         <b>AI Code PRO</b>
       </a><br/>
       <sub>Vector Barcodes (18 Standards) & Designer QR Codes for <b>Adobe Illustrator</b></sub><br/><br/>
@@ -205,7 +205,7 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
     </td>
     <td align="center" width="50%">
       <a href="https://ph-cu-s.com/id-code-pro">
-        <img src="images/qr-id-code-pro.png" width="130" alt="QR Code - ID Code PRO" /><br/>
+        <img src="images/id_code_pro.png" width="130" alt="ID Code PRO - Custom Shape Logo QR Code" /><br/>
         <b>ID Code PRO</b>
       </a><br/>
       <sub>Vector Barcodes (18 Standards) & Designer QR Codes for <b>Adobe InDesign</b></sub><br/><br/>
@@ -370,13 +370,13 @@ build.bat
 **[ID Dimension](https://github.com/SaidAuita/ID-Dimension)**
 * Расширение и автономный скрипт для автоматической расстановки размеров в Adobe InDesign.
 
-### 💎 Профессиональные коммерческие расширения
+### 💎 QR код с логотипом произвольной формы
 
 <table>
   <tr>
     <td align="center" width="50%">
       <a href="https://ph-cu-s.com/ai-code-pro">
-        <img src="images/qr-ai-code-pro.png" width="130" alt="QR-код - AI Code PRO" /><br/>
+        <img src="images/ai_code_pro.png" width="130" alt="AI Code PRO - QR код с логотипом произвольной формы" /><br/>
         <b>AI Code PRO</b>
       </a><br/>
       <sub>Генератор векторных штрихкодов (18 стандартов) и дизайнерских QR-кодов для <b>Adobe Illustrator</b></sub><br/><br/>
@@ -384,7 +384,7 @@ build.bat
     </td>
     <td align="center" width="50%">
       <a href="https://ph-cu-s.com/id-code-pro">
-        <img src="images/qr-id-code-pro.png" width="130" alt="QR-код - ID Code PRO" /><br/>
+        <img src="images/id_code_pro.png" width="130" alt="ID Code PRO - QR код с логотипом произвольной формы" /><br/>
         <b>ID Code PRO</b>
       </a><br/>
       <sub>Генератор векторных штрихкодов (18 стандартов) и дизайнерских QR-кодов для <b>Adobe InDesign</b></sub><br/><br/>
