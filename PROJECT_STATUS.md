@@ -1,12 +1,27 @@
 # PROJECT_STATUS: RyzenQuiet PRO
 
-## Текущая версия: v4.06
+## Текущая версия: v4.07
 - **Активная ветка Git**: `v4`
-- **Предыдущий релиз**: v4.05 (Automated HDD awake schedule, APM keep-alive, multi-language support and UI fixes)
+- **Предыдущий релиз**: v4.06 (UI button height fixes, interactive CPU process toggle, HDD awake status indicator & quick wake/sleep controls)
 
 ---
 
-## Текущая итерация: v4.06
+## Текущая итерация: v4.07
+- [x] **Исправление сбоя открытия окна и зависания (Math.Clamp Crash & Multi-Monitor Geometry Fix)**:
+  - Устранена критическая ошибка `ArgumentException: 'min' cannot be greater than 'max'` в .NET 8 при вызове `Math.Clamp` в методе `ShowDashboard()`. Ошибка проявлялась после нескольких циклов открытия/закрытия окна при динамическом росте высоты дашборда (раскрытие секундомеров, топа процессов, легенды дисков) или при перемещении окна на мониторы с меньшей высотой или увеличенным DPI (`scr.WorkingArea.Bottom - this.Height < scr.WorkingArea.Top`).
+  - Все вызовы `Math.Clamp` в расчетах координат окон (`DashboardPro`, `SettingsForm`, `HardwareInfoForm`, `FanSelectionForm`) защищены через `Math.Max(min, max)` с предварительной адаптацией габаритов окна под рабочее пространство целевого экрана.
+  - Полноценная поддержка мультимониторных конфигураций с отрицательными координатами (дисплеи, расположенные слева от основного): условие `_settings.WindowX >= 0` заменено на валидацию пересечения `WorkingArea.IntersectsWith(targetRect)` для надёжного определения активного экрана и корректного восстановления окна.
+  - Защищено позиционирование окна возле трея `PositionAtTray()`: верхняя граница окна теперь гарантированно не уходит за верхний край экрана (`Math.Max(workingArea.Top, ...)`).
+  - Защищены вызовы `Math.Clamp` при расчете прокрутки панели вентиляторов (`_fanScrollX`) и позиционировании числовых меток секундомеров на графике (`tagY`).
+- [x] **Интерактивное переключение видимости из трея (Tray Click Toggle)**:
+  - По левому клику на иконку в системном трее: если окно программы уже открыто и находится в фокусе (`Form.ActiveForm == _dashboard`), повторный клик плавно сворачивает окно. Если окно скрыто или находится на заднем плане — разворачивает и выводит на передний план.
+- [x] **Синхронизация версий и сборка релиза v4.07**:
+  - Синхронизирована версия `v4.07` во всех ключевых файлах: `RyzenQuietPro.csproj`, `RyzenQuiet.FanService.csproj`, `build.bat`, `Localization.cs` (во всех 8 языковых словарях), `DashboardPro.cs`, `TrayApp.cs`, `README.md`.
+
+---
+
+## Предыдущие итерации:
+### Итерация: v4.06
 - [x] **Исправление вертикального обрезания кнопок (UI Button Height Clipping Fixes)**:
   - **Кнопки масштабирования графика CPU (`CPU Graph Scale: 1x, 2x, 4x, 6x, 8x, Auto`)**:
     - Увеличена высота кнопок с 21px до 26px (`Size = new Size(scBtnW, 26)`).

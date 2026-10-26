@@ -1198,8 +1198,13 @@ namespace RyzenQuietPro
             int x = this.Location.X + (this.Width - _infoForm.Width) / 2;
             int y = this.Location.Y + (this.Height - _infoForm.Height) / 2;
             var screen = Screen.FromPoint(this.Location);
-            x = Math.Clamp(x, screen.WorkingArea.Left + 10, screen.WorkingArea.Right - _infoForm.Width - 10);
-            y = Math.Clamp(y, screen.WorkingArea.Top + 10, screen.WorkingArea.Bottom - _infoForm.Height - 10);
+            int minX = screen.WorkingArea.Left + 10;
+            int maxX = Math.Max(minX, screen.WorkingArea.Right - _infoForm.Width - 10);
+            x = Math.Clamp(x, minX, maxX);
+
+            int minY = screen.WorkingArea.Top + 10;
+            int maxY = Math.Max(minY, screen.WorkingArea.Bottom - _infoForm.Height - 10);
+            y = Math.Clamp(y, minY, maxY);
             _infoForm.Location = new Point(x, y);
 
             if (!_infoForm.Visible)
@@ -1233,8 +1238,13 @@ namespace RyzenQuietPro
             int x = this.Location.X + (this.Width - _settingsForm.Width) / 2;
             int y = this.Location.Y + (this.Height - _settingsForm.Height) / 2;
             var screen = Screen.FromPoint(this.Location);
-            x = Math.Clamp(x, screen.WorkingArea.Left + 10, screen.WorkingArea.Right - _settingsForm.Width - 10);
-            y = Math.Clamp(y, screen.WorkingArea.Top + 10, screen.WorkingArea.Bottom - _settingsForm.Height - 10);
+            int minX = screen.WorkingArea.Left + 10;
+            int maxX = Math.Max(minX, screen.WorkingArea.Right - _settingsForm.Width - 10);
+            x = Math.Clamp(x, minX, maxX);
+
+            int minY = screen.WorkingArea.Top + 10;
+            int maxY = Math.Max(minY, screen.WorkingArea.Bottom - _settingsForm.Height - 10);
+            y = Math.Clamp(y, minY, maxY);
             _settingsForm.Location = new Point(x, y);
 
             this.Opacity = 0.35; // Dim the background dashboard ("в дымке")
@@ -2516,24 +2526,38 @@ namespace RyzenQuietPro
                 this.WindowState = FormWindowState.Normal;
             }
 
-            if (_isDetached && _settings.WindowX >= 0 && _settings.WindowY >= 0)
+            if (_isDetached && (_settings.WindowX != -1 || _settings.WindowY != -1))
             {
-                var pt = new Point(_settings.WindowX, _settings.WindowY);
-                bool isOnScreen = false;
+                var targetRect = new Rectangle(_settings.WindowX, _settings.WindowY, this.Width, this.Height);
+                Screen? targetScreen = null;
                 foreach (var s in Screen.AllScreens)
                 {
-                    if (s.WorkingArea.Contains(pt))
+                    if (s.WorkingArea.IntersectsWith(targetRect))
                     {
-                        isOnScreen = true;
+                        targetScreen = s;
                         break;
                     }
                 }
 
-                if (isOnScreen)
+                if (targetScreen != null)
                 {
-                    var scr = Screen.FromPoint(pt);
-                    int x = Math.Clamp(_settings.WindowX, scr.WorkingArea.Left, scr.WorkingArea.Right - this.Width);
-                    int y = Math.Clamp(_settings.WindowY, scr.WorkingArea.Top, scr.WorkingArea.Bottom - this.Height);
+                    var scr = targetScreen;
+                    if (this.Width > scr.WorkingArea.Width)
+                    {
+                        this.Width = scr.WorkingArea.Width;
+                    }
+                    if (this.Height > scr.WorkingArea.Height)
+                    {
+                        this.Height = scr.WorkingArea.Height;
+                    }
+
+                    int minX = scr.WorkingArea.Left;
+                    int maxX = Math.Max(minX, scr.WorkingArea.Right - this.Width);
+                    int x = Math.Clamp(_settings.WindowX, minX, maxX);
+
+                    int minY = scr.WorkingArea.Top;
+                    int maxY = Math.Max(minY, scr.WorkingArea.Bottom - this.Height);
+                    int y = Math.Clamp(_settings.WindowY, minY, maxY);
                     this.Location = new Point(x, y);
                 }
                 else
@@ -2555,8 +2579,16 @@ namespace RyzenQuietPro
         private void PositionAtTray()
         {
             var workingArea = Screen.PrimaryScreen?.WorkingArea ?? new Rectangle(0, 0, 1920, 1080);
-            int posX = workingArea.Right - this.Width; // 0px margin from right edge
-            int posY = workingArea.Bottom - this.Height - 6; // 6px gap from taskbar
+            if (this.Width > workingArea.Width)
+            {
+                this.Width = workingArea.Width;
+            }
+            if (this.Height > workingArea.Height)
+            {
+                this.Height = workingArea.Height;
+            }
+            int posX = Math.Max(workingArea.Left, workingArea.Right - this.Width); // 0px margin from right edge
+            int posY = Math.Max(workingArea.Top, workingArea.Bottom - this.Height - 6); // 6px gap from taskbar
             this.Location = new Point(posX, posY);
         }
 
@@ -2992,7 +3024,7 @@ namespace RyzenQuietPro
                     using var valFont = new Font("Segoe UI", 7.0f, FontStyle.Bold);
                     var valSz = g.MeasureString(valText, valFont);
                     float tagX = Math.Max(2, lastPt.X - valSz.Width - 6);
-                    float tagY = Math.Clamp(lastPt.Y - valSz.Height / 2, 2, h - valSz.Height - 2);
+                    float tagY = Math.Clamp(lastPt.Y - valSz.Height / 2, 2, Math.Max(2, h - valSz.Height - 2));
 
                     using var tagBgBrush = new SolidBrush(Color.FromArgb(190, 20, 22, 28));
                     g.FillRectangle(tagBgBrush, tagX - 2, tagY - 1, valSz.Width + 4, valSz.Height + 2);
@@ -3349,7 +3381,7 @@ namespace RyzenQuietPro
                 _maxFanScroll = 0;
                 _fanScrollX = 0;
             }
-            _fanScrollX = Math.Clamp(_fanScrollX, 0, _maxFanScroll);
+            _fanScrollX = Math.Clamp(_fanScrollX, 0, Math.Max(0, _maxFanScroll));
 
             var origClip = g.Clip;
             g.SetClip(new Rectangle(0, 0, w, h));
@@ -3867,7 +3899,7 @@ namespace RyzenQuietPro
         {
             if (_settings.FanVisualMode != 1 || _maxFanScroll <= 0) return;
             int step = (int)Math.Round(45 * _settings.FanScale);
-            _fanScrollX = Math.Clamp(_fanScrollX - Math.Sign(e.Delta) * step, 0, _maxFanScroll);
+            _fanScrollX = Math.Clamp(_fanScrollX - Math.Sign(e.Delta) * step, 0, Math.Max(0, _maxFanScroll));
             _pnlFansGraph.Invalidate();
         }
 
@@ -3888,7 +3920,7 @@ namespace RyzenQuietPro
             if (_isFanDragging)
             {
                 int delta = e.X - _fanDragStartX;
-                _fanScrollX = Math.Clamp(_fanScrollStartX - delta, 0, _maxFanScroll);
+                _fanScrollX = Math.Clamp(_fanScrollStartX - delta, 0, Math.Max(0, _maxFanScroll));
                 _pnlFansGraph.Invalidate();
             }
         }

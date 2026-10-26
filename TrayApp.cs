@@ -340,7 +340,17 @@ namespace RyzenQuietPro
             };
 
             _notifyIcon.MouseClick += (s, e) => {
-                if (e.Button == MouseButtons.Left) ShowDashboard();
+                if (e.Button == MouseButtons.Left)
+                {
+                    if (_dashboard != null && !_dashboard.IsDisposed && _dashboard.Visible && Form.ActiveForm == _dashboard)
+                    {
+                        _dashboard.Hide();
+                    }
+                    else
+                    {
+                        ShowDashboard();
+                    }
+                }
             };
 
             _notifyIcon.DoubleClick += (s, e) => ToggleMode();

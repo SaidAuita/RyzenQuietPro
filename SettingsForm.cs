@@ -2554,8 +2554,13 @@ namespace RyzenQuietPro
             int x = this.Location.X + (this.Width - _infoForm.Width) / 2;
             int y = this.Location.Y + (this.Height - _infoForm.Height) / 2;
             var screen = Screen.FromPoint(this.Location);
-            x = Math.Clamp(x, screen.WorkingArea.Left + 10, screen.WorkingArea.Right - _infoForm.Width - 10);
-            y = Math.Clamp(y, screen.WorkingArea.Top + 10, screen.WorkingArea.Bottom - _infoForm.Height - 10);
+            int minX = screen.WorkingArea.Left + 10;
+            int maxX = Math.Max(minX, screen.WorkingArea.Right - _infoForm.Width - 10);
+            x = Math.Clamp(x, minX, maxX);
+
+            int minY = screen.WorkingArea.Top + 10;
+            int maxY = Math.Max(minY, screen.WorkingArea.Bottom - _infoForm.Height - 10);
+            y = Math.Clamp(y, minY, maxY);
             _infoForm.Location = new Point(x, y);
 
             if (!_infoForm.Visible)
@@ -2581,8 +2586,13 @@ namespace RyzenQuietPro
             int x = this.Location.X + (this.Width - _fanSelectionForm.Width) / 2;
             int y = this.Location.Y + (this.Height - _fanSelectionForm.Height) / 2;
             var screen = Screen.FromPoint(this.Location);
-            x = Math.Clamp(x, screen.WorkingArea.Left + 10, screen.WorkingArea.Right - _fanSelectionForm.Width - 10);
-            y = Math.Clamp(y, screen.WorkingArea.Top + 10, screen.WorkingArea.Bottom - _fanSelectionForm.Height - 10);
+            int minX = screen.WorkingArea.Left + 10;
+            int maxX = Math.Max(minX, screen.WorkingArea.Right - _fanSelectionForm.Width - 10);
+            x = Math.Clamp(x, minX, maxX);
+
+            int minY = screen.WorkingArea.Top + 10;
+            int maxY = Math.Max(minY, screen.WorkingArea.Bottom - _fanSelectionForm.Height - 10);
+            y = Math.Clamp(y, minY, maxY);
             _fanSelectionForm.Location = new Point(x, y);
 
             if (!_fanSelectionForm.Visible)
