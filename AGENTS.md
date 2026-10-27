@@ -13,14 +13,15 @@
 - **Единственная рабочая ветка**: вся разработка и релизы ведутся строго в ветке **`v4`**.
 - Все промежуточные или экспериментальные ветки удаляются после завершения итерации. Актуальная рабочая ветка всегда `v4` (`origin/v4`).
 
-## 3. Версионирование при итерациях
-- При **каждой новой итерации** обязателен инкремент версии релиза: `4.01`, `4.02`, `4.03` и т.д.
-- Версия синхронизируется во всех ключевых файлах проекта:
-  1. `RyzenQuietPro.csproj` (`<Version>4.01.0</Version>`, `<AssemblyVersion>4.01.0.0</AssemblyVersion>`, `<FileVersion>4.01.0.0</FileVersion>`, `<InformationalVersion>v4.01 PRO</InformationalVersion>`)
+## 3. Обязательное версионирование при любых изменениях и внедрении новых функций
+- **Строгое правило инкремента версии**: при **каждом внедрении новых функций, изменении UI/логики или итерации доработок** ОБЯЗАТЕЛЕН инкремент версии релиза (`4.08` -> `4.09`, `4.10` и т.д.). Никогда не оставлять версию неизменной при появлении новых возможностей.
+- Версия синхронизируется синхронно во всех ключевых файлах проекта:
+  1. `RyzenQuietPro.csproj` (`<Version>4.09.0</Version>`, `<AssemblyVersion>4.09.0.0</AssemblyVersion>`, `<FileVersion>4.09.0.0</FileVersion>`, `<InformationalVersion>v4.09 PRO</InformationalVersion>`)
   2. `RyzenQuiet.FanService/RyzenQuiet.FanService.csproj`
-  3. `build.bat` (`set VERSION=v4.01`)
-  4. `Localization.cs` (во всех языковых словарях: `["AppTitle"] = "RyzenQuiet PRO v4.01"`)
-  5. `DashboardPro.cs` (`Text = "RyzenQuiet PRO v4.01"`)
-  6. `TrayApp.cs` (`ToolStripMenuItem("RyzenQuiet PRO v4.01")`)
-  7. `README.md` (в заголовках, бейджах и ссылках)
-- После завершения задачи обновлять `PROJECT_STATUS.md`.
+  3. `build.bat` (`set VERSION=v4.09`)
+  4. `Localization.cs` (во всех 8 языковых словарях: `["AppTitle"] = "RyzenQuiet PRO v4.09"`)
+  5. `DashboardPro.cs` (`Text = "RyzenQuiet PRO v4.09"`, заголовок окна и метаданные)
+  6. `TrayApp.cs` (`ToolStripMenuItem("RyzenQuiet PRO v4.09")`)
+  7. `README.md` (в заголовках, бейджах релиза, ссылках на скачивание и описании новых функций)
+- После завершения задачи обязательно обновлять `PROJECT_STATUS.md` с детальным описанием добавленного функционала.
+

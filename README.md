@@ -1,12 +1,12 @@
 <div align="center">
 
-# ⚡ RyzenQuiet PRO (v4.07)
-**Sleek, lightweight hardware HUD & power-plan optimizer for Windows with AMD Ryzen CPB toggle, GPU power limiting & acoustic tuning, multi-stopwatch per-app process profiling with per-counter scaling, automated HDD awake schedule & keep-alive, enhanced multi-disk telemetry, and modular fan monitoring.**
+# ⚡ RyzenQuiet PRO (v4.09)
+**Sleek, lightweight hardware HUD & power-plan optimizer for Windows with AMD Ryzen CPB toggle, GPU power limiting & acoustic tuning, multi-stopwatch per-app process profiling with per-counter scaling, automated HDD awake schedule & keep-alive, enhanced multi-disk telemetry, modular fan monitoring, and collapsible sections.**
 
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011%20(64--bit)-blue.svg)](#)
 [![.NET](https://img.shields.io/badge/.NET-8.0-purple.svg)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/Release-v4.07-orange.svg)](https://github.com/SaidAuita/RyzenQuietPro/releases)
+[![Release](https://img.shields.io/badge/Release-v4.09-orange.svg)](https://github.com/SaidAuita/RyzenQuietPro/releases)
 [![Telemetry](https://img.shields.io/badge/Telemetry-Zero%20%2F%20100%25%20Offline-brightgreen.svg)](#)
 
 <br/>
@@ -25,6 +25,9 @@
   <img src="images/RyzenQuietPro-v4_2.png" alt="GPU Acoustic & Power Tuning Settings Dialog with Background Dimming" width="340" />
   &nbsp;&nbsp;&nbsp;&nbsp;
   <img src="images/RyzenQuietPro-v4_3.png" alt="Hardware Specifications & System Diagnostics" width="380" />
+</p>
+<p align="center">
+  <img src="images/RyzenQuietPro-v4_09.png" alt="RyzenQuiet PRO v4.09 Collapsible Sections into Compact Single-Line Strips" width="370" />
 </p>
 
 <br/>
@@ -123,6 +126,20 @@ All subsystem graphs share a synchronized 60-second historical canvas rendered w
 * **Single-Instance IPC Activation:** Built-in mutex guard and Windows broadcast message (`RyzenQuietPro_ShowDashboard`) smoothly restores and foregrounds the existing dashboard when launching the app shortcut while already running in the background.
 * **Multi-Monitor Safe Positioning:** Dynamic screen boundary clamping automatically recovers and repositions the HUD within visible working areas if a secondary monitor is disconnected or resolution changes.
 
+### 9. 🔍 Dynamic UI Scaling & Multi-Monitor Adaptation (v4.08)
+* **Auto (Per-Monitor Resolution & DPI):** Automatically calculates optimal UI scaling (80% on 1080p FHD, 85% on FHD+, 90% on QHD, 100% on 2K/WQHD, up to 125% on 4K UHD), preventing the HUD from occupying excessive screen height on lower resolution displays.
+* **Manual Slider & Quick Presets:** Customize UI scale anywhere from 70% to 140% with instant presets (75%, 85%, 100%, 115%, 125%) directly in the Settings dialog.
+* **Seamless Screen Switching:** Moving the dashboard between monitors instantly recalibrates fonts, sizes, and layout with zero blurriness.
+
+### 10. 📑 Collapsible Sections into Compact Strips (v4.09)
+<p align="center">
+  <img src="images/RyzenQuietPro-v4_09.png" alt="RyzenQuiet PRO v4.09 Collapsible Sections" width="370" />
+</p>
+
+* **One-Click Section Minimizing:** Clicking on any subsystem header (CPU, RAM, GPU, VRAM, DISK, FANS, Stopwatch) or its accent separator strip instantly collapses the entire section into a sleek, compact single-line bar showing the title, dynamic indicators (`▸` / `▾`), and all vital telemetry next to it.
+* **Smart UI Auto-Fit:** Collapsing sections automatically shrinks the HUD height (down to 160px min height), while expanding restores full graphs and adjusts positioning upward if near the bottom taskbar boundary.
+* **Persistent States:** Every section's collapse state is saved in `settings.json` and remembered across sessions.
+
 ---
 
 ## ⌨️ Controls & Shortcuts
@@ -130,6 +147,7 @@ All subsystem graphs share a synchronized 60-second historical canvas rendered w
 | Shortcut / Button | Action |
 |---|---|
 | <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Q</kbd> | Toggle **Quiet Mode (99%)** / **Boost Mode (100%)** |
+| `Click Title / Bar` | **Collapse or expand section** (CPU, RAM, GPU, VRAM, DISK, FANS, Stopwatch) into a single compact status strip |
 | `⏱` **Stopwatch** | Start (`▶`), pause (`⏸`), reset (`↺`), or arm auto-start (`⚡`) by CPU/GPU power load or target app |
 | `[+]` **Header** | Add a new independent stopwatch counter with custom app binding & color |
 | `[⊞ Scale]` **Button** | Cycle individual counter curve zoom (`Auto`, `x2`, `x4`, `x8`, `x16`, `1x`, `Off`) |
@@ -220,7 +238,7 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 <a name="русский"></a>
 <div align="center">
 
-# ⚡ RyzenQuiet PRO (v4.07) — Описание на русском
+# ⚡ RyzenQuiet PRO (v4.09) — Описание на русском
 **Стильный, легковесный аппаратный HUD-монитор и менеджер профилей питания для Windows с мгновенным отключением CPB у процессоров AMD Ryzen, акустическим контролем и ограничением мощности видеокарт (GPU Power Limiting), мульти-секундомером с привязкой к приложениям и независимым масштабом графиков, автоматическим расписанием работы HDD без сна и защитой от остановки шпинделей, расширенным мониторингом накопителей с раскрытием процессов I/O и модульным мониторингом вентиляторов.**
 
 </div>
@@ -307,6 +325,20 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 * **Активация уже запущенного экземпляра (IPC):** Защита от дубликатов процессов через системный мьютекс и межпроцессное оповещение `RyzenQuietPro_ShowDashboard`, которое автоматически разворачивает и выводит на передний план окно программы при повторном запуске ярлыка.
 * **Защита от ухода за пределы экрана:** Автоматический контроль экранных координат возвращает оверлей в видимую область рабочего стола при отключении внешних мониторов или смене разрешения.
 
+### 9. 🔍 Динамический масштаб интерфейса и адаптация под мониторы (v4.08)
+* **Автоматически по монитору (Auto):** Вычисляет идеальный масштаб под разрешение целевого экрана (80% на FHD 1080p, 85% на FHD+, 90% на QHD, 100% на 2K, до 125% на 4K UHD), предотвращая чрезмерную громоздкость дашборда на небольших экранах.
+* **Слайдер и быстрые пресеты:** Ручной выбор масштаба от 70% до 140% с шагом 5% и кнопками-пресетами (75%, 85%, 100%, 115%, 125%) в окне настроек.
+* **Бесшовный переход между экранами:** При перетаскивании окна между мониторами масштаб и шрифты мгновенно пересчитываются на лету.
+
+### 10. 📑 Сворачивание разделов в компактные полоски (v4.09)
+<p align="center">
+  <img src="images/RyzenQuietPro-v4_09.png" alt="RyzenQuiet PRO v4.09 Сворачивание разделов" width="370" />
+</p>
+
+* **Сворачивание блоков в один клик:** Клик по названию любого раздела (CPU, RAM, GPU, VRAM, DISK, FANS, Секундомер) или по его цветной разделительной полоске мгновенно сворачивает блок в ультракомпактную информационную полоску с сохранением заголовка, стрелочки-индикатора (`▸` / `▾`) и всей ключевой телеметрии в одну строку.
+* **Автоматическая подгонка высоты HUD:** При сворачивании окно дашборда автоматически поджимается по высоте (минимальная базовая высота снижена со 350px до 160px), а при разворачивании плавно возвращает график и защищает окно от выхода за нижний край экрана.
+* **Сохранение состояния:** Свернутость каждого раздела сохраняется в `settings.json` и восстанавливается при перезапуске программы.
+
 ---
 
 ## ⌨️ Управление и горячие клавиши
@@ -314,6 +346,7 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 | Сочетание / Кнопка | Действие |
 |---|---|
 | <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Q</kbd> | Переключение между **Тихим режимом (99%)** и **Boost (100%)** |
+| `Клик по заголовку / полоске` | **Свернуть или развернуть раздел** (CPU, RAM, GPU, VRAM, DISK, FANS, Секундомер) в компактную информационную полоску |
 | `⏱` **Секундомер** | Старт (`▶`), пауза (`⏸`), сброс (`↺`) или взвод автостарта (`⚡`) по мощности CPU/GPU или приложению |
 | `[+]` **В шапке таймеров** | Добавить новый независимый секундомер с привязкой к программе и выбором цвета |
 | `[⊞ Scale]` **Кнопка** | Циклическое переключение персонального масштаба кривой (`Auto`, `x2`, `x4`, `x8`, `x16`, `1x`, `Off`) |
@@ -350,8 +383,8 @@ build.bat
 ```
 
 Исполняемые файлы будут скомпилированы в каталог `build\`:
-* `build\RyzenQuietPro-v4.07.exe` (Standalone)
-* `build\RyzenQuietPro-v4.07-Lite.exe` (Lite)
+* `build\RyzenQuietPro-v4.09.exe` (Standalone)
+* `build\RyzenQuietPro-v4.09-Lite.exe` (Lite)
 * `build\plugins\FanService\RyzenQuiet.FanService.exe` (Fan Monitor Addon)
 
 ---

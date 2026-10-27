@@ -41,6 +41,15 @@ namespace RyzenQuietPro
         private bool _alwaysOnTop;
         private bool _isInitialized = false;
 
+        private float _currentUiScale = 1.0f;
+        public float CurrentUiScale => _currentUiScale;
+
+        public float GetEffectiveUiScale(Screen? screen = null)
+        {
+            screen ??= (this.IsHandleCreated ? Screen.FromControl(this) : null) ?? Screen.PrimaryScreen;
+            return _settings.GetEffectiveUiScale(screen);
+        }
+
         // UI Header
         private Panel _headerPanel = null!;
         private PictureBox _picAppIcon = null!;
@@ -257,12 +266,20 @@ namespace RyzenQuietPro
 
             int visibleFanCount = allFans.Count(f => _settings.IsFanVisible(f.Id, f.Name));
             int contentW = Math.Max(200, this.ClientSize.Width - 28);
-            float fanScale = _settings.FanScale;
-            int targetCardW = (int)(92 * fanScale);
-            int cols = Math.Max(2, (contentW - 4) / targetCardW);
-            if (fanScale >= 1.6f && cols > 2) cols = 2;
-            else if (fanScale >= 1.25f && cols > 3) cols = 3;
-            else if (contentW < 360 && cols > 3) cols = 3;
+            float scale = _currentUiScale;
+            int cols;
+            if (contentW < (int)Math.Round(380 * scale))
+            {
+                cols = 2;
+            }
+            else if (contentW < (int)Math.Round(560 * scale))
+            {
+                cols = 3;
+            }
+            else
+            {
+                cols = Math.Max(2, (contentW - 4) / (int)Math.Round(120 * scale));
+            }
 
             int rows = (int)Math.Ceiling((double)Math.Max(1, visibleFanCount) / cols);
 
@@ -275,6 +292,186 @@ namespace RyzenQuietPro
                 _lastLayoutVisualMode = _settings.FanVisualMode;
                 LayoutComponents();
                 this.Invalidate();
+            }
+        }
+
+        public int CalculateDefaultHeight(float scale)
+        {
+            bool separate = _settings.SeparateCpuGpuControl;
+            int headerH = (int)Math.Round(36 * scale);
+            int footerH = (int)Math.Round((separate ? 78 : 44) * scale);
+            int baseGraphH = (int)Math.Round(50 * scale);
+
+            int totalH = headerH + footerH + (int)Math.Round(8 * scale);
+
+            var visibleSw = _hardware.Stopwatch.Items.Where(i => i.Profile.IsVisible).ToList();
+            int swCount = visibleSw.Count;
+            if (_settings.ShowStopwatch)
+            {
+                if (!_settings.SectionStopwatchCollapsed && swCount > 0)
+                {
+                    int swRowH = (int)Math.Round(50 * scale);
+                    int swGap = (int)Math.Round(4 * scale);
+                    int swCardH = (swCount * swRowH) + ((swCount - 1) * swGap);
+                    totalH += (int)Math.Round(28 * scale) + swCardH + (int)Math.Round(6 * scale);
+                }
+                else
+                {
+                    totalH += (int)Math.Round(28 * scale);
+                }
+            }
+
+            bool showCpu = _settings.ShowCpuGraph || _settings.ShowCpuCores || _settings.ShowTopProcesses;
+            if (showCpu)
+            {
+                totalH += (int)Math.Round(28 * scale);
+                if (!_settings.SectionCpuCollapsed)
+                {
+                    if (_settings.ShowCpuGraph) totalH += baseGraphH + (int)Math.Round(2 * scale);
+                    if (_settings.ShowCpuCores) totalH += (int)Math.Round(26 * scale);
+                    if (_settings.ShowTopProcesses) totalH += (int)Math.Round(96 * scale);
+                }
+            }
+
+            if (_settings.ShowRamGraph)
+            {
+                totalH += (int)Math.Round(28 * scale);
+                if (!_settings.SectionRamCollapsed) totalH += baseGraphH + (int)Math.Round(6 * scale);
+            }
+
+            if (_settings.ShowGpuGraph)
+            {
+                totalH += (int)Math.Round(28 * scale);
+                if (!_settings.SectionGpuCollapsed) totalH += baseGraphH + (int)Math.Round(6 * scale);
+            }
+
+            if (_settings.ShowVramGraph)
+            {
+                totalH += (int)Math.Round(28 * scale);
+                if (!_settings.SectionVramCollapsed) totalH += baseGraphH + (int)Math.Round(6 * scale);
+            }
+
+            if (_settings.ShowDiskGraph)
+            {
+                totalH += (int)Math.Round(28 * scale);
+                if (!_settings.SectionDiskCollapsed)
+                {
+                    totalH += baseGraphH + (int)Math.Round(6 * scale);
+                    if (_settings.EnhancedDiskMode && _settings.DiskLegendExpanded)
+                    {
+                        int driveCount = Math.Max(1, _hardware.Disk.Drives.Count);
+                        int extraH = _pnlDiskLegend != null ? _pnlDiskLegend.ExpandedExtraHeight : 0;
+                        totalH += (int)Math.Round((driveCount * 22 + 4 + extraH) * scale);
+                    }
+                }
+            }
+
+            if (_settings.ShowFanGraph)
+            {
+                totalH += (int)Math.Round(33 * scale);
+                if (!_settings.SectionFansCollapsed)
+                {
+                    float fanScale = _settings.FanScale * scale;
+                    if (_settings.FanVisualMode == 1)
+                    {
+                        totalH += (int)Math.Round(72 * fanScale) + (int)Math.Round(16 * scale);
+                    }
+                    else if (_settings.FanVisualMode == 2)
+                    {
+                        int fanCount = _settings.LastKnownFanCount > 0 ? _settings.LastKnownFanCount : 4;
+                        int cW = Math.Max(180, (int)Math.Round(420 * scale) - (int)Math.Round(28 * scale));
+                        int cols = (cW < (int)Math.Round(380 * scale)) ? 2 : ((cW < (int)Math.Round(560 * scale)) ? 3 : Math.Max(2, (cW - 4) / (int)Math.Round(120 * scale)));
+                        int rows = (int)Math.Ceiling((double)fanCount / cols);
+                        int cardH = (int)Math.Round((42 + 10 * _settings.FanScale) * scale);
+                        int gapY = (int)Math.Max(2, Math.Round(5 * scale));
+                        totalH += (rows * cardH) + ((rows - 1) * gapY) + (int)Math.Round(14 * scale);
+                    }
+                    else
+                    {
+                        totalH += baseGraphH;
+                    }
+                }
+            }
+
+            return Math.Max((int)Math.Round(160 * scale), totalH);
+        }
+
+        public void ApplyUiScale(bool adjustWindowDimensions = false)
+        {
+            _currentUiScale = GetEffectiveUiScale();
+            float scale = _currentUiScale;
+
+            this.MinimumSize = new Size((int)Math.Round(280 * scale), (int)Math.Round(160 * scale));
+
+            if (adjustWindowDimensions)
+            {
+                int targetW = (int)Math.Round(420 * scale);
+                int targetH = CalculateDefaultHeight(scale);
+
+                var screen = Screen.FromControl(this) ?? Screen.PrimaryScreen;
+                if (screen != null)
+                {
+                    targetW = Math.Min(targetW, screen.WorkingArea.Width);
+                    targetH = Math.Min(targetH, screen.WorkingArea.Height);
+                }
+
+                this.Size = new Size(targetW, targetH);
+                _settings.WindowWidth = targetW;
+                _settings.WindowHeight = targetH;
+                _settings.Save();
+            }
+
+            UpdateControlFontsAndSizes(scale);
+            LayoutComponents();
+            this.Invalidate(true);
+        }
+
+        private void UpdateControlFontsAndSizes(float scale)
+        {
+            if (_lblTitle != null) _lblTitle.Font = new Font("Segoe UI", (float)Math.Max(5.5, Math.Round(10f * scale, 1)), FontStyle.Bold);
+            if (_btnInfo != null) _btnInfo.Font = new Font("Segoe UI", (float)Math.Max(5.5, Math.Round(11f * scale, 1)), FontStyle.Bold);
+            if (_btnPin != null) _btnPin.Font = new Font("Segoe UI", (float)Math.Max(5.5, Math.Round(11f * scale, 1)));
+            if (_btnDetach != null) _btnDetach.Font = new Font("Segoe UI", (float)Math.Max(5.5, Math.Round(12f * scale, 1)), FontStyle.Bold);
+            if (_btnClose != null) _btnClose.Font = new Font("Segoe UI", (float)Math.Max(5.5, Math.Round(10.5f * scale, 1)), FontStyle.Bold);
+
+            if (_lblStopwatch != null) _lblStopwatch.Font = new Font("Segoe UI", (float)Math.Max(5.5, Math.Round(9.5f * scale, 1)), FontStyle.Bold);
+            if (_lblStopwatchSub != null) _lblStopwatchSub.Font = new Font("Segoe UI", (float)Math.Max(4.8, Math.Round(8.0f * scale, 1)));
+            if (_btnSwDashboardAdd != null) _btnSwDashboardAdd.Font = new Font("Segoe UI", (float)Math.Max(5.5, Math.Round(9.0f * scale, 1)), FontStyle.Bold);
+
+            if (_lblCpu != null) _lblCpu.Font = new Font("Segoe UI", (float)Math.Max(5.5, Math.Round(9.5f * scale, 1)), FontStyle.Bold);
+            if (_lblCpuSub != null) _lblCpuSub.Font = new Font("Segoe UI", (float)Math.Max(4.8, Math.Round(8.0f * scale, 1)));
+            if (_btnCpuProcessesExpand != null) _btnCpuProcessesExpand.Font = new Font("Segoe UI", (float)Math.Max(5.0, Math.Round(7.0f * scale, 1)), FontStyle.Bold);
+
+            if (_lblRam != null) _lblRam.Font = new Font("Segoe UI", (float)Math.Max(5.5, Math.Round(9.5f * scale, 1)), FontStyle.Bold);
+            if (_lblRamSub != null) _lblRamSub.Font = new Font("Segoe UI", (float)Math.Max(4.8, Math.Round(8.0f * scale, 1)));
+
+            if (_lblGpu != null) _lblGpu.Font = new Font("Segoe UI", (float)Math.Max(5.5, Math.Round(9.5f * scale, 1)), FontStyle.Bold);
+            if (_chkShowAllGpus != null) _chkShowAllGpus.Font = new Font("Segoe UI", (float)Math.Max(5.0, Math.Round(7.5f * scale, 1)));
+
+            if (_lblVram != null) _lblVram.Font = new Font("Segoe UI", (float)Math.Max(5.5, Math.Round(9.5f * scale, 1)), FontStyle.Bold);
+            if (_lblVramSub != null) _lblVramSub.Font = new Font("Segoe UI", (float)Math.Max(4.8, Math.Round(8.0f * scale, 1)));
+
+            if (_lblDisk != null) _lblDisk.Font = new Font("Segoe UI", (float)Math.Max(5.5, Math.Round(9.5f * scale, 1)), FontStyle.Bold);
+            if (_lblDiskSub != null) _lblDiskSub.Font = new Font("Segoe UI", (float)Math.Max(4.8, Math.Round(8.0f * scale, 1)));
+            if (_btnDiskExpand != null) _btnDiskExpand.Font = new Font("Segoe UI", (float)Math.Max(5.0, Math.Round(7.0f * scale, 1)), FontStyle.Bold);
+            if (_lblHddStatus != null) _lblHddStatus.Font = new Font("Segoe UI", (float)Math.Max(5.0, Math.Round(8.5f * scale, 1)), FontStyle.Bold);
+
+            if (_lblFans != null) _lblFans.Font = new Font("Segoe UI", (float)Math.Max(5.5, Math.Round(9.5f * scale, 1)), FontStyle.Bold);
+            if (_lblFansSub != null) _lblFansSub.Font = new Font("Segoe UI", (float)Math.Max(4.8, Math.Round(8.0f * scale, 1)));
+
+            if (_btnSilent != null) _btnSilent.Font = new Font("Segoe UI", (float)Math.Max(5.2, Math.Round(8.5f * scale, 1)), FontStyle.Bold);
+            if (_btnBoost != null) _btnBoost.Font = new Font("Segoe UI", (float)Math.Max(5.2, Math.Round(8.5f * scale, 1)), FontStyle.Bold);
+            if (_btnGpuSilent != null) _btnGpuSilent.Font = new Font("Segoe UI", (float)Math.Max(5.2, Math.Round(8.5f * scale, 1)), FontStyle.Bold);
+            if (_btnGpuBoost != null) _btnGpuBoost.Font = new Font("Segoe UI", (float)Math.Max(5.2, Math.Round(8.5f * scale, 1)), FontStyle.Bold);
+
+            foreach (var rc in _stopwatchRowControls)
+            {
+                var f = new Font("Segoe UI", (float)Math.Max(4.8, Math.Round(7.0f * scale, 1)), FontStyle.Bold);
+                rc.BtnStart.Font = f;
+                rc.BtnAuto.Font = f;
+                rc.BtnStop.Font = f;
+                rc.BtnReset.Font = f;
+                rc.BtnScale.Font = f;
             }
         }
 
@@ -291,51 +488,14 @@ namespace RyzenQuietPro
             this.Opacity = _settings.WidgetOpacity;
             this.Icon = _isQuietMode ? AppIcons.QuietIcon : AppIcons.NormalIcon;
 
-            int initW = Math.Max(380, _settings.WindowWidth > 0 ? _settings.WindowWidth : 420);
-            int defaultH = _settings.ShowTopProcesses ? 590 : 495;
-            if (_settings.ShowStopwatch) defaultH += 75;
-            if (_settings.ShowDiskGraph && _settings.EnhancedDiskMode && _settings.DiskLegendExpanded)
-            {
-                int driveCount = Math.Max(1, _hardware.Disk.Drives.Count);
-                defaultH += driveCount * 22 + 4;
-            }
-            if (_settings.ShowFanGraph)
-            {
-                float fanScale = _settings.FanScale;
-                if (_settings.FanVisualMode == 1)
-                {
-                    defaultH += (int)Math.Round(72 * fanScale) + 16;
-                }
-                else if (_settings.FanVisualMode == 2)
-                {
-                    int cols;
-                    if (fanScale >= 1.40f)
-                    {
-                        cols = Math.Max(2, (initW - 28 - 4) / (int)(95 * fanScale));
-                        if ((initW - 28) < 460) cols = 2;
-                    }
-                    else
-                    {
-                        cols = Math.Max(2, (initW - 28 - 4) / 115);
-                        if ((initW - 28) < 460) cols = 3;
-                        if ((initW - 28) < 320) cols = 2;
-                    }
+            _currentUiScale = GetEffectiveUiScale();
+            float scale = _currentUiScale;
 
-                    int fanCount = _settings.LastKnownFanCount > 0 ? _settings.LastKnownFanCount : 4;
-                    int expectedRows = (int)Math.Ceiling((double)fanCount / cols);
-                    if (expectedRows < 1) expectedRows = 1;
-                    int testCardW = (initW - 28 - 4 - (5 * (cols - 1))) / cols;
-                    bool isWideCard = (testCardW >= 140);
-                    int cardH = isWideCard 
-                        ? (int)Math.Round(48 + 20 * fanScale) 
-                        : (int)Math.Round(42 + 10 * fanScale);
-                    defaultH += (expectedRows * (cardH + 5)) + 40;
-                }
-                else defaultH += 60;
-            }
-            int initH = Math.Max(420, _settings.WindowHeight > 0 ? _settings.WindowHeight : defaultH);
+            int initW = Math.Max((int)Math.Round(300 * scale), _settings.WindowWidth > 0 ? _settings.WindowWidth : (int)Math.Round(420 * scale));
+            int defaultH = CalculateDefaultHeight(scale);
+            int initH = Math.Max((int)Math.Round(340 * scale), _settings.WindowHeight > 0 ? _settings.WindowHeight : defaultH);
             this.ClientSize = new Size(initW, initH);
-            this.MinimumSize = new Size(380, 420);
+            this.MinimumSize = new Size((int)Math.Round(280 * scale), (int)Math.Round(320 * scale));
 
             // 1. Header Panel
             _headerPanel = new Panel
@@ -434,9 +594,11 @@ namespace RyzenQuietPro
 
             // Stopwatch Module
             _sepStopwatch = new ModuleSeparator(StopwatchAccentColor);
+            _sepStopwatch.Click += (s, e) => ToggleSectionStopwatch();
             this.Controls.Add(_sepStopwatch);
 
             _lblStopwatch = CreateMetricHeader("⏱ " + Loc.Get("Stopwatch"), StopwatchAccentColor);
+            _lblStopwatch.Click += (s, e) => ToggleSectionStopwatch();
             _lblStopwatchSub = CreateMetricSubHeader(Loc.Get("StopwatchStopped"));
             this.Controls.Add(_lblStopwatch);
             this.Controls.Add(_lblStopwatchSub);
@@ -478,9 +640,11 @@ namespace RyzenQuietPro
 
             // CPU Module
             _sepCpu = new ModuleSeparator(cpuColor);
+            _sepCpu.Click += (s, e) => ToggleSectionCpu();
             this.Controls.Add(_sepCpu);
 
             _lblCpu = CreateMetricHeader("CPU: 0%", cpuColor);
+            _lblCpu.Click += (s, e) => ToggleSectionCpu();
             _lblCpuSub = CreateMetricSubHeader("0.0 GHz | Cores");
             this.Controls.Add(_lblCpu);
             this.Controls.Add(_lblCpuSub);
@@ -523,9 +687,11 @@ namespace RyzenQuietPro
 
             // RAM Module
             _sepRam = new ModuleSeparator(Color.FromArgb(56, 189, 248));
+            _sepRam.Click += (s, e) => ToggleSectionRam();
             this.Controls.Add(_sepRam);
 
             _lblRam = CreateMetricHeader("RAM: 0%", Color.FromArgb(56, 189, 248));
+            _lblRam.Click += (s, e) => ToggleSectionRam();
             _lblRamSub = CreateMetricSubHeader("0.0 / 0.0 GB");
             this.Controls.Add(_lblRam);
             this.Controls.Add(_lblRamSub);
@@ -536,9 +702,11 @@ namespace RyzenQuietPro
 
             // GPU Module
             _sepGpu = new ModuleSeparator(Color.FromArgb(168, 85, 247));
+            _sepGpu.Click += (s, e) => ToggleSectionGpu();
             this.Controls.Add(_sepGpu);
 
             _lblGpu = CreateMetricHeader("GPU: 0%", Color.FromArgb(168, 85, 247));
+            _lblGpu.Click += (s, e) => ToggleSectionGpu();
             _pnlGpuSub = new GpuSubHeaderPanel();
             this.Controls.Add(_lblGpu);
             this.Controls.Add(_pnlGpuSub);
@@ -567,9 +735,11 @@ namespace RyzenQuietPro
 
             // VRAM Module
             _sepVram = new ModuleSeparator(Color.FromArgb(236, 72, 153));
+            _sepVram.Click += (s, e) => ToggleSectionVram();
             this.Controls.Add(_sepVram);
 
             _lblVram = CreateMetricHeader("VRAM: 0%", Color.FromArgb(236, 72, 153));
+            _lblVram.Click += (s, e) => ToggleSectionVram();
             _lblVramSub = CreateMetricSubHeader("0.0 / 0.0 GB");
             this.Controls.Add(_lblVram);
             this.Controls.Add(_lblVramSub);
@@ -580,9 +750,11 @@ namespace RyzenQuietPro
 
             // DISK Module
             _sepDisk = new ModuleSeparator(Color.FromArgb(6, 182, 212));
+            _sepDisk.Click += (s, e) => ToggleSectionDisk();
             this.Controls.Add(_sepDisk);
 
             _lblDisk = CreateMetricHeader("DISK: 0%", Color.FromArgb(6, 182, 212));
+            _lblDisk.Click += (s, e) => ToggleSectionDisk();
             _lblDiskSub = CreateMetricSubHeader("R:0.0 W:0.0 MB/s [Idle]");
             this.Controls.Add(_lblDisk);
             this.Controls.Add(_lblDiskSub);
@@ -631,9 +803,11 @@ namespace RyzenQuietPro
 
             // FANS Module
             _sepFans = new ModuleSeparator(Color.FromArgb(14, 165, 233));
+            _sepFans.Click += (s, e) => ToggleSectionFans();
             this.Controls.Add(_sepFans);
 
             _lblFans = CreateMetricHeader("FANS: 0 RPM", Color.FromArgb(14, 165, 233));
+            _lblFans.Click += (s, e) => ToggleSectionFans();
             _lblFansSub = CreateMetricSubHeader(Loc.Get("FanPluginStatus_Disabled"));
             this.Controls.Add(_lblFans);
             this.Controls.Add(_lblFansSub);
@@ -757,50 +931,79 @@ namespace RyzenQuietPro
 
             UpdateModeUI();
             _isInitialized = true;
+            UpdateControlFontsAndSizes(_currentUiScale);
             LayoutComponents();
         }
 
         private void LayoutComponents()
         {
+            _currentUiScale = GetEffectiveUiScale();
+            float scale = _currentUiScale;
+            UpdateControlFontsAndSizes(scale);
+
             int w = this.ClientSize.Width;
             int h = this.ClientSize.Height;
 
-            int marginX = 14;
-            int contentW = Math.Max(200, w - (marginX * 2));
+            int marginX = (int)Math.Round(14 * scale);
+            int contentW = Math.Max(180, w - (marginX * 2));
 
             // 1. Header Layout
+            int headerH = (int)Math.Round(36 * scale);
             _headerPanel.Location = new Point(0, 0);
-            _headerPanel.Size = new Size(w, 36);
-            _picAppIcon.Location = new Point(10, 7);
-            _lblTitle.Location = new Point(36, 8);
-            _btnClose.Location = new Point(w - 32, 7);
-            _btnDetach.Location = new Point(w - 60, 5);
-            _btnPin.Location = new Point(w - 88, 6);
-            _btnInfo.Location = new Point(w - 116, 6);
+            _headerPanel.Size = new Size(w, headerH);
+
+            int appIconSize = (int)Math.Round(22 * scale);
+            int appIconPadX = (int)Math.Round(10 * scale);
+            _picAppIcon.Location = new Point(appIconPadX, (headerH - appIconSize) / 2);
+            _picAppIcon.Size = new Size(appIconSize, appIconSize);
+
+            _lblTitle.Location = new Point(_picAppIcon.Right + (int)Math.Round(6 * scale), (headerH - _lblTitle.PreferredHeight) / 2);
+
+            int btnSize = (int)Math.Round(24 * scale);
+            int btnY = (headerH - btnSize) / 2;
+            int btnGap = (int)Math.Round(4 * scale);
+            int curBtnX = w - (int)Math.Round(8 * scale) - btnSize;
+
+            _btnClose.Location = new Point(curBtnX, btnY);
+            _btnClose.Size = new Size(btnSize, btnSize);
+            curBtnX -= btnSize + btnGap;
+
+            _btnDetach.Location = new Point(curBtnX, btnY);
+            _btnDetach.Size = new Size(btnSize, btnSize);
+            curBtnX -= btnSize + btnGap;
+
+            _btnPin.Location = new Point(curBtnX, btnY);
+            _btnPin.Size = new Size(btnSize, btnSize);
+            curBtnX -= btnSize + btnGap;
+
+            _btnInfo.Location = new Point(curBtnX, btnY);
+            _btnInfo.Size = new Size(btnSize, btnSize);
 
             // 2. Footer Layout (Single row unified, or two rows when separate CPU/GPU control is enabled)
             bool separate = _settings.SeparateCpuGpuControl;
-            int footerH = separate ? 78 : 44;
+            int btnBaseH = (int)Math.Round(32 * scale);
+            int footerH = separate ? (btnBaseH * 2 + (int)Math.Round(14 * scale)) : (btnBaseH + (int)Math.Round(12 * scale));
             int footerY = h - footerH;
             _footerPanel.Location = new Point(0, footerY);
             _footerPanel.Size = new Size(w, footerH);
             _footerPanel.BringToFront();
 
-            int gearW = 34;
-            int buttonGap = 4;
-            int availableBtnW = contentW - gearW - buttonGap;
-            int halfW = (availableBtnW - buttonGap) / 2;
+            int gearW = (int)Math.Round(34 * scale);
+            int fButtonGap = (int)Math.Round(4 * scale);
+            int availableBtnW = contentW - gearW - fButtonGap;
+            int halfW = (availableBtnW - fButtonGap) / 2;
+            int fBtnY = (int)Math.Round(6 * scale);
 
             // Row 1: CPU Controls
-            _btnSilent.Location = new Point(marginX, 6);
-            _btnSilent.Size = new Size(halfW, 32);
+            _btnSilent.Location = new Point(marginX, fBtnY);
+            _btnSilent.Size = new Size(halfW, btnBaseH);
 
-            _btnBoost.Location = new Point(marginX + halfW + buttonGap, 6);
-            _btnBoost.Size = new Size(availableBtnW - halfW - buttonGap, 32);
+            _btnBoost.Location = new Point(marginX + halfW + fButtonGap, fBtnY);
+            _btnBoost.Size = new Size(availableBtnW - halfW - fButtonGap, btnBaseH);
 
             // Single unified Gear button on the right (centered vertically across 1 or 2 rows)
-            int gearH = separate ? (42 + 32 - 6) : 32;
-            _btnGear.Location = new Point(marginX + contentW - gearW, 6);
+            int gearH = separate ? (btnBaseH * 2 + (int)Math.Round(4 * scale)) : btnBaseH;
+            _btnGear.Location = new Point(marginX + contentW - gearW, fBtnY);
             _btnGear.Size = new Size(gearW, gearH);
 
             // Row 2: GPU Controls (visible only when separate controls are enabled)
@@ -809,18 +1012,21 @@ namespace RyzenQuietPro
 
             if (separate)
             {
-                _btnGpuSilent.Location = new Point(marginX, 42);
-                _btnGpuSilent.Size = new Size(halfW, 32);
+                int row2Y = fBtnY + btnBaseH + (int)Math.Round(4 * scale);
+                _btnGpuSilent.Location = new Point(marginX, row2Y);
+                _btnGpuSilent.Size = new Size(halfW, btnBaseH);
 
-                _btnGpuBoost.Location = new Point(marginX + halfW + buttonGap, 42);
-                _btnGpuBoost.Size = new Size(availableBtnW - halfW - buttonGap, 32);
+                _btnGpuBoost.Location = new Point(marginX + halfW + fButtonGap, row2Y);
+                _btnGpuBoost.Size = new Size(availableBtnW - halfW - fButtonGap, btnBaseH);
             }
 
-            _lblResizeGrip.Location = new Point(w - 18, footerH - 18);
+            int gripSize = (int)Math.Round(16 * scale);
+            _lblResizeGrip.Size = new Size(gripSize, gripSize);
+            _lblResizeGrip.Location = new Point(w - gripSize - 2, footerH - gripSize - 2);
 
             // 3. Middle Area: Dynamic Graph Sections
-            int topY = 38;
-            int availableH = Math.Max(180, (footerY - 8) - topY);
+            int topY = headerH + (int)Math.Round(2 * scale);
+            int availableH = Math.Max((int)Math.Round(150 * scale), (footerY - (int)Math.Round(8 * scale)) - topY);
 
             bool showCpu = _settings.ShowCpuGraph || _settings.ShowCpuCores || _settings.ShowTopProcesses;
             bool showRam = _settings.ShowRamGraph;
@@ -830,200 +1036,240 @@ namespace RyzenQuietPro
             bool showFans = _settings.ShowFanGraph;
 
             int activeGraphCount = 0;
-            if (_settings.ShowCpuGraph) activeGraphCount++;
-            if (_settings.ShowRamGraph) activeGraphCount++;
-            if (_settings.ShowGpuGraph) activeGraphCount++;
-            if (_settings.ShowVramGraph) activeGraphCount++;
-            if (_settings.ShowDiskGraph) activeGraphCount++;
-            if (_settings.ShowFanGraph) activeGraphCount++;
+            if (_settings.ShowCpuGraph && !_settings.SectionCpuCollapsed) activeGraphCount++;
+            if (_settings.ShowRamGraph && !_settings.SectionRamCollapsed) activeGraphCount++;
+            if (_settings.ShowGpuGraph && !_settings.SectionGpuCollapsed) activeGraphCount++;
+            if (_settings.ShowVramGraph && !_settings.SectionVramCollapsed) activeGraphCount++;
+            if (_settings.ShowDiskGraph && !_settings.SectionDiskCollapsed) activeGraphCount++;
+            if (_settings.ShowFanGraph && !_settings.SectionFansCollapsed) activeGraphCount++;
             if (activeGraphCount == 0) activeGraphCount = 1;
+
+            int sepH = Math.Max(2, (int)Math.Round(3 * scale));
+            int sepGap = (int)Math.Round(5 * scale);
+            int headerRowH = (int)Math.Round(20 * scale);
 
             int fixedH = 0;
             var visibleSw = _hardware.Stopwatch.Items.Where(i => i.Profile.IsVisible).ToList();
             int swCount = visibleSw.Count;
-            int swRowH = 50;
-            int swGap = 4;
+            int swRowH = (int)Math.Round(50 * scale);
+            int swGap = (int)Math.Round(4 * scale);
             int swCardH = swCount > 0 ? (swCount * swRowH) + ((swCount - 1) * swGap) : 0;
             if (_settings.ShowStopwatch)
             {
-                if (swCount > 0)
+                if (swCount > 0 && !_settings.SectionStopwatchCollapsed)
                 {
-                    fixedH += 3 + 5 + 20 + swCardH + 6; // separator + header + stopwatch card + gap
+                    fixedH += sepH + sepGap + headerRowH + swCardH + (int)Math.Round(6 * scale);
                 }
                 else
                 {
-                    fixedH += 3 + 5 + 20 + 4; // separator + header when all hidden
+                    fixedH += sepH + sepGap + headerRowH + (int)Math.Round(4 * scale);
                 }
             }
             if (showCpu)
             {
-                fixedH += 3 + 5 + 20; // separator + header
-                if (_settings.ShowCpuCores) fixedH += 22 + 4; // matrix
-                if (_settings.ShowTopProcesses) fixedH += 90 + 6; // top 5
+                fixedH += sepH + sepGap + headerRowH;
+                if (!_settings.SectionCpuCollapsed)
+                {
+                    if (_settings.ShowCpuCores) fixedH += (int)Math.Round(22 * scale) + (int)Math.Round(4 * scale);
+                    if (_settings.ShowTopProcesses) fixedH += (int)Math.Round(90 * scale) + (int)Math.Round(6 * scale);
+                }
             }
-            if (showRam) fixedH += 3 + 5 + 20 + 6;
-            if (showGpu) fixedH += 3 + 5 + 20 + 6;
-            if (showVram) fixedH += 3 + 5 + 20 + (showDisk || showFans ? 6 : 0);
+            if (showRam) fixedH += sepH + sepGap + headerRowH + (!_settings.SectionRamCollapsed ? (int)Math.Round(6 * scale) : 0);
+            if (showGpu) fixedH += sepH + sepGap + headerRowH + (!_settings.SectionGpuCollapsed ? (int)Math.Round(6 * scale) : 0);
+            if (showVram) fixedH += sepH + sepGap + headerRowH + (!_settings.SectionVramCollapsed && (showDisk || showFans) ? (int)Math.Round(6 * scale) : 0);
+
             int diskLegendH = 0;
-            if (showDisk && _settings.EnhancedDiskMode && _settings.DiskLegendExpanded)
+            if (showDisk && !_settings.SectionDiskCollapsed && _settings.EnhancedDiskMode && _settings.DiskLegendExpanded)
             {
                 int driveCount = Math.Max(1, _hardware.Disk.Drives.Count);
                 int extraH = _pnlDiskLegend != null ? _pnlDiskLegend.ExpandedExtraHeight : 0;
-                diskLegendH = driveCount * 22 + 4 + extraH;
-                fixedH += diskLegendH + 4;
+                diskLegendH = (int)Math.Round((driveCount * 22 + 4 + extraH) * scale);
+                fixedH += diskLegendH + (int)Math.Round(4 * scale);
             }
-            if (showDisk) fixedH += 3 + 5 + 20 + (showFans ? 6 : 0);
-            if (showFans) fixedH += 3 + 6 + 24;
+            if (showDisk) fixedH += sepH + sepGap + headerRowH + (!_settings.SectionDiskCollapsed && showFans ? (int)Math.Round(6 * scale) : 0);
+            if (showFans) fixedH += sepH + (int)Math.Round(6 * scale) + (int)Math.Round(24 * scale);
 
             int fanH;
             int graphH;
-            if (showFans && _settings.FanVisualMode == 1)
+            int minGraphH = (int)Math.Round(22 * scale);
+
+            if (showFans && !_settings.SectionFansCollapsed && _settings.FanVisualMode == 1)
             {
-                float fanScale = _settings.FanScale;
-                fanH = (int)Math.Round(72 * fanScale) + 4;
+                float fanScale = _settings.FanScale * scale;
+                fanH = (int)Math.Round(72 * fanScale) + (int)Math.Round(4 * scale);
                 fixedH += fanH;
                 int nonFanGraphs = activeGraphCount - 1;
                 if (nonFanGraphs <= 0) nonFanGraphs = 1;
-                int remainingForGraphs = Math.Max(30, availableH - fixedH);
-                graphH = Math.Max(24, remainingForGraphs / nonFanGraphs);
+                int remainingForGraphs = Math.Max((int)Math.Round(30 * scale), availableH - fixedH);
+                graphH = Math.Max(minGraphH, remainingForGraphs / nonFanGraphs);
             }
-            else if (showFans && _settings.FanVisualMode == 2)
+            else if (showFans && !_settings.SectionFansCollapsed && _settings.FanVisualMode == 2)
             {
                 var allFans = _hardware.Fans.Fans;
                 int visibleFanCount = allFans.Count(f => _settings.IsFanVisible(f.Id, f.Name));
                 if (visibleFanCount == 0) visibleFanCount = 1;
-                float fanScale = _settings.FanScale;
+                float fanScale = _settings.FanScale * scale;
                 int cols;
-                if (fanScale >= 1.40f)
+                if (contentW < (int)Math.Round(380 * scale))
                 {
-                    cols = Math.Max(2, (contentW - 4) / (int)(95 * fanScale));
-                    if (contentW < 460) cols = 2;
+                    cols = 2;
+                }
+                else if (contentW < (int)Math.Round(560 * scale))
+                {
+                    cols = 3;
                 }
                 else
                 {
-                    cols = Math.Max(2, (contentW - 4) / 115);
-                    if (contentW < 460) cols = 3;
-                    if (contentW < 320) cols = 2;
+                    cols = Math.Max(2, (contentW - 4) / (int)Math.Round(120 * scale));
                 }
 
                 int rows = (int)Math.Ceiling((double)visibleFanCount / cols);
                 if (rows < 1) rows = 1;
-                int cardW = (contentW - 4 - (5 * (cols - 1))) / cols;
-                bool isWideCard = (cardW >= 140);
-                int cardH = isWideCard 
-                    ? (int)Math.Round(48 + 20 * fanScale) 
-                    : (int)Math.Round(42 + 10 * fanScale);
-                int gapY = 5;
-                fanH = (rows * cardH) + ((rows - 1) * gapY) + 8;
+                int gapX = (int)Math.Max(2, Math.Round(5 * scale));
+                int padX = (int)Math.Max(2, Math.Round(2 * scale));
+                int cardW = (contentW - (padX * 2) - (gapX * (cols - 1))) / cols;
+                bool isWideCard = (cardW >= 135 * scale);
+                int cardH = (int)Math.Round((isWideCard 
+                    ? (46 + 18 * _settings.FanScale) 
+                    : (40 + 10 * _settings.FanScale)) * scale);
+                int gapY = (int)Math.Max(2, Math.Round(5 * scale));
+                fanH = (rows * cardH) + ((rows - 1) * gapY) + (int)Math.Round(8 * scale);
                 fixedH += fanH;
                 int nonFanGraphs = activeGraphCount - 1;
                 if (nonFanGraphs <= 0) nonFanGraphs = 1;
-                int remainingForGraphs = Math.Max(30, availableH - fixedH);
-                graphH = Math.Max(24, remainingForGraphs / nonFanGraphs);
+                int remainingForGraphs = Math.Max((int)Math.Round(30 * scale), availableH - fixedH);
+                graphH = Math.Max(minGraphH, remainingForGraphs / nonFanGraphs);
+            }
+            else if (showFans && !_settings.SectionFansCollapsed)
+            {
+                int remainingForGraphs = Math.Max((int)Math.Round(40 * scale), availableH - fixedH);
+                graphH = Math.Max(minGraphH, remainingForGraphs / activeGraphCount);
+                fanH = graphH;
             }
             else
             {
-                int remainingForGraphs = Math.Max(40, availableH - fixedH);
-                graphH = Math.Max(24, remainingForGraphs / activeGraphCount);
-                fanH = graphH;
+                fanH = 0;
+                int remainingForGraphs = Math.Max((int)Math.Round(40 * scale), availableH - fixedH);
+                graphH = Math.Max(minGraphH, remainingForGraphs / activeGraphCount);
             }
 
             int curY = topY;
 
             // --- STOPWATCH ---
             bool showStopwatch = _settings.ShowStopwatch;
+            bool isSwCollapsed = _settings.SectionStopwatchCollapsed;
             bool hasVisibleSw = visibleSw.Count > 0;
             _sepStopwatch.Visible = showStopwatch;
             _lblStopwatch.Visible = showStopwatch;
             _lblStopwatchSub.Visible = showStopwatch;
-            _btnSwDashboardAdd.Visible = showStopwatch;
-            _pnlStopwatch.Visible = showStopwatch && hasVisibleSw;
+            _btnSwDashboardAdd.Visible = showStopwatch && !isSwCollapsed;
+            _pnlStopwatch.Visible = showStopwatch && hasVisibleSw && !isSwCollapsed;
 
             if (showStopwatch)
             {
                 _sepStopwatch.Location = new Point(0, curY);
-                _sepStopwatch.Size = new Size(w, 3);
-                curY += 5;
+                _sepStopwatch.Size = new Size(w, sepH);
+                curY += sepGap;
+
+                int swAddW = (int)Math.Round(24 * scale);
+                int swAddH = (int)Math.Round(20 * scale);
+                if (!isSwCollapsed)
+                {
+                    _btnSwDashboardAdd.Location = new Point(marginX + contentW - swAddW, curY);
+                    _btnSwDashboardAdd.Size = new Size(swAddW, swAddH);
+                }
 
                 _lblStopwatch.Location = new Point(marginX, curY);
-                _lblStopwatchSub.Location = new Point(marginX + 110, curY);
-                _lblStopwatchSub.Size = new Size(contentW - 140, 20);
+                int swLblW = Math.Max((int)(70 * scale), _lblStopwatch.PreferredWidth);
+                int swRightPad = !isSwCollapsed ? (swAddW + (int)Math.Round(6 * scale)) : 0;
+                _lblStopwatchSub.Location = new Point(marginX + swLblW + (int)Math.Round(6 * scale), curY);
+                _lblStopwatchSub.Size = new Size(Math.Max(50, contentW - swLblW - (int)Math.Round(6 * scale) - swRightPad), headerRowH);
+                curY += headerRowH;
 
-                _btnSwDashboardAdd.Location = new Point(marginX + contentW - 24, curY);
-                _btnSwDashboardAdd.Size = new Size(24, 20);
-                curY += 20;
-
-                if (hasVisibleSw)
+                if (!isSwCollapsed && hasVisibleSw)
                 {
                     _pnlStopwatch.Location = new Point(marginX, curY);
                     _pnlStopwatch.Size = new Size(contentW, swCardH);
                     LayoutStopwatchButtons(contentW, swRowH, swGap);
-                    curY += swCardH + 6;
+                    curY += swCardH + (int)Math.Round(6 * scale);
                 }
                 else
                 {
-                    curY += 4;
+                    curY += (int)Math.Round(4 * scale);
                 }
             }
 
             // --- CPU ---
+            bool isCpuCollapsed = _settings.SectionCpuCollapsed;
             _sepCpu.Visible = showCpu;
             _lblCpu.Visible = showCpu;
             _lblCpuSub.Visible = showCpu;
-            _pnlCpuGraph.Visible = _settings.ShowCpuGraph;
-            _pnlCoresMatrix.Visible = _settings.ShowCpuCores;
-            _btnCpuProcessesExpand.Visible = showCpu;
+            _pnlCpuGraph.Visible = _settings.ShowCpuGraph && !isCpuCollapsed;
+            _pnlCoresMatrix.Visible = _settings.ShowCpuCores && !isCpuCollapsed;
+            _btnCpuProcessesExpand.Visible = showCpu && !isCpuCollapsed;
 
             if (showCpu)
             {
                 _sepCpu.Location = new Point(0, curY);
-                _sepCpu.Size = new Size(w, 3);
-                curY += 5;
+                _sepCpu.Size = new Size(w, sepH);
+                curY += sepGap;
 
                 _lblCpu.Location = new Point(marginX, curY);
-                int cpuSubRightOffset = _settings.ShowCpuCores ? 0 : 24;
-                _lblCpuSub.Location = new Point(marginX + 95, curY);
-                _lblCpuSub.Size = new Size(contentW - 95 - cpuSubRightOffset, 20);
-                curY += 20;
+                int cpuLabelW = Math.Max((int)(65 * scale), _lblCpu.PreferredWidth);
+                int cpuSubRightOffset = isCpuCollapsed ? 0 : (_settings.ShowCpuCores ? 0 : (int)Math.Round(24 * scale));
+                _lblCpuSub.Location = new Point(marginX + cpuLabelW + (int)Math.Round(6 * scale), curY);
+                _lblCpuSub.Size = new Size(Math.Max(50, contentW - cpuLabelW - (int)Math.Round(6 * scale) - cpuSubRightOffset), headerRowH);
+                curY += headerRowH;
 
-                if (_settings.ShowCpuGraph)
+                if (!isCpuCollapsed)
                 {
-                    _pnlCpuGraph.Location = new Point(marginX, curY);
-                    _pnlCpuGraph.Size = new Size(contentW, graphH);
-                    curY += graphH + 2;
-                }
+                    if (_settings.ShowCpuGraph)
+                    {
+                        _pnlCpuGraph.Location = new Point(marginX, curY);
+                        _pnlCpuGraph.Size = new Size(contentW, graphH);
+                        curY += graphH + (int)Math.Round(2 * scale);
+                    }
 
-                if (_settings.ShowCpuCores)
-                {
-                    _pnlCoresMatrix.Location = new Point(marginX, curY);
-                    _pnlCoresMatrix.Size = new Size(contentW - 24, 22);
+                    int coresMatrixH = (int)Math.Round(22 * scale);
+                    int expandBtnW = (int)Math.Round(20 * scale);
+                    if (_settings.ShowCpuCores)
+                    {
+                        _pnlCoresMatrix.Location = new Point(marginX, curY);
+                        _pnlCoresMatrix.Size = new Size(contentW - expandBtnW - (int)Math.Round(4 * scale), coresMatrixH);
 
-                    _btnCpuProcessesExpand.Location = new Point(marginX + contentW - 20, curY);
-                    _btnCpuProcessesExpand.Size = new Size(20, 22);
-                    _btnCpuProcessesExpand.Text = _settings.ShowTopProcesses ? "▲" : "▼";
-                    _toolTip.SetToolTip(_btnCpuProcessesExpand, _settings.ShowTopProcesses ? Loc.Get("ProcessesCollapse") : Loc.Get("ProcessesExpand"));
+                        _btnCpuProcessesExpand.Location = new Point(marginX + contentW - expandBtnW, curY);
+                        _btnCpuProcessesExpand.Size = new Size(expandBtnW, coresMatrixH);
+                        _btnCpuProcessesExpand.Text = _settings.ShowTopProcesses ? "▲" : "▼";
+                        _toolTip.SetToolTip(_btnCpuProcessesExpand, _settings.ShowTopProcesses ? Loc.Get("ProcessesCollapse") : Loc.Get("ProcessesExpand"));
 
-                    curY += 22 + 4;
-                }
-                else
-                {
-                    _btnCpuProcessesExpand.Location = new Point(marginX + contentW - 20, curY - 20 + 1);
-                    _btnCpuProcessesExpand.Size = new Size(20, 18);
-                    _btnCpuProcessesExpand.Text = _settings.ShowTopProcesses ? "▲" : "▼";
-                    _toolTip.SetToolTip(_btnCpuProcessesExpand, _settings.ShowTopProcesses ? Loc.Get("ProcessesCollapse") : Loc.Get("ProcessesExpand"));
-                }
+                        curY += coresMatrixH + (int)Math.Round(4 * scale);
+                    }
+                    else
+                    {
+                        _btnCpuProcessesExpand.Location = new Point(marginX + contentW - expandBtnW, curY - headerRowH + 1);
+                        _btnCpuProcessesExpand.Size = new Size(expandBtnW, (int)Math.Round(18 * scale));
+                        _btnCpuProcessesExpand.Text = _settings.ShowTopProcesses ? "▲" : "▼";
+                        _toolTip.SetToolTip(_btnCpuProcessesExpand, _settings.ShowTopProcesses ? Loc.Get("ProcessesCollapse") : Loc.Get("ProcessesExpand"));
+                    }
 
-                if (_settings.ShowTopProcesses)
-                {
-                    _pnlTopProcesses.Visible = true;
-                    _pnlTopProcesses.Location = new Point(marginX, curY);
-                    _pnlTopProcesses.Size = new Size(contentW, 90);
-                    curY += 90 + 6;
+                    if (_settings.ShowTopProcesses)
+                    {
+                        int topProcH = (int)Math.Round(90 * scale);
+                        _pnlTopProcesses.Visible = true;
+                        _pnlTopProcesses.Location = new Point(marginX, curY);
+                        _pnlTopProcesses.Size = new Size(contentW, topProcH);
+                        curY += topProcH + (int)Math.Round(6 * scale);
+                    }
+                    else
+                    {
+                        _pnlTopProcesses.Visible = false;
+                        curY += (int)Math.Round(2 * scale);
+                    }
                 }
                 else
                 {
                     _pnlTopProcesses.Visible = false;
-                    curY += 2;
+                    curY += (int)Math.Round(4 * scale);
                 }
             }
             else
@@ -1033,157 +1279,207 @@ namespace RyzenQuietPro
             }
 
             // --- RAM ---
+            bool isRamCollapsed = _settings.SectionRamCollapsed;
             _sepRam.Visible = showRam;
             _lblRam.Visible = showRam;
             _lblRamSub.Visible = showRam;
-            _pnlRamGraph.Visible = showRam;
+            _pnlRamGraph.Visible = showRam && !isRamCollapsed;
 
             if (showRam)
             {
                 _sepRam.Location = new Point(0, curY);
-                _sepRam.Size = new Size(w, 3);
-                curY += 5;
+                _sepRam.Size = new Size(w, sepH);
+                curY += sepGap;
 
                 _lblRam.Location = new Point(marginX, curY);
-                _lblRamSub.Location = new Point(marginX + 95, curY);
-                _lblRamSub.Size = new Size(contentW - 95, 20);
-                curY += 20;
+                int ramLabelW = Math.Max((int)(65 * scale), _lblRam.PreferredWidth);
+                _lblRamSub.Location = new Point(marginX + ramLabelW + (int)Math.Round(6 * scale), curY);
+                _lblRamSub.Size = new Size(Math.Max(50, contentW - ramLabelW - (int)Math.Round(6 * scale)), headerRowH);
+                curY += headerRowH;
 
-                _pnlRamGraph.Location = new Point(marginX, curY);
-                _pnlRamGraph.Size = new Size(contentW, graphH);
-                curY += graphH + 6;
+                if (!isRamCollapsed)
+                {
+                    _pnlRamGraph.Location = new Point(marginX, curY);
+                    _pnlRamGraph.Size = new Size(contentW, graphH);
+                    curY += graphH + (int)Math.Round(6 * scale);
+                }
+                else
+                {
+                    curY += (int)Math.Round(4 * scale);
+                }
             }
 
             // --- GPU ---
+            bool isGpuCollapsed = _settings.SectionGpuCollapsed;
             _sepGpu.Visible = showGpu;
             _lblGpu.Visible = showGpu;
             _pnlGpuSub.Visible = showGpu;
-            _pnlGpuGraph.Visible = showGpu;
+            _pnlGpuGraph.Visible = showGpu && !isGpuCollapsed;
 
             bool multiGpu = _hardware.Gpu.GpuCount > 1;
-            _chkShowAllGpus.Visible = showGpu && multiGpu;
+            _chkShowAllGpus.Visible = showGpu && multiGpu && !isGpuCollapsed;
 
             if (showGpu)
             {
                 _sepGpu.Location = new Point(0, curY);
-                _sepGpu.Size = new Size(w, 3);
-                curY += 5;
+                _sepGpu.Size = new Size(w, sepH);
+                curY += sepGap;
 
                 _lblGpu.Location = new Point(marginX, curY);
+                int gpuLabelW = Math.Max((int)(65 * scale), _lblGpu.PreferredWidth);
+                _pnlGpuSub.UiScale = scale;
 
-                if (multiGpu)
+                if (multiGpu && !isGpuCollapsed)
                 {
-                    int chkW = 74;
+                    int chkW = (int)Math.Round(74 * scale);
                     _chkShowAllGpus.Location = new Point(w - marginX - chkW, curY + 2);
-                    _pnlGpuSub.Location = new Point(marginX + 95, curY);
-                    _pnlGpuSub.Size = new Size(Math.Max(50, w - marginX - chkW - (marginX + 95) - 4), 20);
+                    _pnlGpuSub.Location = new Point(marginX + gpuLabelW + (int)Math.Round(6 * scale), curY);
+                    _pnlGpuSub.Size = new Size(Math.Max(50, w - marginX - chkW - (marginX + gpuLabelW + (int)Math.Round(6 * scale)) - 4), headerRowH);
                 }
                 else
                 {
-                    _pnlGpuSub.Location = new Point(marginX + 95, curY);
-                    _pnlGpuSub.Size = new Size(contentW - 95, 20);
+                    _pnlGpuSub.Location = new Point(marginX + gpuLabelW + (int)Math.Round(6 * scale), curY);
+                    _pnlGpuSub.Size = new Size(Math.Max(50, contentW - gpuLabelW - (int)Math.Round(6 * scale)), headerRowH);
                 }
-                curY += 20;
+                curY += headerRowH;
 
-                _pnlGpuGraph.Location = new Point(marginX, curY);
-                _pnlGpuGraph.Size = new Size(contentW, graphH);
-                curY += graphH + 6;
+                if (!isGpuCollapsed)
+                {
+                    _pnlGpuGraph.Location = new Point(marginX, curY);
+                    _pnlGpuGraph.Size = new Size(contentW, graphH);
+                    curY += graphH + (int)Math.Round(6 * scale);
+                }
+                else
+                {
+                    curY += (int)Math.Round(4 * scale);
+                }
             }
 
             // --- VRAM ---
+            bool isVramCollapsed = _settings.SectionVramCollapsed;
             _sepVram.Visible = showVram;
             _lblVram.Visible = showVram;
             _lblVramSub.Visible = showVram;
-            _pnlVramGraph.Visible = showVram;
+            _pnlVramGraph.Visible = showVram && !isVramCollapsed;
 
             if (showVram)
             {
                 _sepVram.Location = new Point(0, curY);
-                _sepVram.Size = new Size(w, 3);
-                curY += 5;
+                _sepVram.Size = new Size(w, sepH);
+                curY += sepGap;
 
                 _lblVram.Location = new Point(marginX, curY);
-                _lblVramSub.Location = new Point(marginX + 95, curY);
-                _lblVramSub.Size = new Size(contentW - 95, 20);
-                curY += 20;
+                int vramLabelW = Math.Max((int)(65 * scale), _lblVram.PreferredWidth);
+                _lblVramSub.Location = new Point(marginX + vramLabelW + (int)Math.Round(6 * scale), curY);
+                _lblVramSub.Size = new Size(Math.Max(50, contentW - vramLabelW - (int)Math.Round(6 * scale)), headerRowH);
+                curY += headerRowH;
 
-                _pnlVramGraph.Location = new Point(marginX, curY);
-                _pnlVramGraph.Size = new Size(contentW, graphH);
-                curY += graphH + (showDisk || showFans ? 6 : 0);
+                if (!isVramCollapsed)
+                {
+                    _pnlVramGraph.Location = new Point(marginX, curY);
+                    _pnlVramGraph.Size = new Size(contentW, graphH);
+                    curY += graphH + (showDisk || showFans ? (int)Math.Round(6 * scale) : 0);
+                }
+                else
+                {
+                    curY += (int)Math.Round(4 * scale);
+                }
             }
 
             // --- DISK ---
+            bool isDiskCollapsed = _settings.SectionDiskCollapsed;
             bool enhancedDisk = _settings.EnhancedDiskMode;
             bool diskLegendOpen = enhancedDisk && _settings.DiskLegendExpanded;
             bool showHddStatus = showDisk && _settings.HddScheduleEnabled;
             _sepDisk.Visible = showDisk;
             _lblDisk.Visible = showDisk;
             _lblDiskSub.Visible = showDisk;
-            _btnDiskExpand.Visible = showDisk && enhancedDisk;
-            _lblHddStatus.Visible = showHddStatus;
-            if (_pnlDiskLegend != null) _pnlDiskLegend.Visible = showDisk && diskLegendOpen;
-            _pnlDiskGraph.Visible = showDisk;
+            _btnDiskExpand.Visible = showDisk && enhancedDisk && !isDiskCollapsed;
+            _lblHddStatus.Visible = showHddStatus && !isDiskCollapsed;
+            if (_pnlDiskLegend != null) _pnlDiskLegend.Visible = showDisk && diskLegendOpen && !isDiskCollapsed;
+            _pnlDiskGraph.Visible = showDisk && !isDiskCollapsed;
 
             if (showDisk)
             {
                 _sepDisk.Location = new Point(0, curY);
-                _sepDisk.Size = new Size(w, 3);
-                curY += 5;
+                _sepDisk.Size = new Size(w, sepH);
+                curY += sepGap;
 
                 _lblDisk.Location = new Point(marginX, curY);
+                int diskLabelW = Math.Max((int)(65 * scale), _lblDisk.PreferredWidth);
 
                 int rightOffset = 0;
-                if (enhancedDisk)
+                int expandW = (int)Math.Round(20 * scale);
+                if (!isDiskCollapsed && enhancedDisk)
                 {
-                    _btnDiskExpand.Location = new Point(marginX + contentW - 20, curY + 1);
+                    _btnDiskExpand.Location = new Point(marginX + contentW - expandW, curY + 1);
+                    _btnDiskExpand.Size = new Size(expandW, (int)Math.Round(18 * scale));
                     _btnDiskExpand.Text = _settings.DiskLegendExpanded ? "▲" : "▼";
                     _toolTip.SetToolTip(_btnDiskExpand, _settings.DiskLegendExpanded ? Loc.Get("DiskLegendCollapse") : Loc.Get("DiskLegendExpand"));
-                    rightOffset += 24;
+                    rightOffset += expandW + (int)Math.Round(4 * scale);
                 }
 
-                if (showHddStatus)
+                if (!isDiskCollapsed && showHddStatus)
                 {
-                    _lblHddStatus.Location = new Point(marginX + contentW - rightOffset - 18, curY + 1);
-                    rightOffset += 22;
+                    int hddStatW = (int)Math.Round(18 * scale);
+                    _lblHddStatus.Location = new Point(marginX + contentW - rightOffset - hddStatW, curY + 1);
+                    _lblHddStatus.Size = new Size(hddStatW, (int)Math.Round(18 * scale));
+                    rightOffset += hddStatW + (int)Math.Round(4 * scale);
                 }
 
-                _lblDiskSub.Location = new Point(marginX + 95, curY);
-                _lblDiskSub.Size = new Size(Math.Max(50, contentW - 95 - rightOffset), 20);
-                curY += 20;
+                _lblDiskSub.Location = new Point(marginX + diskLabelW + (int)Math.Round(6 * scale), curY);
+                _lblDiskSub.Size = new Size(Math.Max(50, contentW - diskLabelW - (int)Math.Round(6 * scale) - rightOffset), headerRowH);
+                curY += headerRowH;
 
-                if (diskLegendOpen && _pnlDiskLegend != null)
+                if (!isDiskCollapsed)
                 {
-                    _pnlDiskLegend.Location = new Point(marginX, curY);
-                    _pnlDiskLegend.Size = new Size(contentW, diskLegendH);
-                    _pnlDiskLegend.UpdateLayout();
-                    curY += diskLegendH + 4;
-                }
+                    if (diskLegendOpen && _pnlDiskLegend != null)
+                    {
+                        _pnlDiskLegend.UiScale = scale;
+                        _pnlDiskLegend.Location = new Point(marginX, curY);
+                        _pnlDiskLegend.Size = new Size(contentW, diskLegendH);
+                        _pnlDiskLegend.UpdateLayout();
+                        curY += diskLegendH + (int)Math.Round(4 * scale);
+                    }
 
-                _pnlDiskGraph.Location = new Point(marginX, curY);
-                _pnlDiskGraph.Size = new Size(contentW, graphH);
-                curY += graphH + (showFans ? 6 : 0);
+                    _pnlDiskGraph.Location = new Point(marginX, curY);
+                    _pnlDiskGraph.Size = new Size(contentW, graphH);
+                    curY += graphH + (showFans ? (int)Math.Round(6 * scale) : 0);
+                }
+                else
+                {
+                    curY += (int)Math.Round(4 * scale);
+                }
             }
 
             // --- FANS ---
+            bool isFansCollapsed = _settings.SectionFansCollapsed;
             _sepFans.Visible = showFans;
             _lblFans.Visible = showFans;
             _lblFansSub.Visible = showFans;
-            _pnlFansGraph.Visible = showFans;
+            _pnlFansGraph.Visible = showFans && !isFansCollapsed;
 
             if (showFans)
             {
                 _sepFans.Location = new Point(0, curY);
-                _sepFans.Size = new Size(w, 3);
-                curY += 6;
+                _sepFans.Size = new Size(w, sepH);
+                curY += (int)Math.Round(6 * scale);
 
                 _lblFans.Location = new Point(marginX, curY);
-                int fansLabelW = Math.Max(70, _lblFans.PreferredWidth);
-                _lblFansSub.Location = new Point(marginX + fansLabelW + 8, curY);
-                _lblFansSub.Size = new Size(Math.Max(10, contentW - (fansLabelW + 8)), 18);
-                curY += 24;
+                int fansLabelW = Math.Max((int)(70 * scale), _lblFans.PreferredWidth);
+                _lblFansSub.Location = new Point(marginX + fansLabelW + (int)Math.Round(8 * scale), curY);
+                _lblFansSub.Size = new Size(Math.Max(10, contentW - (fansLabelW + (int)Math.Round(8 * scale))), (int)Math.Round(18 * scale));
+                curY += (int)Math.Round(24 * scale);
 
-                _pnlFansGraph.Location = new Point(marginX, curY);
-                _pnlFansGraph.Size = new Size(contentW, fanH);
+                if (!isFansCollapsed)
+                {
+                    _pnlFansGraph.Location = new Point(marginX, curY);
+                    _pnlFansGraph.Size = new Size(contentW, fanH);
+                }
+                else
+                {
+                    curY += (int)Math.Round(4 * scale);
+                }
             }
         }
 
@@ -1220,6 +1516,7 @@ namespace RyzenQuietPro
             if (_settingsForm == null || _settingsForm.IsDisposed)
             {
                 _settingsForm = new SettingsForm(_hardware, _settings, () => {
+                    ApplyUiScale(true);
                     _hardware.Fans.DemoMode = _settings.EnableFanDemo;
                     _hardware.Fans.SetEnabled(_settings.EnableFanAddon);
                     _hardware.Stopwatch.SyncWithSettings(_settings);
@@ -1264,6 +1561,32 @@ namespace RyzenQuietPro
             {
                 _settingsForm.BringToFront();
                 _settingsForm.Activate();
+            }
+        }
+
+        private string? _lastScreenDeviceName;
+
+        protected override void OnLocationChanged(EventArgs e)
+        {
+            base.OnLocationChanged(e);
+            if (!_isInitialized) return;
+
+            if (_settings.AutoUiScale)
+            {
+                var curScreen = Screen.FromControl(this);
+                if (_lastScreenDeviceName != null && !string.Equals(_lastScreenDeviceName, curScreen.DeviceName, StringComparison.OrdinalIgnoreCase))
+                {
+                    _lastScreenDeviceName = curScreen.DeviceName;
+                    float newScale = GetEffectiveUiScale(curScreen);
+                    if (Math.Abs(newScale - _currentUiScale) > 0.01f)
+                    {
+                        ApplyUiScale(true);
+                    }
+                }
+                else
+                {
+                    _lastScreenDeviceName = curScreen.DeviceName;
+                }
             }
         }
 
@@ -1322,9 +1645,10 @@ namespace RyzenQuietPro
             return new Label
             {
                 Text = text,
-                Font = new Font("Segoe UI", 9.5f, FontStyle.Bold),
+                Font = new Font("Segoe UI", (float)Math.Max(5.5, Math.Round(9.5f * _currentUiScale, 1)), FontStyle.Bold),
                 ForeColor = color,
-                AutoSize = true
+                AutoSize = true,
+                Cursor = Cursors.Hand
             };
         }
 
@@ -1333,7 +1657,7 @@ namespace RyzenQuietPro
             return new Label
             {
                 Text = text,
-                Font = new Font("Segoe UI", 8.0f),
+                Font = new Font("Segoe UI", (float)Math.Max(4.8, Math.Round(8.0f * _currentUiScale, 1))),
                 ForeColor = Color.FromArgb(165, 165, 180),
                 TextAlign = ContentAlignment.MiddleRight,
                 AutoEllipsis = true
@@ -1345,7 +1669,7 @@ namespace RyzenQuietPro
             var btn = new Button
             {
                 Text = text,
-                Font = new Font("Segoe UI", 7.5f, FontStyle.Bold),
+                Font = new Font("Segoe UI", (float)Math.Max(4.8, Math.Round(7.0f * _currentUiScale, 1)), FontStyle.Bold),
                 ForeColor = foreColor,
                 BackColor = Color.FromArgb(28, 28, 36),
                 FlatStyle = FlatStyle.Flat,
@@ -1416,14 +1740,15 @@ namespace RyzenQuietPro
         {
             if (_stopwatchRowControls.Count == 0) return;
 
+            float scale = _currentUiScale;
             int actionBtnCount = 4;
-            int btnGap = 4;
-            int scaleBtnW = 54;
-            int actionBtnW = 36;
-            int btnH = 26;
+            int btnGap = (int)Math.Max(2, Math.Round(3 * scale));
+            int scaleBtnW = (int)Math.Max(26, Math.Round(44 * scale));
+            int actionBtnW = (int)Math.Max(18, Math.Round(30 * scale));
+            int btnH = (int)Math.Max(16, Math.Round(22 * scale));
 
             int totalButtonsW = (actionBtnW * actionBtnCount) + (btnGap * actionBtnCount) + scaleBtnW;
-            int startX = Math.Max(140, panelW - totalButtonsW - 4);
+            int startX = Math.Max((int)Math.Round(95 * scale), panelW - totalButtonsW - (int)Math.Round(4 * scale));
 
             for (int i = 0; i < _stopwatchRowControls.Count; i++)
             {
@@ -1605,12 +1930,19 @@ namespace RyzenQuietPro
             var items = _hardware.Stopwatch.Items.Where(i => i.Profile.IsVisible).ToList();
             if (items.Count == 0) return;
 
-            int swRowH = 50;
-            int swGap = 4;
+            int swRowH = (int)Math.Round(50 * _currentUiScale);
+            int swGap = (int)Math.Round(4 * _currentUiScale);
 
-            using var fontTime = new Font("Consolas", 15f, FontStyle.Bold);
-            using var fontSub = new Font("Segoe UI", 8.0f);
+            using var fontTime = new Font("Consolas", (float)Math.Max(7.5, Math.Round(13.0f * _currentUiScale, 1)), FontStyle.Bold);
+            using var fontSub = new Font("Segoe UI", (float)Math.Max(4.8, Math.Round(7.5f * _currentUiScale, 1)));
             using var borderPen = new Pen(Color.FromArgb(36, 36, 46), 1f);
+
+            int actionBtnW = (int)Math.Max(18, Math.Round(30 * _currentUiScale));
+            int scaleBtnW = (int)Math.Max(26, Math.Round(44 * _currentUiScale));
+            int btnGap = (int)Math.Max(2, Math.Round(3 * _currentUiScale));
+            int totalButtonsW = (actionBtnW * 4) + (btnGap * 4) + scaleBtnW;
+            int startX = Math.Max((int)Math.Round(95 * _currentUiScale), w - totalButtonsW - (int)Math.Round(4 * _currentUiScale));
+            int maxTextW = Math.Max(30, startX - (int)Math.Round(14 * _currentUiScale));
 
             for (int i = 0; i < items.Count; i++)
             {
@@ -1623,7 +1955,7 @@ namespace RyzenQuietPro
                 // Left color accent bar
                 using (var colorBrush = new SolidBrush(item.AccentColor))
                 {
-                    g.FillRectangle(colorBrush, 2, rowY + 6, 3, swRowH - 12);
+                    g.FillRectangle(colorBrush, 2, rowY + (int)Math.Round(6 * _currentUiScale), 3, swRowH - (int)Math.Round(12 * _currentUiScale));
                 }
 
                 // Time String
@@ -1650,12 +1982,12 @@ namespace RyzenQuietPro
                 if (item.IsRunning)
                 {
                     using var glowBrush = new SolidBrush(Color.FromArgb(45, digitColor.R, digitColor.G, digitColor.B));
-                    g.DrawString(timeStr, fontTime, glowBrush, 11, rowY + 5);
+                    g.DrawString(timeStr, fontTime, glowBrush, (int)Math.Round(11 * _currentUiScale), rowY + (int)Math.Round(5 * _currentUiScale));
                 }
 
                 using (var brush = new SolidBrush(digitColor))
                 {
-                    g.DrawString(timeStr, fontTime, brush, 10, rowY + 4);
+                    g.DrawString(timeStr, fontTime, brush, (int)Math.Round(10 * _currentUiScale), rowY + (int)Math.Round(4 * _currentUiScale));
                 }
 
                 // Subtitle: Target Program / Process Name (clean text, no broken glyphs)
@@ -1688,10 +2020,7 @@ namespace RyzenQuietPro
                 }
 
                 // Clip subtitle before buttons
-                int totalButtonsW = (36 * 4) + (4 * 4) + 54;
-                int startX = Math.Max(140, w - totalButtonsW - 4);
-                int maxTextW = Math.Max(50, startX - 15);
-                var subRect = new RectangleF(10, rowY + 28, maxTextW, 18);
+                var subRect = new RectangleF((int)Math.Round(10 * _currentUiScale), rowY + (int)Math.Round(26 * _currentUiScale), maxTextW, (int)Math.Round(18 * _currentUiScale));
                 using (var subBrush = new SolidBrush(Color.FromArgb(56, 189, 248)))
                 using (var sf = new StringFormat { Trimming = StringTrimming.EllipsisCharacter, FormatFlags = StringFormatFlags.NoWrap })
                 {
@@ -1711,6 +2040,7 @@ namespace RyzenQuietPro
             public string MultiGpuText { get; set; } = "";
             public bool IsMultiGpu { get; set; } = false;
             public bool ShowTempSquare { get; set; } = true;
+            public float UiScale { get; set; } = 1.0f;
 
             public GpuSubHeaderPanel()
             {
@@ -1729,7 +2059,7 @@ namespace RyzenQuietPro
                 int h = this.Height;
                 if (w <= 0 || h <= 0) return;
 
-                using var font = new Font("Segoe UI", 8.0f);
+                using var font = new Font("Segoe UI", (float)Math.Max(4.8, Math.Round(8.0f * UiScale, 1)));
 
                 if (IsMultiGpu)
                 {
@@ -1756,7 +2086,7 @@ namespace RyzenQuietPro
 
                     if (ShowTempSquare)
                     {
-                        int sqSize = 8;
+                        int sqSize = (int)Math.Max(5, Math.Round(8 * UiScale));
                         int sqX = curRight - sqSize - 4;
                         int sqY = (h - sqSize) / 2;
 
@@ -1848,6 +2178,7 @@ namespace RyzenQuietPro
             private int _selectedDriveIndex = -1;
 
             public int ExpandedExtraHeight => (_selectedDriveIndex >= 0 && _selectedDriveIndex < _hardware.Disk.Drives.Count) ? 84 : 0;
+            public float UiScale { get; set; } = 1.0f;
 
             public DiskLegendPanel(HardwareMonitor hardware, AppSettings settings, Action onDiskToggled, Action<bool> onSelectionChanged)
             {
@@ -1939,8 +2270,8 @@ namespace RyzenQuietPro
                 int rowH = 22;
                 int w = this.ClientSize.Width;
 
-                using var fontBold = new Font("Segoe UI", 7.5f, FontStyle.Bold);
-                using var fontRegular = new Font("Segoe UI", 7.5f);
+                using var fontBold = new Font("Segoe UI", (float)Math.Max(4.8, Math.Round(7.5f * UiScale, 1)), FontStyle.Bold);
+                using var fontRegular = new Font("Segoe UI", (float)Math.Max(4.8, Math.Round(7.5f * UiScale, 1)));
 
                 for (int i = 0; i < drives.Count; i++)
                 {
@@ -2040,7 +2371,7 @@ namespace RyzenQuietPro
 
                         string ltr = !string.IsNullOrEmpty(selectedDrive.DriveLetters) ? selectedDrive.DriveLetters : $"#{selectedDrive.PhysicalIndex}";
                         string headerTitle = $"{Loc.Get("DiskProcessesTitle")} [{ltr}]";
-                        using var fontHeader = new Font("Segoe UI", 7.5f, FontStyle.Bold);
+                        using var fontHeader = new Font("Segoe UI", (float)Math.Max(4.8, Math.Round(7.5f * UiScale, 1)), FontStyle.Bold);
                         TextRenderer.DrawText(g, headerTitle, fontHeader, new Point(cardRect.X + 8, cardRect.Y + 3),
                             Color.FromArgb(56, 189, 248), TextFormatFlags.NoPadding);
 
@@ -2049,7 +2380,7 @@ namespace RyzenQuietPro
                         using var resmonPen = new Pen(Color.FromArgb(60, 70, 90), 1f);
                         g.FillRectangle(resmonBg, resmonRect);
                         g.DrawRectangle(resmonPen, resmonRect);
-                        using var fontResmon = new Font("Segoe UI", 7.0f);
+                        using var fontResmon = new Font("Segoe UI", (float)Math.Max(4.8, Math.Round(7.0f * UiScale, 1)));
                         TextRenderer.DrawText(g, Loc.Get("ResmonBtn"), fontResmon, resmonRect,
                             Color.FromArgb(180, 190, 210), TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
 
@@ -2057,8 +2388,8 @@ namespace RyzenQuietPro
                         if (topIo.Count > 0)
                         {
                             int maxP = Math.Min(3, topIo.Count);
-                            using var fontProc = new Font("Segoe UI", 7.2f);
-                            using var fontBoldMetrics = new Font("Segoe UI", 7.2f, FontStyle.Bold);
+                            using var fontProc = new Font("Segoe UI", (float)Math.Max(4.8, Math.Round(7.2f * UiScale, 1)));
+                            using var fontBoldMetrics = new Font("Segoe UI", (float)Math.Max(4.8, Math.Round(7.2f * UiScale, 1)), FontStyle.Bold);
 
                             for (int p = 0; p < maxP; p++)
                             {
@@ -2238,12 +2569,29 @@ namespace RyzenQuietPro
                 }
             }
 
+            private bool _isHovered = false;
+
             public ModuleSeparator(Color accentColor)
             {
                 _accentColor = accentColor;
                 this.DoubleBuffered = true;
                 this.SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer, true);
                 this.Height = 3;
+                this.Cursor = Cursors.Hand;
+            }
+
+            protected override void OnMouseEnter(EventArgs e)
+            {
+                base.OnMouseEnter(e);
+                _isHovered = true;
+                this.Invalidate();
+            }
+
+            protected override void OnMouseLeave(EventArgs e)
+            {
+                base.OnMouseLeave(e);
+                _isHovered = false;
+                this.Invalidate();
             }
 
             protected override void OnPaint(PaintEventArgs e)
@@ -2258,8 +2606,9 @@ namespace RyzenQuietPro
                     g.DrawLine(darkPen, 0, 0, w, 0);
                 }
 
-                // 2. Accent color line of the block
-                using (var accentPen = new Pen(_accentColor, 1.5f))
+                // 2. Accent color line of the block (glow on hover)
+                Color lineColor = _isHovered ? ControlPaint.Light(_accentColor, 0.35f) : _accentColor;
+                using (var accentPen = new Pen(lineColor, _isHovered ? 2.0f : 1.5f))
                 {
                     g.DrawLine(accentPen, 0, 1.5f, w, 1.5f);
                 }
@@ -2492,6 +2841,22 @@ namespace RyzenQuietPro
             {
                 _toolTip.SetToolTip(_lblHddStatus, $"{Loc.Get("HddScheduleModule")}: {_hardware.HddSchedule.GetStatusString()}");
             }
+
+            string sectionTip = Loc.Get("SectionToggleCollapse");
+            if (_lblStopwatch != null) _toolTip.SetToolTip(_lblStopwatch, sectionTip);
+            if (_sepStopwatch != null) _toolTip.SetToolTip(_sepStopwatch, sectionTip);
+            if (_lblCpu != null) _toolTip.SetToolTip(_lblCpu, sectionTip);
+            if (_sepCpu != null) _toolTip.SetToolTip(_sepCpu, sectionTip);
+            if (_lblRam != null) _toolTip.SetToolTip(_lblRam, sectionTip);
+            if (_sepRam != null) _toolTip.SetToolTip(_sepRam, sectionTip);
+            if (_lblGpu != null) _toolTip.SetToolTip(_lblGpu, sectionTip);
+            if (_sepGpu != null) _toolTip.SetToolTip(_sepGpu, sectionTip);
+            if (_lblVram != null) _toolTip.SetToolTip(_lblVram, sectionTip);
+            if (_sepVram != null) _toolTip.SetToolTip(_sepVram, sectionTip);
+            if (_lblDisk != null) _toolTip.SetToolTip(_lblDisk, sectionTip);
+            if (_sepDisk != null) _toolTip.SetToolTip(_sepDisk, sectionTip);
+            if (_lblFans != null) _toolTip.SetToolTip(_lblFans, sectionTip);
+            if (_sepFans != null) _toolTip.SetToolTip(_sepFans, sectionTip);
         }
 
         private void OnLanguageChanged()
@@ -2505,7 +2870,7 @@ namespace RyzenQuietPro
             UpdateModeUI();
             if (_lblTitle != null) _lblTitle.Text = Loc.Get("AppTitle");
             if (_chkShowAllGpus != null) _chkShowAllGpus.Text = Loc.Get("ShowAllGpus");
-            if (_lblStopwatch != null) _lblStopwatch.Text = "⏱ " + Loc.Get("Stopwatch");
+            if (_lblStopwatch != null) _lblStopwatch.Text = (_settings.SectionStopwatchCollapsed ? "▸ " : "▾ ") + "⏱ " + Loc.Get("Stopwatch");
             foreach (var rc in _stopwatchRowControls)
             {
                 rc.BtnStart.Text = Loc.Get("StopwatchStart");
@@ -2541,6 +2906,16 @@ namespace RyzenQuietPro
 
                 if (targetScreen != null)
                 {
+                    if (_settings.AutoUiScale)
+                    {
+                        float targetScale = GetEffectiveUiScale(targetScreen);
+                        if (Math.Abs(targetScale - _currentUiScale) > 0.01f)
+                        {
+                            _currentUiScale = targetScale;
+                            ApplyUiScale(true);
+                        }
+                    }
+
                     var scr = targetScreen;
                     if (this.Width > scr.WorkingArea.Width)
                     {
@@ -2578,7 +2953,17 @@ namespace RyzenQuietPro
 
         private void PositionAtTray()
         {
-            var workingArea = Screen.PrimaryScreen?.WorkingArea ?? new Rectangle(0, 0, 1920, 1080);
+            var curScreen = Screen.PrimaryScreen;
+            if (_settings.AutoUiScale && curScreen != null)
+            {
+                float targetScale = GetEffectiveUiScale(curScreen);
+                if (Math.Abs(targetScale - _currentUiScale) > 0.01f)
+                {
+                    _currentUiScale = targetScale;
+                    ApplyUiScale(true);
+                }
+            }
+            var workingArea = curScreen?.WorkingArea ?? new Rectangle(0, 0, 1920, 1080);
             if (this.Width > workingArea.Width)
             {
                 this.Width = workingArea.Width;
@@ -2597,6 +2982,10 @@ namespace RyzenQuietPro
             // 0. Stopwatch
             if (_settings.ShowStopwatch)
             {
+                if (_lblStopwatch != null)
+                {
+                    _lblStopwatch.Text = $"{(_settings.SectionStopwatchCollapsed ? "▸ " : "▾ ")}⏱ {Loc.Get("Stopwatch")}";
+                }
                 UpdateStopwatchSubHeader();
                 _pnlStopwatch?.Invalidate();
             }
@@ -2604,7 +2993,8 @@ namespace RyzenQuietPro
             // 1. CPU
             float cpuUsage = _hardware.Cpu.TotalCpuUsage;
             float freqGhz = _hardware.Cpu.CurrentFrequencyMHz / 1000f;
-            _lblCpu.Text = $"{Loc.Get("Cpu")}: {cpuUsage:F0}%";
+            string cpuArrow = _settings.SectionCpuCollapsed ? "▸ " : "▾ ";
+            _lblCpu.Text = $"{cpuArrow}{Loc.Get("Cpu")}: {cpuUsage:F0}%";
             _lblCpu.ForeColor = _isQuietMode ? Color.FromArgb(80, 220, 140) : Color.FromArgb(250, 180, 80);
             string cpuName = _hardware.Cpu.CpuShortName;
             string cpuCoreInfo = (freqGhz > 0.5f)
@@ -2623,11 +3013,13 @@ namespace RyzenQuietPro
 
             // 2. RAM
             float ramUsage = _hardware.Ram.MemoryLoadPercent;
-            _lblRam.Text = $"{Loc.Get("Ram")}: {ramUsage:F0}%";
+            string ramArrow = _settings.SectionRamCollapsed ? "▸ " : "▾ ";
+            _lblRam.Text = $"{ramArrow}{Loc.Get("Ram")}: {ramUsage:F0}%";
             string ramSpecs = !string.IsNullOrEmpty(_hardware.Ram.MemorySpecs) ? $"{_hardware.Ram.MemorySpecs} | " : "";
             _lblRamSub.Text = $"{ramSpecs}{_hardware.Ram.UsedGb:F1} / {_hardware.Ram.TotalGb:F1} GB";
 
             // 3. GPU
+            string gpuArrow = _settings.SectionGpuCollapsed ? "▸ " : "▾ ";
             bool multiGpuActive = _hardware.Gpu.GpuCount > 1 && _settings.ShowAllGpus;
             if (multiGpuActive)
             {
@@ -2656,12 +3048,13 @@ namespace RyzenQuietPro
                     }
                 }
                 avgGpu /= devs.Count;
-                _lblGpu.Text = $"{Loc.Get("Gpu")}: {avgGpu:F0}%";
+                _lblGpu.Text = $"{gpuArrow}{Loc.Get("Gpu")}: {avgGpu:F0}%";
                 _pnlGpuSub.IsMultiGpu = true;
                 _pnlGpuSub.MultiGpuText = gpuDetail;
                 _pnlGpuSub.Invalidate();
 
                 // 4. VRAM
+                string vramArrow = _settings.SectionVramCollapsed ? "▸ " : "▾ ";
                 ulong totalVramBytes = 0;
                 ulong usedVramBytes = 0;
                 string vramDetail = "";
@@ -2676,13 +3069,13 @@ namespace RyzenQuietPro
                 double totalUsedGb = usedVramBytes / (1024.0 * 1024 * 1024);
                 double totalTotalGb = totalVramBytes / (1024.0 * 1024 * 1024);
                 string vramType = _hardware.Gpu.VramType;
-                _lblVram.Text = $"{Loc.Get("Vram")}: {totalVramPercent:F0}%";
+                _lblVram.Text = $"{vramArrow}{Loc.Get("Vram")}: {totalVramPercent:F0}%";
                 _lblVramSub.Text = $"{vramType} | {totalUsedGb:F1}/{totalTotalGb:F0} GB  ({vramDetail})";
             }
             else
             {
                 float gpuUsage = _hardware.Gpu.GpuLoadPercent;
-                _lblGpu.Text = $"{Loc.Get("Gpu")}: {gpuUsage:F0}%";
+                _lblGpu.Text = $"{gpuArrow}{Loc.Get("Gpu")}: {gpuUsage:F0}%";
 
                 int gpuFanRpm = -1;
                 if (_hardware.Fans.IsConnected && !_hardware.Fans.DemoMode)
@@ -2705,14 +3098,16 @@ namespace RyzenQuietPro
                 _pnlGpuSub.Invalidate();
 
                 // 4. VRAM
+                string vramArrow = _settings.SectionVramCollapsed ? "▸ " : "▾ ";
                 float vramUsage = _hardware.Gpu.VramLoadPercent;
                 string vramType = _hardware.Gpu.VramType;
-                _lblVram.Text = $"{Loc.Get("Vram")}: {vramUsage:F0}%";
+                _lblVram.Text = $"{vramArrow}{Loc.Get("Vram")}: {vramUsage:F0}%";
                 _lblVramSub.Text = $"{vramType} | {_hardware.Gpu.VramUsedGb:F1} / {_hardware.Gpu.VramTotalGb:F1} GB";
             }
 
             // 5. DISK
-            _lblDisk.Text = Loc.Get("Disk");
+            string diskArrow = _settings.SectionDiskCollapsed ? "▸ " : "▾ ";
+            _lblDisk.Text = $"{diskArrow}{Loc.Get("Disk")}";
             string diskIdleText = (_hardware.Disk.PeakActiveDisk == "Idle") ? Loc.Get("Idle") : _hardware.Disk.PeakActiveDisk;
             _lblDiskSub.Text = $"R:{_hardware.Disk.ReadMbPerSec:F1} W:{_hardware.Disk.WriteMbPerSec:F1} MB/s [{diskIdleText}]";
             if (_settings.HddScheduleEnabled)
@@ -2728,25 +3123,42 @@ namespace RyzenQuietPro
             // 6. FANS
             if (_settings.ShowFanGraph)
             {
+                string fansArrow = _settings.SectionFansCollapsed ? "▸ " : "▾ ";
                 var fans = _hardware.Fans.Fans;
                 if (_hardware.Fans.IsConnected && fans.Count > 0)
                 {
                     if (_hardware.Fans.DemoMode)
                     {
-                        _lblFans.Text = $"{Loc.Get("Fans")} [DEMO]";
+                        _lblFans.Text = $"{fansArrow}{Loc.Get("Fans")} [DEMO]";
                         _lblFans.ForeColor = Color.FromArgb(245, 158, 11);
                         _lblFansSub.Text = Loc.Get("FanDemoModeHint");
                     }
                     else
                     {
-                        _lblFans.Text = Loc.Get("Fans");
+                        _lblFans.Text = $"{fansArrow}{Loc.Get("Fans")}";
                         _lblFans.ForeColor = Color.FromArgb(14, 165, 233);
-                        _lblFansSub.Text = "";
+                        if (_settings.SectionFansCollapsed)
+                        {
+                            var visibleFans = fans.Where(f => _settings.IsFanVisible(f.Id, f.Name)).ToList();
+                            if (visibleFans.Count > 0)
+                            {
+                                int maxRpm = visibleFans.Max(f => f.CurrentRpm);
+                                _lblFansSub.Text = $"{visibleFans.Count} {Loc.Get("FansCountSuffix")} | Max: {maxRpm:N0} RPM";
+                            }
+                            else
+                            {
+                                _lblFansSub.Text = "";
+                            }
+                        }
+                        else
+                        {
+                            _lblFansSub.Text = "";
+                        }
                     }
                 }
                 else
                 {
-                    _lblFans.Text = $"{Loc.Get("Fans")}: --";
+                    _lblFans.Text = $"{fansArrow}{Loc.Get("Fans")}: --";
                     _lblFans.ForeColor = Color.FromArgb(14, 165, 233);
                     string msg = _hardware.Fans.StatusMessage;
                     if (_hardware.Fans.IsConnected && fans.Count == 0)
@@ -2874,12 +3286,13 @@ namespace RyzenQuietPro
                 _ => "1x (100%)"
             };
 
-            using var font = new Font("Segoe UI", 7.0f, FontStyle.Bold);
+            float uiScale = _currentUiScale;
+            using var font = new Font("Segoe UI", (float)Math.Max(5.0, Math.Round(7.0f * uiScale, 1)), FontStyle.Bold);
             var sz = g.MeasureString(badgeText, font);
-            int badgeW = (int)Math.Ceiling(sz.Width) + 8;
-            int badgeH = 15;
-            int badgeX = w - badgeW - 6;
-            int badgeY = 3;
+            int badgeW = (int)Math.Ceiling(sz.Width) + (int)Math.Round(6 * uiScale);
+            int badgeH = (int)Math.Max(10, Math.Round(15 * uiScale));
+            int badgeX = w - badgeW - (int)Math.Round(6 * uiScale);
+            int badgeY = (int)Math.Round(2 * uiScale);
 
             var badgeRect = new Rectangle(badgeX, badgeY, badgeW, badgeH);
 
@@ -3365,11 +3778,12 @@ namespace RyzenQuietPro
                 return;
             }
 
-            float fanScale = _settings.FanScale;
-            int cardW = (int)Math.Round(76 + 32 * (fanScale - 1f));
+            float scale = _currentUiScale;
+            float fanScale = _settings.FanScale * scale;
+            int cardW = (int)Math.Round((76 + 32 * (_settings.FanScale - 1f)) * scale);
             int cardH = Math.Min(h - 4, (int)Math.Round(72 * fanScale));
-            int gap = Math.Max(5, (int)Math.Round(6 * fanScale));
-            int padX = 6;
+            int gap = Math.Max(3, (int)Math.Round(6 * fanScale));
+            int padX = (int)Math.Max(3, Math.Round(6 * scale));
             int totalW = padX + (fans.Count * cardW) + (Math.Max(0, fans.Count - 1) * gap) + padX;
 
             if (totalW > w)
@@ -3387,8 +3801,8 @@ namespace RyzenQuietPro
             g.SetClip(new Rectangle(0, 0, w, h));
 
             int startX = padX - _fanScrollX;
-            float fontSizeName = Math.Clamp(7.5f * (float)Math.Sqrt(fanScale), 7.5f, 11f);
-            float fontSizeRpm = Math.Clamp(7f * (float)Math.Sqrt(fanScale), 7f, 10f);
+            float fontSizeName = (float)Math.Max(4.8, Math.Round(Math.Clamp(7.5f * (float)Math.Sqrt(_settings.FanScale), 7.5f, 11f) * scale, 1));
+            float fontSizeRpm = (float)Math.Max(4.8, Math.Round(Math.Clamp(7f * (float)Math.Sqrt(_settings.FanScale), 7f, 10f) * scale, 1));
             using var fontName = new Font("Segoe UI", fontSizeName, FontStyle.Bold);
             using var fontRpm = new Font("Segoe UI", fontSizeRpm, FontStyle.Regular);
 
@@ -3445,15 +3859,15 @@ namespace RyzenQuietPro
 
                 // Fan geometry
                 float cx = cardX + (cardW / 2f);
-                float fanRadius = Math.Clamp((cardH - 30f) * 0.46f, 16f, 36f);
-                float cy = cardY + 4f + fanRadius;
+                float fanRadius = Math.Clamp((cardH - (int)Math.Round(26f * scale)) * 0.46f, 10f * scale, 34f * scale);
+                float cy = cardY + (int)Math.Round(3f * scale) + fanRadius;
 
                 // Outer shroud
                 using (var shroudBg = new SolidBrush(Color.FromArgb(18, 19, 24)))
                 {
                     g.FillEllipse(shroudBg, cx - fanRadius, cy - fanRadius, fanRadius * 2, fanRadius * 2);
                 }
-                using (var shroudPen = new Pen(Color.FromArgb(46, 48, 60), Math.Max(1f, 1f * fanScale)))
+                using (var shroudPen = new Pen(Color.FromArgb(46, 48, 60), Math.Max(0.8f, 1f * fanScale)))
                 {
                     g.DrawEllipse(shroudPen, cx - fanRadius, cy - fanRadius, fanRadius * 2, fanRadius * 2);
                 }
@@ -3463,16 +3877,16 @@ namespace RyzenQuietPro
                 DrawFanBlades(g, cx, cy, fanRadius, bladeCount, curAngle, tierColor, rpm > 0, fanScale);
 
                 // Central hub cap
-                float hubR = 5f * fanScale;
+                float hubR = Math.Max(2.5f * scale, 4.5f * fanScale);
                 using (var hubBrush = new SolidBrush(Color.FromArgb(32, 34, 44)))
                 {
                     g.FillEllipse(hubBrush, cx - hubR, cy - hubR, hubR * 2, hubR * 2);
                 }
-                using (var hubBorder = new Pen(Color.FromArgb(60, 64, 80), Math.Max(1f, 1f * fanScale)))
+                using (var hubBorder = new Pen(Color.FromArgb(60, 64, 80), Math.Max(0.8f, 1f * fanScale)))
                 {
                     g.DrawEllipse(hubBorder, cx - hubR, cy - hubR, hubR * 2, hubR * 2);
                 }
-                float dotR = 1.5f * fanScale;
+                float dotR = Math.Max(1.0f, 1.4f * fanScale);
                 using (var dotBrush = new SolidBrush(tierColor))
                 {
                     g.FillEllipse(dotBrush, cx - dotR, cy - dotR, dotR * 2, dotR * 2);
@@ -3481,7 +3895,7 @@ namespace RyzenQuietPro
                 // Legend: Fan Name
                 string dispName = FormatFanName(f.Name);
                 var szName = g.MeasureString(dispName, fontName);
-                float textNameY = cy + fanRadius + 3f * fanScale;
+                float textNameY = cy + fanRadius + Math.Max(2f, 3f * fanScale);
                 using (var nameBrush = new SolidBrush(Color.FromArgb(235, 235, 245)))
                 {
                     g.DrawString(dispName, fontName, nameBrush, cx - (szName.Width / 2f), textNameY);
@@ -3490,7 +3904,7 @@ namespace RyzenQuietPro
                 // Legend: RPM
                 string rpmText = rpm > 0 ? $"{rpm:N0} RPM" : "0 RPM (0dB)";
                 var szRpm = g.MeasureString(rpmText, fontRpm);
-                float textRpmY = textNameY + szName.Height + 1f;
+                float textRpmY = textNameY + szName.Height + Math.Max(1f, 1f * scale);
                 using (var rpmBrush = new SolidBrush(tierColor))
                 {
                     g.DrawString(rpmText, fontRpm, rpmBrush, cx - (szRpm.Width / 2f), textRpmY);
@@ -3502,34 +3916,35 @@ namespace RyzenQuietPro
             // Horizontal scroll navigation arrows (overlaid on edges)
             if (_maxFanScroll > 0)
             {
-                using var arrowFont = new Font("Segoe UI", 9f, FontStyle.Bold);
+                using var arrowFont = new Font("Segoe UI", (float)Math.Max(5.5, Math.Round(9f * scale, 1)), FontStyle.Bold);
+                int arrowW = (int)Math.Round(22 * scale);
 
                 // Left arrow
                 if (_fanScrollX > 0)
                 {
                     using var leftBg = new LinearGradientBrush(
-                        new Rectangle(0, 0, 26, h),
+                        new Rectangle(0, 0, arrowW, h),
                         Color.FromArgb(220, 16, 16, 20),
                         Color.FromArgb(0, 16, 16, 20),
                         LinearGradientMode.Horizontal);
-                    g.FillRectangle(leftBg, 0, 0, 26, h);
+                    g.FillRectangle(leftBg, 0, 0, arrowW, h);
 
                     using var arrowBrush = new SolidBrush(Color.FromArgb(56, 189, 248));
-                    g.DrawString("◀", arrowFont, arrowBrush, 2, (h - 18) / 2);
+                    g.DrawString("◀", arrowFont, arrowBrush, 2, (h - (int)Math.Round(18 * scale)) / 2);
                 }
 
                 // Right arrow
                 if (_fanScrollX < _maxFanScroll)
                 {
                     using var rightBg = new LinearGradientBrush(
-                        new Rectangle(w - 26, 0, 26, h),
+                        new Rectangle(w - arrowW, 0, arrowW, h),
                         Color.FromArgb(0, 16, 16, 20),
                         Color.FromArgb(220, 16, 16, 20),
                         LinearGradientMode.Horizontal);
-                    g.FillRectangle(rightBg, w - 26, 0, 26, h);
+                    g.FillRectangle(rightBg, w - arrowW, 0, arrowW, h);
 
                     using var arrowBrush = new SolidBrush(Color.FromArgb(56, 189, 248));
-                    g.DrawString("▶", arrowFont, arrowBrush, w - 16, (h - 18) / 2);
+                    g.DrawString("▶", arrowFont, arrowBrush, w - arrowW + (int)Math.Round(8 * scale), (h - (int)Math.Round(18 * scale)) / 2);
                 }
             }
         }
@@ -3547,7 +3962,8 @@ namespace RyzenQuietPro
             var fans = allFans.Where(f => _settings.IsFanVisible(f.Id, f.Name)).ToList();
             if (fans.Count == 0 || !_hardware.Fans.IsConnected)
             {
-                using var font = new Font("Segoe UI", 8.25f);
+                float emptyFontSz = (float)Math.Max(5.0, Math.Round(8.25f * _currentUiScale, 1));
+                using var font = new Font("Segoe UI", emptyFontSz);
                 using var brush = new SolidBrush(Color.FromArgb(120, 130, 145));
                 string msg = _hardware.Fans.StatusMessage;
                 if (_hardware.Fans.IsConnected && fans.Count == 0)
@@ -3563,38 +3979,41 @@ namespace RyzenQuietPro
                 return;
             }
 
-            float fanScale = _settings.FanScale;
+            float scale = _currentUiScale;
+            float fanScale = _settings.FanScale * scale;
+
             int cols;
-            if (fanScale >= 1.40f)
+            if (w < (int)Math.Round(380 * scale))
             {
-                cols = Math.Max(2, (w - 4) / (int)(95 * fanScale));
-                if (w < 460) cols = 2;
+                cols = 2;
+            }
+            else if (w < (int)Math.Round(560 * scale))
+            {
+                cols = 3;
             }
             else
             {
-                cols = Math.Max(2, (w - 4) / 115);
-                if (w < 460) cols = 3;
-                if (w < 320) cols = 2;
+                cols = Math.Max(2, (w - 4) / (int)Math.Round(120 * scale));
             }
 
             int rows = (int)Math.Ceiling((double)fans.Count / cols);
             if (rows < 1) rows = 1;
 
-            int gapX = 5;
-            int gapY = 5;
-            int padX = 2;
+            int gapX = (int)Math.Max(2, Math.Round(5 * scale));
+            int gapY = (int)Math.Max(2, Math.Round(5 * scale));
+            int padX = (int)Math.Max(2, Math.Round(2 * scale));
             int cardW = (w - (padX * 2) - (gapX * (cols - 1))) / cols;
-            bool isWideCard = (cardW >= 140);
-            int cardH = isWideCard 
-                ? (int)Math.Round(48 + 20 * fanScale) 
-                : (int)Math.Round(42 + 10 * fanScale);
+            bool isWideCard = (cardW >= 135 * scale);
+            int cardH = (int)Math.Round((isWideCard 
+                ? (46 + 18 * _settings.FanScale) 
+                : (40 + 10 * _settings.FanScale)) * scale);
 
-            float fontSizeName = isWideCard 
-                ? Math.Clamp(8.25f + 1.25f * (fanScale - 1f), 8.0f, 9.5f)
-                : 7.25f;
-            float fontSizeRpm = isWideCard
-                ? Math.Clamp(7.75f + 1.25f * (fanScale - 1f), 7.5f, 9.0f)
-                : 6.75f;
+            float fontSizeName = (float)Math.Max(4.8, Math.Round((isWideCard 
+                ? Math.Clamp(8.25f + 1.25f * (_settings.FanScale - 1f), 8.0f, 9.5f)
+                : 7.25f) * scale, 1));
+            float fontSizeRpm = (float)Math.Max(4.8, Math.Round((isWideCard
+                ? Math.Clamp(7.75f + 1.25f * (_settings.FanScale - 1f), 7.5f, 9.0f)
+                : 6.75f) * scale, 1));
             using var fontName = new Font("Segoe UI", fontSizeName, FontStyle.Bold);
             using var fontRpm = new Font("Segoe UI", fontSizeRpm, FontStyle.Bold);
 
@@ -3605,9 +4024,9 @@ namespace RyzenQuietPro
                 int row = i / cols;
 
                 int cardX = padX + col * (cardW + gapX);
-                int cardY = 4 + row * (cardH + gapY);
+                int cardY = (int)Math.Round(4 * scale) + row * (cardH + gapY);
 
-                if (cardY + cardH > h + 20) break;
+                if (cardY + cardH > h + (int)Math.Round(20 * scale)) break;
 
                 int rpm = f.CurrentRpm;
                 int bladeCount;
@@ -3648,8 +4067,8 @@ namespace RyzenQuietPro
                 // Accent top stripe when spinning
                 if (rpm > 0)
                 {
-                    using var accentPen = new Pen(Color.FromArgb(180, tierColor.R, tierColor.G, tierColor.B), Math.Max(2f, 2f * fanScale));
-                    g.DrawLine(accentPen, cardX + 3, cardY + 1, cardX + cardW - 3, cardY + 1);
+                    using var accentPen = new Pen(Color.FromArgb(180, tierColor.R, tierColor.G, tierColor.B), Math.Max(1.5f, 2f * fanScale));
+                    g.DrawLine(accentPen, cardX + (int)Math.Round(3 * scale), cardY + 1, cardX + cardW - (int)Math.Round(3 * scale), cardY + 1);
                 }
 
                 _fanAngles.TryGetValue(f.Id, out float curAngle);
@@ -3664,11 +4083,14 @@ namespace RyzenQuietPro
 
                 // SIDE-BY-SIDE LAYOUT FOR ALL SCALES:
                 // Animated spinner on the left, fan name + RPM text on the right
+                // Proportionally sized fan spinner
                 float fanRadius = isWideCard 
-                    ? Math.Clamp((cardH - 18f) / 2f, 20f, 34f)
-                    : Math.Clamp((cardH - 14f) / 2f, 15f, 20f);
+                    ? Math.Clamp((cardH - (int)Math.Round(14f * scale)) / 2f, 10f * scale, 30f * scale)
+                    : Math.Clamp((cardH - (int)Math.Round(10f * scale)) / 2f, 9f * scale, 20f * scale);
 
-                float padLeft = isWideCard ? Math.Clamp(8f * fanScale, 8f, 14f) : 6f;
+                float padLeft = isWideCard 
+                    ? Math.Clamp(8f * fanScale, 6f * scale, 14f * scale) 
+                    : (5f * scale);
                 float cx = cardX + padLeft + fanRadius;
                 float cy = cardY + (cardH / 2f);
 
@@ -3677,7 +4099,7 @@ namespace RyzenQuietPro
                 {
                     g.FillEllipse(shroudBg, cx - fanRadius, cy - fanRadius, fanRadius * 2, fanRadius * 2);
                 }
-                using (var shroudPen = new Pen(Color.FromArgb(46, 48, 60), Math.Max(1.1f, 1.1f * fanScale)))
+                using (var shroudPen = new Pen(Color.FromArgb(46, 48, 60), Math.Max(0.8f, 1.1f * fanScale)))
                 {
                     g.DrawEllipse(shroudPen, cx - fanRadius, cy - fanRadius, fanRadius * 2, fanRadius * 2);
                 }
@@ -3691,20 +4113,22 @@ namespace RyzenQuietPro
                 {
                     g.FillEllipse(hubBrush, cx - hubR, cy - hubR, hubR * 2, hubR * 2);
                 }
-                using (var hubBorder = new Pen(Color.FromArgb(60, 64, 80), Math.Max(1f, 1f * fanScale)))
+                using (var hubBorder = new Pen(Color.FromArgb(60, 64, 80), Math.Max(0.8f, 1f * fanScale)))
                 {
                     g.DrawEllipse(hubBorder, cx - hubR, cy - hubR, hubR * 2, hubR * 2);
                 }
-                float dotR = Math.Max(1.5f, hubR * 0.35f);
+                float dotR = Math.Max(1.0f, hubR * 0.35f);
                 using (var dotBrush = new SolidBrush(tierColor))
                 {
                     g.FillEllipse(dotBrush, cx - dotR, cy - dotR, dotR * 2, dotR * 2);
                 }
 
                 // Text block on the right
-                float gapSpinnerToText = isWideCard ? Math.Clamp(8f * fanScale, 8f, 12f) : 6f;
+                float gapSpinnerToText = isWideCard 
+                    ? Math.Clamp(7f * fanScale, 5f * scale, 12f * scale) 
+                    : (5f * scale);
                 float textLeft = cx + fanRadius + gapSpinnerToText;
-                float availTextW = Math.Max(30f, (cardX + cardW - 3f) - textLeft);
+                float availTextW = Math.Max(25f * scale, (cardX + cardW - (int)Math.Round(3f * scale)) - textLeft);
 
                 using var sf = new StringFormat
                 {
@@ -3712,20 +4136,20 @@ namespace RyzenQuietPro
                     FormatFlags = StringFormatFlags.NoWrap
                 };
 
-                bool showSubInfo = isWideCard && fanScale >= 1.35f && !string.IsNullOrWhiteSpace(subInfo);
+                bool showSubInfo = isWideCard && _settings.FanScale >= 1.35f && !string.IsNullOrWhiteSpace(subInfo);
 
                 if (showSubInfo)
                 {
                     // 3-line layout for large magnification: Name (bold) + Sensor breakdown (small) + RPM (bold)
-                    float fontSizeSub = Math.Clamp(fontSizeName - 1.75f, 6.5f, 7.5f);
+                    float fontSizeSub = (float)Math.Max(4.8, Math.Round(Math.Clamp(fontSizeName - 1.75f * scale, 6.0f * scale, 7.5f * scale), 1));
                     using var fontSub = new Font("Segoe UI", fontSizeSub, FontStyle.Regular);
 
                     var szName = g.MeasureString(dispName, fontName);
                     var szSub = g.MeasureString(subInfo, fontSub);
                     var szRpm = g.MeasureString(rpmText, fontRpm);
 
-                    float spacing1 = Math.Clamp(2f * fanScale, 2f, 3.5f);
-                    float spacing2 = Math.Clamp(3.5f * fanScale, 3f, 5.5f);
+                    float spacing1 = Math.Clamp(2f * fanScale, 1.5f * scale, 3.5f * scale);
+                    float spacing2 = Math.Clamp(3.5f * fanScale, 2.5f * scale, 5.5f * scale);
 
                     float totalTextH = szName.Height + spacing1 + szSub.Height + spacing2 + szRpm.Height;
                     float textTopY = cy - (totalTextH / 2f);
@@ -3754,8 +4178,8 @@ namespace RyzenQuietPro
                 {
                     // 2-line layout for compact scale (3 columns or small magnification)
                     float lineSpacing = isWideCard
-                        ? Math.Clamp(5f * fanScale, 4f, 9f)
-                        : 3f;
+                        ? Math.Clamp(4f * fanScale, 3f * scale, 8f * scale)
+                        : (2.5f * scale);
 
                     var szName = g.MeasureString(dispName, fontName);
                     var szRpm = g.MeasureString(rpmText, fontRpm);
@@ -4067,7 +4491,8 @@ namespace RyzenQuietPro
 
             _hardware.Processes.IsEnabled = _settings.ShowTopProcesses || (_settings.ShowDiskGraph && _settings.EnhancedDiskMode);
 
-            int diffH = 94;
+            int diffH = (int)Math.Round(94 * _currentUiScale);
+            int minH = (int)Math.Round(350 * _currentUiScale);
             if (_settings.ShowTopProcesses)
             {
                 var screen = Screen.FromControl(this);
@@ -4080,13 +4505,13 @@ namespace RyzenQuietPro
             }
             else
             {
-                if (this.Height - diffH >= 480)
+                if (this.Height - diffH >= minH)
                 {
                     this.Height -= diffH;
                 }
                 else
                 {
-                    this.Height = 480;
+                    this.Height = minH;
                 }
             }
 
@@ -4103,12 +4528,13 @@ namespace RyzenQuietPro
             _toolTip.SetToolTip(_btnDiskExpand, _settings.DiskLegendExpanded ? Loc.Get("DiskLegendCollapse") : Loc.Get("DiskLegendExpand"));
 
             int driveCount = Math.Max(1, _hardware.Disk.Drives.Count);
-            int diskLegendH = driveCount * 22 + 4;
+            int diskLegendH = (int)Math.Round((driveCount * 22 + 4) * _currentUiScale);
+            int minH = (int)Math.Round(350 * _currentUiScale);
 
             if (_settings.DiskLegendExpanded)
             {
                 var screen = Screen.FromControl(this);
-                int addH = diskLegendH + 4;
+                int addH = diskLegendH + (int)Math.Round(4 * _currentUiScale);
                 if (this.Bottom + addH > screen.WorkingArea.Bottom)
                 {
                     int shiftUp = (this.Bottom + addH) - screen.WorkingArea.Bottom;
@@ -4118,14 +4544,14 @@ namespace RyzenQuietPro
             }
             else
             {
-                int subH = diskLegendH + 4;
-                if (this.Height - subH >= 480)
+                int subH = diskLegendH + (int)Math.Round(4 * _currentUiScale);
+                if (this.Height - subH >= minH)
                 {
                     this.Height -= subH;
                 }
                 else
                 {
-                    this.Height = 480;
+                    this.Height = minH;
                 }
             }
 
@@ -4139,9 +4565,52 @@ namespace RyzenQuietPro
             this.Invalidate();
         }
 
+        private void ToggleSectionStopwatch() => ToggleSectionCollapse(() => _settings.SectionStopwatchCollapsed = !_settings.SectionStopwatchCollapsed);
+        private void ToggleSectionCpu() => ToggleSectionCollapse(() => _settings.SectionCpuCollapsed = !_settings.SectionCpuCollapsed);
+        private void ToggleSectionRam() => ToggleSectionCollapse(() => _settings.SectionRamCollapsed = !_settings.SectionRamCollapsed);
+        private void ToggleSectionGpu() => ToggleSectionCollapse(() => _settings.SectionGpuCollapsed = !_settings.SectionGpuCollapsed);
+        private void ToggleSectionVram() => ToggleSectionCollapse(() => _settings.SectionVramCollapsed = !_settings.SectionVramCollapsed);
+        private void ToggleSectionDisk() => ToggleSectionCollapse(() => _settings.SectionDiskCollapsed = !_settings.SectionDiskCollapsed);
+        private void ToggleSectionFans() => ToggleSectionCollapse(() => _settings.SectionFansCollapsed = !_settings.SectionFansCollapsed);
+
+        private void ToggleSectionCollapse(Action toggleState)
+        {
+            float scale = _currentUiScale;
+            int oldIdealH = CalculateDefaultHeight(scale);
+            toggleState();
+            _settings.Save();
+            int newIdealH = CalculateDefaultHeight(scale);
+            int diffH = newIdealH - oldIdealH;
+
+            int minH = (int)Math.Round(160 * scale);
+            this.MinimumSize = new Size((int)Math.Round(280 * scale), minH);
+
+            if (diffH > 0)
+            {
+                var screen = Screen.FromControl(this) ?? Screen.PrimaryScreen;
+                if (screen != null && this.Bottom + diffH > screen.WorkingArea.Bottom)
+                {
+                    int shiftUp = (this.Bottom + diffH) - screen.WorkingArea.Bottom;
+                    this.Top = Math.Max(screen.WorkingArea.Top, this.Top - shiftUp);
+                }
+                this.Height += diffH;
+            }
+            else if (diffH < 0)
+            {
+                this.Height = Math.Max(minH, this.Height + diffH);
+            }
+
+            _settings.WindowHeight = this.Height;
+            _settings.Save();
+            LayoutComponents();
+            UpdateMetricsUI();
+            this.Invalidate(true);
+        }
+
         private void OnDiskSelectionLayoutChanged(bool expanded)
         {
-            int diffH = 84;
+            int diffH = (int)Math.Round(84 * _currentUiScale);
+            int minH = (int)Math.Round(350 * _currentUiScale);
             if (expanded)
             {
                 var screen = Screen.FromControl(this);
@@ -4154,13 +4623,13 @@ namespace RyzenQuietPro
             }
             else
             {
-                if (this.Height - diffH >= 480)
+                if (this.Height - diffH >= minH)
                 {
                     this.Height -= diffH;
                 }
                 else
                 {
-                    this.Height = 480;
+                    this.Height = minH;
                 }
             }
             LayoutComponents();
@@ -4239,9 +4708,11 @@ namespace RyzenQuietPro
 
             if (activeDrives.Count > 0)
             {
-                using var font = new Font("Segoe UI", 7.5f, FontStyle.Bold);
-                int badgeX = w - 8;
-                int badgeY = 3;
+                float uiScale = _currentUiScale;
+                using var font = new Font("Segoe UI", (float)Math.Max(5.0, Math.Round(7.0f * uiScale, 1)), FontStyle.Bold);
+                int badgeX = w - (int)Math.Round(8 * uiScale);
+                int badgeY = (int)Math.Round(2 * uiScale);
+                int badgeH = (int)Math.Max(10, Math.Round(15 * uiScale));
 
                 for (int i = 0; i < activeDrives.Count; i++)
                 {
@@ -4251,18 +4722,18 @@ namespace RyzenQuietPro
                     string text = $"{prefix} {drive.LoadPercent:F0}%";
                     Size sz = TextRenderer.MeasureText(g, text, font, Size.Empty, TextFormatFlags.NoPadding);
 
-                    badgeX -= sz.Width + 10;
+                    badgeX -= sz.Width + (int)Math.Round(8 * uiScale);
                     if (badgeX < 6) break;
 
                     using (var bgBrush = new SolidBrush(Color.FromArgb(190, 16, 18, 24)))
                     using (var borderPen = new Pen(drive.Color, 1f))
                     {
-                        var rect = new Rectangle(badgeX, badgeY, sz.Width + 8, 15);
+                        var rect = new Rectangle(badgeX, badgeY, sz.Width + (int)Math.Round(6 * uiScale), badgeH);
                         g.FillRectangle(bgBrush, rect);
                         g.DrawRectangle(borderPen, rect);
                     }
 
-                    TextRenderer.DrawText(g, text, font, new Point(badgeX + 4, badgeY + 1), drive.Color, TextFormatFlags.NoPadding);
+                    TextRenderer.DrawText(g, text, font, new Point(badgeX + (int)Math.Round(3 * uiScale), badgeY + 1), drive.Color, TextFormatFlags.NoPadding);
                     badgeX -= 3;
                 }
             }
@@ -4338,21 +4809,25 @@ namespace RyzenQuietPro
                 if (list.Count == 0)
                 {
                     using var brush = new SolidBrush(Color.FromArgb(140, 140, 150));
-                    using var font = new Font("Segoe UI", 8.25f, FontStyle.Italic);
+                    using var font = new Font("Segoe UI", (float)Math.Max(4.8, Math.Round(8.25f * _currentUiScale, 1)), FontStyle.Italic);
                     g.DrawString("Monitoring top CPU processes...", font, brush, 8, (h - 16) / 2);
                     return;
                 }
 
-                int rowH = 18;
+                int rowH = (int)Math.Round(18 * _currentUiScale);
                 Color cpuCol = _isQuietMode ? Color.FromArgb(80, 220, 140) : Color.FromArgb(250, 180, 80);
-                using var fontName = new Font("Segoe UI", 8.25f);
-                using var fontCpu = new Font("Segoe UI", 8.25f, FontStyle.Bold);
-                using var fontRam = new Font("Segoe UI", 8.25f);
+                float fontSize = (float)Math.Max(4.8, Math.Round(8.25f * _currentUiScale, 1));
+                using var fontName = new Font("Segoe UI", fontSize);
+                using var fontCpu = new Font("Segoe UI", fontSize, FontStyle.Bold);
+                using var fontRam = new Font("Segoe UI", fontSize);
 
                 using var brushName = new SolidBrush(Color.FromArgb(220, 220, 230));
                 using var brushCpu = new SolidBrush(cpuCol);
                 using var brushRam = new SolidBrush(Color.FromArgb(56, 189, 248)); // RAM Cyan
                 using var rowDividerPen = new Pen(Color.FromArgb(26, 26, 32), 1f);
+
+                int iconSize = Math.Max(9, (int)Math.Round(16 * _currentUiScale));
+                int iconYOffset = (rowH - iconSize) / 2;
 
                 int count = Math.Min(5, list.Count);
                 for (int i = 0; i < count; i++)
@@ -4371,31 +4846,32 @@ namespace RyzenQuietPro
                     // Icon
                     if (proc.Icon != null)
                     {
-                        g.DrawImage(proc.Icon, 4, y + 1, 16, 16);
+                        g.DrawImage(proc.Icon, 4, y + iconYOffset, iconSize, iconSize);
                     }
                     else
                     {
                         using var dotBrush = new SolidBrush(Color.FromArgb(70, 70, 85));
-                        g.FillEllipse(dotBrush, 9, y + 6, 5, 5);
+                        int dotSize = Math.Max(3, (int)Math.Round(5 * _currentUiScale));
+                        g.FillEllipse(dotBrush, 9, y + (rowH - dotSize) / 2, dotSize, dotSize);
                     }
 
                     // RAM value right-aligned at right edge
-                    int ramW = 62;
-                    int ramX = w - ramW - 6;
+                    int ramW = (int)Math.Round(62 * _currentUiScale);
+                    int ramX = w - ramW - (int)Math.Round(6 * _currentUiScale);
                     var ramRect = new Rectangle(ramX, y, ramW, rowH);
                     var ramFormat = new StringFormat { Alignment = StringAlignment.Far, LineAlignment = StringAlignment.Center };
                     g.DrawString(proc.RamFormatted, fontRam, brushRam, ramRect, ramFormat);
 
                     // CPU % right-aligned before RAM
-                    int cpuW = 58;
-                    int cpuX = ramX - cpuW - 4;
+                    int cpuW = (int)Math.Round(58 * _currentUiScale);
+                    int cpuX = ramX - cpuW - (int)Math.Round(4 * _currentUiScale);
                     var cpuRect = new Rectangle(cpuX, y, cpuW, rowH);
                     var cpuFormat = new StringFormat { Alignment = StringAlignment.Far, LineAlignment = StringAlignment.Center };
                     g.DrawString($"{proc.CpuPercent:F1}%", fontCpu, brushCpu, cpuRect, cpuFormat);
 
                     // Process Name with ellipsis
-                    int nameX = 24;
-                    int nameW = Math.Max(40, cpuX - nameX - 4);
+                    int nameX = iconSize + (int)Math.Round(8 * _currentUiScale);
+                    int nameW = Math.Max(30, cpuX - nameX - (int)Math.Round(4 * _currentUiScale));
                     var nameRect = new RectangleF(nameX, y, nameW, rowH);
                     var nameFormat = new StringFormat
                     {

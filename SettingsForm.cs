@@ -46,11 +46,13 @@ namespace RyzenQuietPro
         private Label _lblSecLang = null!;
         private Label _lblSecGraphs = null!;
         private Label _lblSecTray = null!;
+        private Label _lblSecUiScale = null!;
         private Label _lblSecSystem = null!;
         private Label _lblSecGpuTuning = null!;
 
         private readonly List<Button> _langButtons = new();
         private readonly List<Button> _trayButtons = new();
+        private readonly List<Button> _uiScalePresetButtons = new();
         private readonly List<Button> _gpuPowerPresetButtons = new();
         private readonly List<Button> _gpuFanPresetButtons = new();
 
@@ -134,6 +136,10 @@ namespace RyzenQuietPro
         private TrackBar _sliderOpacity = null!;
         private Label _lblOpacityVal = null!;
 
+        private TrackBar _sliderUiScale = null!;
+        private Label _lblUiScaleVal = null!;
+        private CheckBox _chkAutoUiScale = null!;
+
         private CheckBox _chkAlwaysOnTop = null!;
         private CheckBox _chkAutoQuiet = null!;
         private CheckBox _chkStartup = null!;
@@ -157,7 +163,7 @@ namespace RyzenQuietPro
             _onModeChangeRequested = onModeChangeRequested;
 
             bool multiGpu = _hardware.Gpu.GpuCount > 1;
-            int totalFormH = multiGpu ? 1610 : 1580;
+            int totalFormH = multiGpu ? 1740 : 1710;
 
             var screen = Screen.FromPoint(Cursor.Position);
             int availH = screen.WorkingArea.Height - 30;
@@ -1619,6 +1625,97 @@ namespace RyzenQuietPro
 
             curY += 78;
 
+            // ================= 3b. UI SCALE CARD =================
+            int cardUiScaleH = 126;
+            var cardUiScale = CreateCard(cardX, curY, cardW, cardUiScaleH);
+            _pnlBody.Controls.Add(cardUiScale);
+
+            _lblSecUiScale = CreateSectionHeader(Loc.Get("UiScale"), 12, 8);
+            cardUiScale.Controls.Add(_lblSecUiScale);
+
+            _lblUiScaleVal = new Label
+            {
+                Text = $"{_settings.UiScalePercent}%",
+                Font = new Font("Segoe UI", 9f, FontStyle.Bold),
+                ForeColor = Color.FromArgb(56, 189, 248),
+                Location = new Point(cardW - 75, 8),
+                Size = new Size(65, 20),
+                TextAlign = ContentAlignment.MiddleRight
+            };
+            cardUiScale.Controls.Add(_lblUiScaleVal);
+
+            _sliderUiScale = new TrackBar
+            {
+                AutoSize = false,
+                Minimum = 70,
+                Maximum = 140,
+                Value = Math.Clamp(_settings.UiScalePercent, 70, 140),
+                TickFrequency = 5,
+                SmallChange = 5,
+                LargeChange = 10,
+                Size = new Size(cardW - 24, 22),
+                Location = new Point(12, 30),
+                Cursor = Cursors.Hand
+            };
+            _sliderUiScale.ValueChanged += (s, e) => {
+                int val = _sliderUiScale.Value;
+                _settings.UiScalePercent = val;
+                if (_settings.AutoUiScale)
+                {
+                    _settings.AutoUiScale = false;
+                    if (_chkAutoUiScale != null) _chkAutoUiScale.Checked = false;
+                }
+                _settings.Save();
+                UpdateUiScaleButtonsHighlight();
+                _onSettingsUpdated?.Invoke();
+            };
+            cardUiScale.Controls.Add(_sliderUiScale);
+
+            // Presets row: 75%, 85%, 100%, 115%, 125%
+            int[] scalePresets = new[] { 75, 85, 100, 115, 125 };
+            int scX = 12;
+            int scW = (cardW - 24 - (scalePresets.Length - 1) * 4) / scalePresets.Length;
+            foreach (var p in scalePresets)
+            {
+                var pBtn = new Button
+                {
+                    Text = $"{p}%",
+                    Font = new Font("Segoe UI", 8.25f),
+                    Size = new Size(scW, 26),
+                    Location = new Point(scX, 58),
+                    FlatStyle = FlatStyle.Flat,
+                    BackColor = (_settings.UiScalePercent == p) ? Color.FromArgb(56, 189, 248) : Color.FromArgb(32, 32, 40),
+                    ForeColor = (_settings.UiScalePercent == p) ? Color.FromArgb(18, 18, 24) : Color.FromArgb(170, 170, 185),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    Padding = Padding.Empty,
+                    Cursor = Cursors.Hand,
+                    Tag = p
+                };
+                pBtn.FlatAppearance.BorderSize = 0;
+                int target = p;
+                pBtn.Click += (s, e) => {
+                    if (_settings.AutoUiScale)
+                    {
+                        _settings.AutoUiScale = false;
+                        if (_chkAutoUiScale != null) _chkAutoUiScale.Checked = false;
+                    }
+                    _sliderUiScale.Value = target;
+                };
+                cardUiScale.Controls.Add(pBtn);
+                _uiScalePresetButtons.Add(pBtn);
+                scX += scW + 4;
+            }
+
+            _chkAutoUiScale = CreateCheckbox(Loc.Get("UiScaleAuto"), 14, 92, _settings.AutoUiScale, v => {
+                _settings.AutoUiScale = v;
+                _settings.Save();
+                UpdateUiScaleButtonsHighlight();
+                _onSettingsUpdated?.Invoke();
+            });
+            cardUiScale.Controls.Add(_chkAutoUiScale);
+
+            curY += cardUiScaleH + 8;
+
             // ================= 4. SYSTEM & OPACITY CARD =================
             // Clear separation between slider presets and checkboxes
             var cardSys = CreateCard(cardX, curY, cardW, 192);
@@ -2119,6 +2216,19 @@ namespace RyzenQuietPro
                 }
             }
 
+            // UI Scale elements
+            if (_sliderUiScale != null) _sliderUiScale.Width = cardW - 24;
+            if (_lblUiScaleVal != null) _lblUiScaleVal.Left = cardW - 75;
+            if (_uiScalePresetButtons.Count > 0)
+            {
+                int scW = (cardW - 24 - (_uiScalePresetButtons.Count - 1) * 4) / _uiScalePresetButtons.Count;
+                for (int i = 0; i < _uiScalePresetButtons.Count; i++)
+                {
+                    _uiScalePresetButtons[i].Width = scW;
+                    _uiScalePresetButtons[i].Left = 12 + i * (scW + 4);
+                }
+            }
+
             // Opacity & System elements
             if (_sliderOpacity != null) _sliderOpacity.Width = cardW - 24;
             if (_lblOpacityVal != null) _lblOpacityVal.Left = cardW - 75;
@@ -2188,6 +2298,8 @@ namespace RyzenQuietPro
             _lblSecLang.Text = Loc.Get("Language").TrimEnd(':');
             _lblSecGraphs.Text = Loc.Get("MenuGraphs").TrimEnd(':');
             _lblSecTray.Text = Loc.Get("TrayIconMenu").TrimEnd(':');
+            if (_lblSecUiScale != null) _lblSecUiScale.Text = Loc.Get("UiScale").TrimEnd(':');
+            if (_chkAutoUiScale != null) _chkAutoUiScale.Text = Loc.Get("UiScaleAuto");
             _lblSecSystem.Text = Loc.Get("Opacity").TrimEnd(':');
 
             if (_chkStopwatch != null) _chkStopwatch.Text = Loc.Get("StopwatchModule");
@@ -2326,6 +2438,28 @@ namespace RyzenQuietPro
             UpdateGpuTuningCardUI();
             UpdateHddCardUI();
             UpdateHddTimeoutButtonsHighlight();
+            UpdateUiScaleButtonsHighlight();
+        }
+
+        private void UpdateUiScaleButtonsHighlight()
+        {
+            int activePercent = _settings.AutoUiScale 
+                ? _settings.GetEffectiveUiScalePercent(Screen.FromControl(this)) 
+                : _settings.UiScalePercent;
+
+            if (_lblUiScaleVal != null)
+            {
+                _lblUiScaleVal.Text = _settings.AutoUiScale 
+                    ? $"{activePercent}% ({Loc.Get("UiScaleAuto")})" 
+                    : $"{activePercent}%";
+            }
+
+            foreach (var btn in _uiScalePresetButtons)
+            {
+                bool isSelected = (btn.Tag is int v && v == activePercent);
+                btn.BackColor = isSelected ? Color.FromArgb(56, 189, 248) : Color.FromArgb(32, 32, 40);
+                btn.ForeColor = isSelected ? Color.FromArgb(18, 18, 24) : Color.FromArgb(170, 170, 185);
+            }
         }
 
         private void UpdateHddCardUI()

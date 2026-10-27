@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text.Json;
+using System.Windows.Forms;
 
 namespace RyzenQuietPro
 {
@@ -39,6 +40,16 @@ namespace RyzenQuietPro
         public int CpuGraphScale { get; set; } = 1; // 1 = 1x (100%), 2 = 2x (50%), 4 = 4x (25%), 6 = 6x (16.7%), 8 = 8x (12.5%), 0 = Auto
         public bool ShowCpuCores { get; set; } = true;
         public bool ShowRamGraph { get; set; } = true;
+
+        // Collapsible Dashboard Sections (interactive compact strip mode)
+        public bool SectionStopwatchCollapsed { get; set; } = false;
+        public bool SectionCpuCollapsed { get; set; } = false;
+        public bool SectionRamCollapsed { get; set; } = false;
+        public bool SectionGpuCollapsed { get; set; } = false;
+        public bool SectionVramCollapsed { get; set; } = false;
+        public bool SectionDiskCollapsed { get; set; } = false;
+        public bool SectionFansCollapsed { get; set; } = false;
+
         public bool ShowGpuGraph { get; set; } = true;
         public bool ShowGpuTempLine { get; set; } = true;
         public bool ShowGpuFanSpeed { get; set; } = true;
@@ -128,6 +139,33 @@ namespace RyzenQuietPro
         public double WidgetOpacity { get; set; } = 0.96;
         public int SettingsWidth { get; set; } = 500;
         public int SettingsHeight { get; set; } = 0;
+        public int UiScalePercent { get; set; } = 100;
+        public bool AutoUiScale { get; set; } = false;
+
+        public int GetEffectiveUiScalePercent(Screen? screen = null)
+        {
+            if (!AutoUiScale)
+            {
+                return Math.Clamp(UiScalePercent, 60, 150);
+            }
+
+            int h = screen?.WorkingArea.Height ?? Screen.PrimaryScreen?.WorkingArea.Height ?? 1080;
+
+            if (h <= 1050) return 80;
+            if (h <= 1150) return 85;
+            if (h <= 1300) return 90;
+            if (h <= 1500) return 100;
+            if (h <= 1800) return 115;
+            return 125;
+        }
+
+        public float GetEffectiveUiScale(Screen? screen = null)
+        {
+            return GetEffectiveUiScalePercent(screen) / 100f;
+        }
+
+        [System.Text.Json.Serialization.JsonIgnore]
+        public float UiScale => GetEffectiveUiScale();
 
         private static readonly string SettingsFolder = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
