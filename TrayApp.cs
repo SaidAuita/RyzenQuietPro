@@ -81,6 +81,7 @@ namespace RyzenQuietPro
 
             var currentMode = PowerPlanManager.GetCurrentMode();
             _isQuietMode = (currentMode == PowerPlanManager.Mode.Quiet);
+            StartupManager.SyncExecutablePathIfEnabled();
             _isStartupEnabled = StartupManager.IsStartupEnabled();
 
             InitializeContextMenu();

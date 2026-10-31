@@ -16,12 +16,12 @@
 ## 3. Обязательное версионирование при любых изменениях и внедрении новых функций
 - **Строгое правило инкремента версии**: при **каждом внедрении новых функций, изменении UI/логики или итерации доработок** ОБЯЗАТЕЛЕН инкремент версии релиза (`4.08` -> `4.09`, `4.10` и т.д.). Никогда не оставлять версию неизменной при появлении новых возможностей.
 - Версия синхронизируется синхронно во всех ключевых файлах проекта:
-  1. `RyzenQuietPro.csproj` (`<Version>4.09.0</Version>`, `<AssemblyVersion>4.09.0.0</AssemblyVersion>`, `<FileVersion>4.09.0.0</FileVersion>`, `<InformationalVersion>v4.09 PRO</InformationalVersion>`)
+  1. `RyzenQuietPro.csproj` (`<Version>4.10.0</Version>`, `<AssemblyVersion>4.10.0.0</AssemblyVersion>`, `<FileVersion>4.10.0.0</FileVersion>`, `<InformationalVersion>v4.10 PRO</InformationalVersion>`)
   2. `RyzenQuiet.FanService/RyzenQuiet.FanService.csproj`
-  3. `build.bat` (`set VERSION=v4.09`)
-  4. `Localization.cs` (во всех 8 языковых словарях: `["AppTitle"] = "RyzenQuiet PRO v4.09"`)
-  5. `DashboardPro.cs` (`Text = "RyzenQuiet PRO v4.09"`, заголовок окна и метаданные)
-  6. `TrayApp.cs` (`ToolStripMenuItem("RyzenQuiet PRO v4.09")`)
+  3. `build.bat` (`set VERSION=v4.10`)
+  4. `Localization.cs` (во всех 8 языковых словарях: `["AppTitle"] = "RyzenQuiet PRO v4.10"`)
+  5. `DashboardPro.cs` (`Text = "RyzenQuiet PRO v4.10"`, заголовок окна и метаданные)
+  6. `TrayApp.cs` (`ToolStripMenuItem("RyzenQuiet PRO v4.10")`)
   7. `README.md` (в заголовках, бейджах релиза, ссылках на скачивание и описании новых функций)
 - После завершения задачи обязательно обновлять `PROJECT_STATUS.md` с детальным описанием добавленного функционала.
 
