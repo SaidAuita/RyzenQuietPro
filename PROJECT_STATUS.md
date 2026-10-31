@@ -34,9 +34,11 @@
       - Португальский (`pt`): `"🗕 Iniciar minimizado na bandeja"`
       - Китайский (`zh`): `"🗕 启动时最小化到托盘"`
     - Заголовок `AppTitle` поднят до `RyzenQuiet PRO v4.11` во всех словарях.
-  - **Инкремент версии релиза**:
+  - **Инкремент версии релиза и публикация**:
     - Номер версии поднят до `v4.11` в `RyzenQuietPro.csproj`, `RyzenQuiet.FanService.csproj`, `build.bat`, `Localization.cs`, `README.md`, `PROJECT_STATUS.md`.
     - Собраны бинарники `RyzenQuietPro-v4.11.exe`, `RyzenQuietPro-v4.11-Lite.exe` и релизные пакеты.
+    - Опубликован официальный релиз на GitHub: [v4.11 Release](https://github.com/SaidAuita/RyzenQuietPro/releases/tag/v4.11) со всеми 5 ассетами (Standalone, Lite, Complete.zip, Lite.zip, FanService.exe).
+    - Обновлен сайт `ph-cu-s.com`: загружены новые бинарники v4.11 в `/static/tools/`, обновлены русская (`/ru/tools/ryzenquietpro`) и английская (`/tools/ryzenquietpro`) страницы и каталог утилит, выстроен строгий хронологический порядок разделов возможностей (8 -> 9 -> 10 -> 11).
 
 ---
 
