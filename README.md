@@ -140,6 +140,11 @@ All subsystem graphs share a synchronized 60-second historical canvas rendered w
 * **Smart UI Auto-Fit:** Collapsing sections automatically shrinks the HUD height (down to 160px min height), while expanding restores full graphs and adjusts positioning upward if near the bottom taskbar boundary.
 * **Persistent States:** Every section's collapse state is saved in `settings.json` and remembered across sessions.
 
+### 11. 🚀 Windows Task Manager Startup Integration & Auto-Healing (v4.10)
+* **Automatic Approval (`StartupApproved\Run`):** Seamlessly synchronizes the Windows Explorer binary approval keys (`02 00 00 00...`), ensuring the startup item is immediately recognized as **"Enabled"** in Windows Task Manager without requiring manual toggling.
+* **Path Auto-Healing (`SyncExecutablePathIfEnabled`):** Automatically detects if the application was moved or launched from a newer release folder, updating the registry startup path and re-approving activation on launch.
+* **Precise Status Detection:** Accurately reflects enabled/disabled state in settings by validating both the standard `Run` key and the binary flags in `StartupApproved\Run`.
+
 ---
 
 ## ⌨️ Controls & Shortcuts
@@ -338,6 +343,11 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 * **Сворачивание блоков в один клик:** Клик по названию любого раздела (CPU, RAM, GPU, VRAM, DISK, FANS, Секундомер) или по его цветной разделительной полоске мгновенно сворачивает блок в ультракомпактную информационную полоску с сохранением заголовка, стрелочки-индикатора (`▸` / `▾`) и всей ключевой телеметрии в одну строку.
 * **Автоматическая подгонка высоты HUD:** При сворачивании окно дашборда автоматически поджимается по высоте (минимальная базовая высота снижена со 350px до 160px), а при разворачивании плавно возвращает график и защищает окно от выхода за нижний край экрана.
 * **Сохранение состояния:** Свернутость каждого раздела сохраняется в `settings.json` и восстанавливается при перезапуске программы.
+
+### 11. 🚀 Интеграция с автозагрузкой Windows Task Manager и авто-восстановление (v4.10)
+* **Автоматическое одобрение (`StartupApproved\Run`):** Программа нативно синхронизирует служебные бинарные ключи проводника Windows (`02 00 00 00...`), благодаря чему при включении автозапуска утилита сразу же получает статус **«Включено»** в Диспетчере задач Windows без необходимости ручных манипуляций.
+* **Авто-восстановление и обновление пути (`SyncExecutablePathIfEnabled`):** При перемещении утилиты в другую папку или запуске свежего билда путь в реестре автозагрузки автоматически обновляется при первом старте.
+* **Высокоточная диагностика статуса:** Галочка автозагрузки в настройках корректно валидирует как ветку `Run`, так и бинарные флаги одобрения Проводника.
 
 ---
 
