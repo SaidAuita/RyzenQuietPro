@@ -143,6 +143,7 @@ namespace RyzenQuietPro
         private CheckBox _chkAlwaysOnTop = null!;
         private CheckBox _chkAutoQuiet = null!;
         private CheckBox _chkStartup = null!;
+        private CheckBox _chkStartMinimized = null!;
 
         private Button _btnSpecs = null!;
         private Button _btnTools = null!;
@@ -1718,7 +1719,7 @@ namespace RyzenQuietPro
 
             // ================= 4. SYSTEM & OPACITY CARD =================
             // Clear separation between slider presets and checkboxes
-            var cardSys = CreateCard(cardX, curY, cardW, 192);
+            var cardSys = CreateCard(cardX, curY, cardW, 220);
             _pnlBody.Controls.Add(cardSys);
 
             _lblSecSystem = CreateSectionHeader(Loc.Get("Opacity"), 12, 8);
@@ -1807,12 +1808,24 @@ namespace RyzenQuietPro
                 _settings.AutoQuietOnIdle = v;
             });
             _chkStartup = CreateCheckbox(Loc.Get("Startup"), 14, sysChkY + (sysGap * 2), StartupManager.IsStartupEnabled(), v => {
-                StartupManager.SetStartup(v);
+                StartupManager.SetStartup(v, _settings.StartMinimized);
             });
+            _chkStartMinimized = CreateCheckbox(Loc.Get("StartMinimized"), 14, sysChkY + (sysGap * 3), _settings.StartMinimized, v => {
+                _settings.StartMinimized = v;
+                _settings.Save();
+                if (StartupManager.IsStartupEnabled())
+                {
+                    StartupManager.UpdateStartupArgs(v);
+                }
+            });
+            if (_toolTip != null)
+            {
+                _toolTip.SetToolTip(_chkStartMinimized, Loc.Get("StartMinimizedTip"));
+            }
 
-            cardSys.Controls.AddRange(new Control[] { _chkAlwaysOnTop, _chkAutoQuiet, _chkStartup });
+            cardSys.Controls.AddRange(new Control[] { _chkAlwaysOnTop, _chkAutoQuiet, _chkStartup, _chkStartMinimized });
 
-            curY += 200;
+            curY += 228;
 
             // Bottom spacer for scrollable body
             _pnlBody.Controls.Add(new Panel
@@ -2376,6 +2389,11 @@ namespace RyzenQuietPro
             _chkAlwaysOnTop.Text = Loc.Get("AlwaysOnTop");
             _chkAutoQuiet.Text = Loc.Get("AutoQuiet");
             _chkStartup.Text = Loc.Get("Startup");
+            if (_chkStartMinimized != null)
+            {
+                _chkStartMinimized.Text = Loc.Get("StartMinimized");
+                if (_toolTip != null) _toolTip.SetToolTip(_chkStartMinimized, Loc.Get("StartMinimizedTip"));
+            }
 
             if (_lblSecGpuTuning != null) _lblSecGpuTuning.Text = "⚡ " + Loc.Get("GpuTuningTitle");
             if (_chkGpuTuning != null) _chkGpuTuning.Text = Loc.Get("GpuTuningEnable");

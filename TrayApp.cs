@@ -37,6 +37,7 @@ namespace RyzenQuietPro
         private ToolStripMenuItem _detachMenuItem = null!;
         private ToolStripMenuItem _autoQuietMenuItem = null!;
         private ToolStripMenuItem _startupMenuItem = null!;
+        private ToolStripMenuItem _startMinimizedMenuItem = null!;
         private ToolStripMenuItem _topProcessesMenuItem = null!;
         private ToolStripMenuItem? _showAllGpusMenuItem;
         private ToolStripMenuItem _metricMenu = null!;
@@ -81,7 +82,7 @@ namespace RyzenQuietPro
 
             var currentMode = PowerPlanManager.GetCurrentMode();
             _isQuietMode = (currentMode == PowerPlanManager.Mode.Quiet);
-            StartupManager.SyncExecutablePathIfEnabled();
+            StartupManager.SyncExecutablePathIfEnabled(_settings.StartMinimized);
             _isStartupEnabled = StartupManager.IsStartupEnabled();
 
             InitializeContextMenu();
@@ -109,13 +110,16 @@ namespace RyzenQuietPro
 
             UpdateTrayState();
 
-            // If user left widget detached in previous session, restore it
-            if (_settings.IsDetached)
+            bool hasMinimizedArg = HasMinimizedArg();
+            bool shouldStartMinimized = hasMinimizedArg || _settings.StartMinimized;
+
+            // If user left widget detached in previous session, restore it unless starting minimized
+            if (_settings.IsDetached && !shouldStartMinimized)
             {
                 _dashboard.ShowDashboard();
             }
 
-            Logger.Log($"TrayApp initialized. Mode: {currentMode}, Detached: {_settings.IsDetached}");
+            Logger.Log($"TrayApp initialized. Mode: {currentMode}, Detached: {_settings.IsDetached}, StartMinimized: {shouldStartMinimized}");
         }
 
         protected override void SetVisibleCore(bool value)
@@ -237,6 +241,13 @@ namespace RyzenQuietPro
             _startupMenuItem.Click += (s, e) => ToggleStartup();
             _contextMenu.Items.Add(_startupMenuItem);
 
+            _startMinimizedMenuItem = new ToolStripMenuItem(Loc.Get("StartMinimized"))
+            {
+                Checked = _settings.StartMinimized
+            };
+            _startMinimizedMenuItem.Click += (s, e) => ToggleStartMinimized();
+            _contextMenu.Items.Add(_startMinimizedMenuItem);
+
             _topProcessesMenuItem = new ToolStripMenuItem(Loc.Get("TopProcesses"))
             {
                 Checked = _settings.ShowTopProcesses
@@ -285,6 +296,7 @@ namespace RyzenQuietPro
             if (_metricNoneItem != null) _metricNoneItem.Text = Loc.Get("TrayMetricNone");
             if (_autoQuietMenuItem != null) _autoQuietMenuItem.Text = Loc.Get("AutoQuiet");
             if (_startupMenuItem != null) _startupMenuItem.Text = Loc.Get("Startup");
+            if (_startMinimizedMenuItem != null) _startMinimizedMenuItem.Text = Loc.Get("StartMinimized");
             if (_topProcessesMenuItem != null) _topProcessesMenuItem.Text = Loc.Get("TopProcesses");
             if (_showAllGpusMenuItem != null) _showAllGpusMenuItem.Text = Loc.Get("ShowAllGpus");
             if (_exitMenuItem != null) _exitMenuItem.Text = Loc.Get("Exit");
@@ -323,6 +335,7 @@ namespace RyzenQuietPro
                 _showAllGpusMenuItem.Checked = _settings.ShowAllGpus;
             }
             _detachMenuItem.Text = _settings.IsDetached ? Loc.Get("TipDock") : Loc.Get("TipDetach");
+            if (_startMinimizedMenuItem != null) _startMinimizedMenuItem.Checked = _settings.StartMinimized;
         }
 
         private void InitializeTrayIcon()
@@ -618,9 +631,39 @@ namespace RyzenQuietPro
         private void ToggleStartup()
         {
             _isStartupEnabled = !_isStartupEnabled;
-            StartupManager.SetStartup(_isStartupEnabled);
+            StartupManager.SetStartup(_isStartupEnabled, _settings.StartMinimized);
             _startupMenuItem.Checked = _isStartupEnabled;
             _dashboard?.SetStartupState(_isStartupEnabled);
+        }
+
+        private void ToggleStartMinimized()
+        {
+            _settings.StartMinimized = !_settings.StartMinimized;
+            _settings.Save();
+            _startMinimizedMenuItem.Checked = _settings.StartMinimized;
+            if (_isStartupEnabled)
+            {
+                StartupManager.UpdateStartupArgs(_settings.StartMinimized);
+            }
+            OnSettingsChanged();
+        }
+
+        private static bool HasMinimizedArg()
+        {
+            try
+            {
+                string[] args = Environment.GetCommandLineArgs();
+                for (int i = 1; i < args.Length; i++)
+                {
+                    string a = args[i].Trim().ToLowerInvariant();
+                    if (a is "--minimized" or "-minimized" or "/minimized" or "-m" or "--startup" or "-startup" or "/startup" or "--silent" or "-silent")
+                    {
+                        return true;
+                    }
+                }
+            }
+            catch { }
+            return false;
         }
 
         private void ShowNotification(PowerPlanManager.Mode mode)

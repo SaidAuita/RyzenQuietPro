@@ -28,7 +28,7 @@ namespace RyzenQuietPro
         {
             ["ru"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.10",
+                ["AppTitle"] = "RyzenQuiet PRO v4.11",
                 ["Silent"] = "Тихий",
                 ["SilentFull"] = "🌿 Тихий (99%)",
                 ["Boost"] = "Турбо",
@@ -198,6 +198,8 @@ namespace RyzenQuietPro
                 ["AlwaysOnTop"] = "📌 Поверх всех окон",
                 ["AutoQuiet"] = "🌿 Тихий режим при простое (5 мин)",
                 ["Startup"] = "🚀 Запуск вместе с Windows",
+                ["StartMinimized"] = "🗕 Автостарт в свернутом виде",
+                ["StartMinimizedTip"] = "Запускать приложение свернутым в системный трей без показа окна при старте Windows",
                 ["TrayIconMenu"] = "🏷️ Иконка в трее",
                 ["TrayMetricCpu"] = "CPU % (Процессор)",
                 ["TrayMetricGpu"] = "GPU % (Видеокарта)",
@@ -248,7 +250,7 @@ namespace RyzenQuietPro
             },
             ["en"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.10",
+                ["AppTitle"] = "RyzenQuiet PRO v4.11",
                 ["Silent"] = "Silent",
                 ["SilentFull"] = "🌿 Silent (99%)",
                 ["Boost"] = "Boost",
@@ -414,6 +416,8 @@ namespace RyzenQuietPro
                 ["AlwaysOnTop"] = "📌 Always On Top",
                 ["AutoQuiet"] = "🌿 Auto-Quiet on Idle (5 min)",
                 ["Startup"] = "🚀 Start with Windows",
+                ["StartMinimized"] = "🗕 Start minimized in tray",
+                ["StartMinimizedTip"] = "Start application minimized to the system tray without opening window on Windows startup",
                 ["TrayIconMenu"] = "🏷️ Dynamic Tray Icon",
                 ["TrayMetricCpu"] = "CPU % (Processor)",
                 ["TrayMetricGpu"] = "GPU % (Graphics)",
@@ -463,7 +467,7 @@ namespace RyzenQuietPro
             },
             ["de"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.10",
+                ["AppTitle"] = "RyzenQuiet PRO v4.11",
                 ["Silent"] = "Leise",
                 ["SilentFull"] = "🌿 Leise (99%)",
                 ["Boost"] = "Boost",
@@ -558,6 +562,8 @@ namespace RyzenQuietPro
                 ["AlwaysOnTop"] = "📌 Immer im Vordergrund",
                 ["AutoQuiet"] = "🌿 Auto-Leise bei Leerlauf (5 Min.)",
                 ["Startup"] = "🚀 Mit Windows starten",
+                ["StartMinimized"] = "🗕 Minimiert im Tray starten",
+                ["StartMinimizedTip"] = "Startet die Anwendung minimiert im Infobereich ohne Fensteröffnung beim Windows-Start",
                 ["TrayIconMenu"] = "🏷️ Dynamisches Tray-Icon",
                 ["TrayMetricCpu"] = "CPU %",
                 ["TrayMetricGpu"] = "GPU %",
@@ -607,7 +613,7 @@ namespace RyzenQuietPro
             },
             ["es"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.10",
+                ["AppTitle"] = "RyzenQuiet PRO v4.11",
                 ["Silent"] = "Silencioso",
                 ["SilentFull"] = "🌿 Silencioso (99%)",
                 ["Boost"] = "Turbo",
@@ -702,6 +708,8 @@ namespace RyzenQuietPro
                 ["AlwaysOnTop"] = "📌 Siempre en primer plano",
                 ["AutoQuiet"] = "🌿 Silencio automático en reposo (5 min)",
                 ["Startup"] = "🚀 Iniciar con Windows",
+                ["StartMinimized"] = "🗕 Iniciar minimizado en la bandeja",
+                ["StartMinimizedTip"] = "Iniciar la aplicación minimizada en la bandeja del sistema sin abrir la ventana al iniciar Windows",
                 ["TrayIconMenu"] = "🏷️ Icono dinámico en bandeja",
                 ["TrayMetricCpu"] = "CPU %",
                 ["TrayMetricGpu"] = "GPU %",
@@ -751,7 +759,7 @@ namespace RyzenQuietPro
             },
             ["fr"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.10",
+                ["AppTitle"] = "RyzenQuiet PRO v4.11",
                 ["Silent"] = "Silencieux",
                 ["SilentFull"] = "🌿 Silencieux (99%)",
                 ["Boost"] = "Turbo",
@@ -846,6 +854,8 @@ namespace RyzenQuietPro
                 ["AlwaysOnTop"] = "📌 Toujours au premier plan",
                 ["AutoQuiet"] = "🌿 Mode silencieux en inactivité (5 min)",
                 ["Startup"] = "🚀 Lancer au démarrage de Windows",
+                ["StartMinimized"] = "🗕 Démarrer réduit dans la zone de notification",
+                ["StartMinimizedTip"] = "Démarrer l'application réduite dans la barre d'état sans ouvrir la fenêtre au démarrage de Windows",
                 ["TrayIconMenu"] = "🏷️ Icône dynamique dans la barre",
                 ["TrayMetricCpu"] = "CPU %",
                 ["TrayMetricGpu"] = "GPU %",
@@ -895,7 +905,7 @@ namespace RyzenQuietPro
             },
             ["ja"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.10",
+                ["AppTitle"] = "RyzenQuiet PRO v4.11",
                 ["Silent"] = "静音",
                 ["SilentFull"] = "🌿 静音モード (99%)",
                 ["Boost"] = "ブースト",
@@ -990,6 +1000,8 @@ namespace RyzenQuietPro
                 ["AlwaysOnTop"] = "📌 常に最前面に表示",
                 ["AutoQuiet"] = "🌿 アイドル時自動静音 (5分)",
                 ["Startup"] = "🚀 Windows起動時に自動実行",
+                ["StartMinimized"] = "🗕 トレイに最小化して起動",
+                ["StartMinimizedTip"] = "Windows起動時にウィンドウを開かず、システムトレイに最小化して常駐します",
                 ["TrayIconMenu"] = "🏷️ トレイアイコンの数値表示",
                 ["TrayMetricCpu"] = "CPU %",
                 ["TrayMetricGpu"] = "GPU %",
@@ -1039,7 +1051,7 @@ namespace RyzenQuietPro
             },
             ["pt"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.10",
+                ["AppTitle"] = "RyzenQuiet PRO v4.11",
                 ["Silent"] = "Silencioso",
                 ["SilentFull"] = "🌿 Silencioso (99%)",
                 ["Boost"] = "Turbo",
@@ -1134,6 +1146,8 @@ namespace RyzenQuietPro
                 ["AlwaysOnTop"] = "📌 Sempre no topo",
                 ["AutoQuiet"] = "🌿 Modo silencioso em inatividade (5 min)",
                 ["Startup"] = "🚀 Iniciar com o Windows",
+                ["StartMinimized"] = "🗕 Iniciar minimizado na bandeja",
+                ["StartMinimizedTip"] = "Iniciar o aplicativo minimizado na bandeja do sistema sem abrir a janela na inicialização do Windows",
                 ["TrayIconMenu"] = "🏷️ Ícone dinâmico na bandeja",
                 ["TrayMetricCpu"] = "CPU %",
                 ["TrayMetricGpu"] = "GPU %",
@@ -1183,7 +1197,7 @@ namespace RyzenQuietPro
             },
             ["zh"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.10",
+                ["AppTitle"] = "RyzenQuiet PRO v4.11",
                 ["Silent"] = "静音",
                 ["SilentFull"] = "🌿 静音模式 (99%)",
                 ["Boost"] = "加速",
@@ -1278,6 +1292,8 @@ namespace RyzenQuietPro
                 ["AlwaysOnTop"] = "📌 窗口总在最前",
                 ["AutoQuiet"] = "🌿 空闲自动静音 (5分钟)",
                 ["Startup"] = "🚀 随 Windows 开机启动",
+                ["StartMinimized"] = "🗕 启动时最小化到托盘",
+                ["StartMinimizedTip"] = "随 Windows 开机启动时最小化到系统托盘，不弹出窗口",
                 ["TrayIconMenu"] = "🏷️ 托盘动态图标",
                 ["TrayMetricCpu"] = "CPU %",
                 ["TrayMetricGpu"] = "显卡 %",

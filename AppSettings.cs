@@ -141,6 +141,7 @@ namespace RyzenQuietPro
         public int SettingsHeight { get; set; } = 0;
         public int UiScalePercent { get; set; } = 100;
         public bool AutoUiScale { get; set; } = false;
+        public bool StartMinimized { get; set; } = false;
 
         public int GetEffectiveUiScalePercent(Screen? screen = null)
         {

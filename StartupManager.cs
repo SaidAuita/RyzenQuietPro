@@ -15,7 +15,7 @@ namespace RyzenQuietPro
         // Standard Windows 10/11 binary marker for "Enabled" in Task Manager (StartupApproved)
         private static readonly byte[] ApprovedEnabledBytes = new byte[] { 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
-        public static void SetStartup(bool enabled)
+        public static void SetStartup(bool enabled, bool startMinimized = false)
         {
             try
             {
@@ -37,8 +37,9 @@ namespace RyzenQuietPro
                     {
                         if (enabled)
                         {
-                            runKey.SetValue(AppName, $"\"{exePath}\"");
-                            Logger.Log($"Startup enabled in Run key: \"{exePath}\"");
+                            string regVal = startMinimized ? $"\"{exePath}\" --minimized" : $"\"{exePath}\"";
+                            runKey.SetValue(AppName, regVal);
+                            Logger.Log($"Startup enabled in Run key: {regVal}");
                         }
                         else
                         {
@@ -54,6 +55,21 @@ namespace RyzenQuietPro
             catch (Exception ex)
             {
                 Logger.Log($"Error managing startup: {ex.Message}");
+            }
+        }
+
+        public static void UpdateStartupArgs(bool startMinimized)
+        {
+            try
+            {
+                if (IsStartupEnabled())
+                {
+                    SetStartup(true, startMinimized);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Log($"Error updating startup args: {ex.Message}");
             }
         }
 
@@ -86,7 +102,7 @@ namespace RyzenQuietPro
             }
         }
 
-        public static void SyncExecutablePathIfEnabled()
+        public static void SyncExecutablePathIfEnabled(bool startMinimized = false)
         {
             try
             {
@@ -101,8 +117,8 @@ namespace RyzenQuietPro
 
                     if (!string.IsNullOrEmpty(currentExe))
                     {
-                        string expectedVal = $"\"{currentExe}\"";
-                        if (!string.Equals(currentRegVal.Trim('\"'), currentExe, StringComparison.OrdinalIgnoreCase))
+                        string expectedVal = startMinimized ? $"\"{currentExe}\" --minimized" : $"\"{currentExe}\"";
+                        if (!string.Equals(currentRegVal.Trim(), expectedVal, StringComparison.OrdinalIgnoreCase))
                         {
                             Logger.Log($"Syncing startup executable path from {currentRegVal} to {expectedVal}");
                             runKey.SetValue(AppName, expectedVal);

@@ -1,12 +1,47 @@
 # PROJECT_STATUS: RyzenQuiet PRO
 
-## Текущая версия: v4.10
+## Текущая версия: v4.11
 - **Активная ветка Git**: `v4`
-- **Предыдущий релиз**: v4.09 (Collapsible Sections into Compact Strips)
+- **Предыдущий релиз**: v4.10 (StartupApproved Management & Task Manager Auto-Healing)
 
 ---
 
-## Текущая итерация: v4.10
+## Текущая итерация: v4.11
+- [x] **Автостарт в свернутом виде (Start Minimized on Boot Checkbox & In-Tray Silent Execution)**:
+  - **Контекст и задача**:
+    - Пользователь запросил добавление опции «Автостарт в свернутом виде — чекбокс в настройках».
+    - Ранее, если пользователь откреплял дашборд в режим плавающего виджета на рабочем столе (`IsDetached = true`), при включенном автозапуске Windows окно дашборда при старте системы всегда открывалось поверх рабочего стола.
+  - **Реализация в UI (`SettingsForm.cs` & `TrayApp.cs`)**:
+    - В `SettingsForm.cs` в блоке системных параметров (`cardSys`) высота карточки увеличена со 192px до 220px. Добавлен новый чекбокс `_chkStartMinimized` («🗕 Автостарт в свернутом виде») с информативным тултипом.
+    - В контекстное меню системного трея (`TrayApp.cs`) добавлен синхронизированный пункт `_startMinimizedMenuItem` для быстрого переключения прямо из трея.
+    - Изменения мгновенно синхронизируются и сохраняются в `%LOCALAPPDATA%\RyzenQuietPro\settings.json`.
+  - **Реализация в `StartupManager.cs`**:
+    - Метод `SetStartup(bool enabled, bool startMinimized = false)`: при включении автозапуска с активным флагом `StartMinimized` в системный реестр `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` прописывается команда с аргументом: `"<path>\RyzenQuietPro.exe" --minimized`.
+    - Добавлен метод `UpdateStartupArgs(bool startMinimized)` для мгновенного обновления параметров командной строки в реестре при переключении чекбокса, если автозапуск уже включен.
+    - В `SyncExecutablePathIfEnabled(bool startMinimized = false)` добавлена поддержка флага `--minimized`, чтобы при перемещении исполняемого файла аргумент автозапуска сохранялся и автоматически обновлялся.
+  - **Логика запуска (`TrayApp.cs`)**:
+    - Добавлен метод `HasMinimizedArg()` с распознаванием аргументов командной строки (`--minimized`, `-minimized`, `/minimized`, `--startup`, `--silent`).
+    - При старте приложения: если передан аргумент запуска в свернутом виде либо в настройках включен `StartMinimized`, окно дашборда при старте не отображается (`_dashboard.ShowDashboard()` подавляется), и утилита тихо работает в трее.
+    - Окно мгновенно выводится на передний план по клику на иконку в трее или при повторном запуске ярлыка программы (межпроцессная активация IPC через Windows message broadcast).
+  - **Мультиязычная локализация (8 языков)**:
+    - Ключи `StartMinimized` и `StartMinimizedTip` добавлены во все 8 языковых словарей в `Localization.cs`:
+      - Русский (`ru`): `"🗕 Автостарт в свернутом виде"`
+      - Английский (`en`): `"🗕 Start minimized in tray"`
+      - Немецкий (`de`): `"🗕 Minimiert im Tray starten"`
+      - Испанский (`es`): `"🗕 Iniciar minimizado en la bandeja"`
+      - Французский (`fr`): `"🗕 Démarrer réduit dans la zone de notification"`
+      - Японский (`ja`): `"🗕 トレイに最小化して起動"`
+      - Португальский (`pt`): `"🗕 Iniciar minimizado na bandeja"`
+      - Китайский (`zh`): `"🗕 启动时最小化到托盘"`
+    - Заголовок `AppTitle` поднят до `RyzenQuiet PRO v4.11` во всех словарях.
+  - **Инкремент версии релиза**:
+    - Номер версии поднят до `v4.11` в `RyzenQuietPro.csproj`, `RyzenQuiet.FanService.csproj`, `build.bat`, `Localization.cs`, `README.md`, `PROJECT_STATUS.md`.
+    - Собраны бинарники `RyzenQuietPro-v4.11.exe`, `RyzenQuietPro-v4.11-Lite.exe` и релизные пакеты.
+
+---
+
+## Предыдущие итерации:
+### Итерация: v4.10
 - [x] **Автоматическое включение и синхронизация автозагрузки с Диспетчером задач Windows (StartupApproved Management & Auto-Healing)**:
   - **Проблема**:
     - При установке галочки «Запуск вместе с Windows» в настройках RyzenQuiet PRO запись добавлялась в реестр `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`. Однако в Диспетчере задач Windows (вкладка «Автозагрузка») приложение отображалось в состоянии «Отключено» («Выключено»), и при перезагрузке или входе в Windows не стартовало, требуя обязательного ручного включения через Диспетчер задач.
