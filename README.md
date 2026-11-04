@@ -28,6 +28,8 @@
 </p>
 <p align="center">
   <img src="images/RyzenQuietPro-v4_09.png" alt="RyzenQuiet PRO v4.09 Collapsible Sections into Compact Single-Line Strips" width="370" />
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="images/RyzenQuietPro-v4_13.png" alt="RyzenQuiet PRO v4.13 ServerSync Live Exchange Progress HUD" width="370" />
 </p>
 
 <br/>
@@ -150,11 +152,15 @@ All subsystem graphs share a synchronized 60-second historical canvas rendered w
 * **CLI Parameter Support (`--minimized`):** When auto-start is enabled with minimized mode, the registry `Run` key is registered with `--minimized` (`"path\RyzenQuietPro.exe" --minimized`), preventing HUD popups even if floating desktop mode was active.
 * **Instant Activation:** The main HUD remains one click away via the tray icon or by launching the application shortcut again.
 
-### 13. 🔄 ServerSync Exchange Monitor (v4.12)
+### 13. 🔄 ServerSync Exchange Monitor (v4.13)
 * **What is ServerSync:** A dedicated, lightweight module designed to monitor real-time file synchronization between private servers (e.g. Work and Home network nodes) powered by the ServerSync bidirectional daemon.
 * **Dual Progress Bars:** 
   * *Current File:* Live transfer progress (filename, transferred/total MB, %, current MB/s speed, and transfer direction: ⬆ Upload or ⬇ Download).
   * *Queue:* Total remaining files in queue, cumulative transfer volume (MB/GB), overall completion percentage, and estimated time remaining (ETA).
+
+<p align="center">
+  <img src="images/RyzenQuietPro-v4_13.png" alt="ServerSync Live Progress Monitor with Dual Per-File and Overall Queue Tracking in RyzenQuiet PRO v4.13" width="370" />
+</p>
 * **How to Connect:**
   * Open Settings (`⚙`) and enable the **ServerSync** card.
   * Enter the IP address of the ServerSync server running on your **current local network**:
@@ -372,11 +378,15 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 * **Поддержка аргументов командной строки (`--minimized`):** При включении опции в реестр автозапуска `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` автоматически прописывается аргумент `--minimized`, гарантирующий запуск утилиты в трей.
 * **Мгновенное разворачивание:** Приложение продолжает работать в фоне, а дашборд мгновенно разворачивается по клику на иконку в трее или при повторном запуске ярлыка.
 
-### 13. 🔄 Мониторинг синхронизации сервера обмена ServerSync (v4.12)
+### 13. 🔄 Мониторинг синхронизации сервера обмена ServerSync (v4.13)
 * **Что такое ServerSync:** Встроенный модуль мониторинга непрерывной двусторонней синхронизации рабочих файлов между серверами Дома и Работы под управлением демона ServerSync.
 * **Двойная шкала прогресса в HUD:**
   * *Текущий файл:* Пофайловая индикация передачи (имя файла с умным сокращением путей, переданный объем / общий размер в KB/MB/GB, процент, мгновенная скорость в МБ/с и направление: ⬆ Отправка или ⬇ Скачивание).
   * *Общая очередь:* Иконка 📦, количество оставшихся файлов, суммарный объем данных в очереди, общий процент выполнения и расчетный ETA.
+
+<p align="center">
+  <img src="images/RyzenQuietPro-v4_13.png" alt="Мониторинг прогресса синхронизации файлов ServerSync в RyzenQuiet PRO v4.13" width="370" />
+</p>
 * **Как подключиться и настроить:**
   * Откройте меню настроек (`⚙`) и перейдите к блоку **Сервер обмена**.
   * Укажите IP-адрес сервера ServerSync в вашей **текущей локальной сети**:
