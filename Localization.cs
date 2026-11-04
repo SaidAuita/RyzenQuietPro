@@ -63,6 +63,7 @@ namespace RyzenQuietPro
                 ["ServerSync_Speed"] = "Скорость",
                 ["ServerSync_Eta"] = "ETA",
                 ["ServerSync_Hint"] = "💡 Мониторинг синхронизации файлов ServerSync (порт 19888). Укажите IP-адрес сервера вашей локальной сети (на работе — рабочий, дома — домашний).",
+                ["ServerSync_Timeout"] = "Таймаут (проверьте IP и порт)",
                 ["Stopwatch"] = "СЕКУНДОМЕР",
                 ["StopwatchModule"] = "⏱️ Секундомер",
                 ["StopwatchStart"] = "▶ Старт",
@@ -301,6 +302,7 @@ namespace RyzenQuietPro
                 ["ServerSync_Speed"] = "Speed",
                 ["ServerSync_Eta"] = "ETA",
                 ["ServerSync_Hint"] = "💡 ServerSync file exchange monitor (port 19888). Enter the IP address of your local network server (work server when at work, home server when at home).",
+                ["ServerSync_Timeout"] = "Connection timed out",
                 ["Stopwatch"] = "STOPWATCH",
                 ["StopwatchModule"] = "⏱️ Stopwatch",
                 ["StopwatchStart"] = "▶ Start",
@@ -535,6 +537,7 @@ namespace RyzenQuietPro
                 ["ServerSync_Speed"] = "Geschwindigkeit",
                 ["ServerSync_Eta"] = "ETA",
                 ["ServerSync_Hint"] = "💡 ServerSync Dateiüberwachungsdienst (Port 19888). Geben Sie die IP-Adresse Ihres lokalen Netzwerkservers ein.",
+                ["ServerSync_Timeout"] = "Zeitüberschreitung der Verbindung",
 
                 ["TipInfo"] = "Systemdaten & Hardware-Unterstützung",
                 ["TipPinOn"] = "Immer im Vordergrund (Aktiv)",
@@ -698,6 +701,7 @@ namespace RyzenQuietPro
                 ["ServerSync_Speed"] = "Velocidad",
                 ["ServerSync_Eta"] = "ETA",
                 ["ServerSync_Hint"] = "💡 Monitor de sincronización de archivos ServerSync (puerto 19888). Ingrese la dirección IP de su servidor local.",
+                ["ServerSync_Timeout"] = "Tiempo de espera agotado",
 
                 ["TipInfo"] = "Especificaciones del sistema",
                 ["TipPinOn"] = "Siempre visible (Fijado)",
@@ -861,6 +865,7 @@ namespace RyzenQuietPro
                 ["ServerSync_Speed"] = "Vitesse",
                 ["ServerSync_Eta"] = "ETA",
                 ["ServerSync_Hint"] = "💡 Moniteur de synchronisation de fichiers ServerSync (port 19888). Entrez l'adresse IP de votre serveur local.",
+                ["ServerSync_Timeout"] = "Délai d'attente dépassé",
 
                 ["TipInfo"] = "Spécifications du système",
                 ["TipPinOn"] = "Toujours visible (Épinglé)",
@@ -1024,6 +1029,7 @@ namespace RyzenQuietPro
                 ["ServerSync_Speed"] = "速度",
                 ["ServerSync_Eta"] = "ETA",
                 ["ServerSync_Hint"] = "💡 ServerSyncファイル同期監視 (ポート 19888)。ローカルネットワークサーバーのIPアドレスを入力してください。",
+                ["ServerSync_Timeout"] = "接続タイムアウト",
 
                 ["TipInfo"] = "システム仕様とハードウェア情報",
                 ["TipPinOn"] = "常に最前面に表示 (固定)",
@@ -1187,6 +1193,7 @@ namespace RyzenQuietPro
                 ["ServerSync_Speed"] = "Velocidade",
                 ["ServerSync_Eta"] = "ETA",
                 ["ServerSync_Hint"] = "💡 Monitor de sincronização de arquivos ServerSync (porta 19888). Insira o endereço IP do seu servidor local.",
+                ["ServerSync_Timeout"] = "Tempo limite de conexão",
 
                 ["TipInfo"] = "Especificações do sistema",
                 ["TipPinOn"] = "Sempre no topo (Fixado)",
@@ -1350,6 +1357,7 @@ namespace RyzenQuietPro
                 ["ServerSync_Speed"] = "速度",
                 ["ServerSync_Eta"] = "ETA",
                 ["ServerSync_Hint"] = "💡 ServerSync 文件交换同步监控 (端口 19888)。请输入本地局域网服务器的 IP 地址。",
+                ["ServerSync_Timeout"] = "连接超时",
 
                 ["TipInfo"] = "系统规格与硬件支持",
                 ["TipPinOn"] = "窗口置顶 (已固定)",

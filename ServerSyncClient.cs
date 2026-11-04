@@ -51,7 +51,7 @@ namespace RyzenQuietPro
             _settings = settings;
             _http = new HttpClient
             {
-                Timeout = TimeSpan.FromMilliseconds(1800)
+                Timeout = TimeSpan.FromMilliseconds(4000)
             };
 
             if (_settings.ServerSyncEnabled)
@@ -215,24 +215,24 @@ namespace RyzenQuietPro
                     else
                     {
                         MarkOffline();
-                        delayMs = 8000;
+                        delayMs = 5000;
                     }
                 }
-                catch (OperationCanceledException)
+                catch (OperationCanceledException) when (token.IsCancellationRequested)
                 {
                     break;
                 }
-                catch
+                catch (Exception)
                 {
                     MarkOffline();
-                    delayMs = 8000;
+                    delayMs = 4000;
                 }
 
                 try
                 {
                     await Task.Delay(delayMs, token).ConfigureAwait(false);
                 }
-                catch (OperationCanceledException)
+                catch (OperationCanceledException) when (token.IsCancellationRequested)
                 {
                     break;
                 }
@@ -243,7 +243,20 @@ namespace RyzenQuietPro
         {
             bool wasOnline = IsOnline;
             IsOnline = false;
+            IsSyncing = false;
+            PeerConnected = false;
+            PeerName = null;
             Direction = "offline";
+            CurrentFileName = "";
+            CurrentFileRelPath = "";
+            CurrentTransferredBytes = 0;
+            CurrentTotalBytes = 0;
+            CurrentFilePercent = 0f;
+            CurrentSpeedMbps = 0f;
+            QueueFilesCount = 0;
+            QueueTotalBytes = 0;
+            OverallPercent = 100f;
+            EtaSeconds = 0;
             if (wasOnline)
             {
                 StatusChanged?.Invoke();
@@ -258,7 +271,7 @@ namespace RyzenQuietPro
         {
             try
             {
-                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(4));
                 string url = $"http://{host.Trim()}:{port}/status";
                 using var resp = await _http.GetAsync(url, cts.Token).ConfigureAwait(false);
                 if (resp.IsSuccessStatusCode)
@@ -272,6 +285,10 @@ namespace RyzenQuietPro
                     return (true, info, nodeName);
                 }
                 return (false, $"HTTP {(int)resp.StatusCode}: {resp.ReasonPhrase}", null);
+            }
+            catch (OperationCanceledException)
+            {
+                return (false, Loc.Get("ServerSync_Timeout"), null);
             }
             catch (Exception ex)
             {
