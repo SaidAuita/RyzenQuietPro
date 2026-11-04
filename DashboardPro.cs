@@ -5017,6 +5017,13 @@ namespace RyzenQuietPro
                 _lblServerSyncSub.Text = Loc.Get("ServerSync_Offline");
                 _lblServerSyncSub.ForeColor = Color.FromArgb(140, 140, 150);
             }
+            else if (ss.IsDeleting)
+            {
+                string target = !string.IsNullOrEmpty(ss.LastDeletedName) ? $": {ss.LastDeletedName}" : "";
+                string peerStr = !string.IsNullOrEmpty(ss.PeerName) ? $" ↔ {ss.PeerName}" : "";
+                _lblServerSyncSub.Text = $"🗑 {Loc.Get("ServerSync_Deleted")}{target}{peerStr}";
+                _lblServerSyncSub.ForeColor = Color.FromArgb(250, 204, 21); // Yellow (#FACC15)
+            }
             else if (ss.IsSyncing)
             {
                 string dirStr = (ss.Direction == "upload") ? $"⬆ {Loc.Get("ServerSync_Upload")}" : $"⬇ {Loc.Get("ServerSync_Download")}";
@@ -5068,6 +5075,22 @@ namespace RyzenQuietPro
                 string offText = $"✕ {Loc.Get("ServerSync_Offline")}: {_settings.ServerSyncHost}:{_settings.ServerSyncPort}";
                 TextRenderer.DrawText(g, offText, fontMuted, new Rectangle(10, 0, w - 20, h), Color.FromArgb(140, 140, 155),
                     TextFormatFlags.VerticalCenter | TextFormatFlags.HorizontalCenter | TextFormatFlags.EndEllipsis);
+                return;
+            }
+
+            if (!ss.IsSyncing && ss.IsDeleting)
+            {
+                using var fontDel = new Font("Segoe UI", (float)Math.Max(5.5, Math.Round(8.5f * scale, 1)), FontStyle.Bold);
+                using var fontSub = new Font("Segoe UI", (float)Math.Max(5.0, Math.Round(7.2f * scale, 1)), FontStyle.Regular);
+
+                string delName = !string.IsNullOrEmpty(ss.LastDeletedName) ? $": {ss.LastDeletedName}" : "";
+                string delText = $"🗑 {Loc.Get("ServerSync_Deleted")}{delName}";
+                string peerInfo = !string.IsNullOrEmpty(ss.PeerName)
+                    ? $"{_settings.ServerSyncHost}:{_settings.ServerSyncPort} ↔ {ss.PeerName}"
+                    : (ss.PeerConnected ? $"{_settings.ServerSyncHost}:{_settings.ServerSyncPort}" : $"{_settings.ServerSyncHost}:{_settings.ServerSyncPort} (Ожидание соединения)");
+
+                TextRenderer.DrawText(g, delText, fontDel, new Point(14, (int)Math.Round(8 * scale)), Color.FromArgb(250, 204, 21), TextFormatFlags.NoPadding);
+                TextRenderer.DrawText(g, peerInfo, fontSub, new Point(14, (int)Math.Round(28 * scale)), Color.FromArgb(200, 190, 120), TextFormatFlags.NoPadding);
                 return;
             }
 

@@ -28,7 +28,7 @@ namespace RyzenQuietPro
         {
             ["ru"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.13",
+                ["AppTitle"] = "RyzenQuiet PRO v4.14",
                 ["Silent"] = "Тихий",
                 ["SilentFull"] = "🌿 Тихий (99%)",
                 ["Boost"] = "Турбо",
@@ -54,6 +54,7 @@ namespace RyzenQuietPro
                 ["ServerSync_TestBtn"] = "Проверить",
                 ["ServerSync_Testing"] = "Проверка...",
                 ["ServerSync_Synced"] = "Синхронизировано",
+                ["ServerSync_Deleted"] = "Удаление",
                 ["ServerSync_Offline"] = "Офлайн",
                 ["ServerSync_Queue"] = "Очередь",
                 ["ServerSync_File"] = "Файл",
@@ -268,7 +269,7 @@ namespace RyzenQuietPro
             },
             ["en"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.13",
+                ["AppTitle"] = "RyzenQuiet PRO v4.14",
                 ["Silent"] = "Silent",
                 ["SilentFull"] = "🌿 Silent (99%)",
                 ["Boost"] = "Boost",
@@ -293,6 +294,7 @@ namespace RyzenQuietPro
                 ["ServerSync_TestBtn"] = "Test",
                 ["ServerSync_Testing"] = "Testing...",
                 ["ServerSync_Synced"] = "Synchronized",
+                ["ServerSync_Deleted"] = "Deleted",
                 ["ServerSync_Offline"] = "Offline",
                 ["ServerSync_Queue"] = "Queue",
                 ["ServerSync_File"] = "File",
@@ -503,7 +505,7 @@ namespace RyzenQuietPro
             },
             ["de"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.13",
+                ["AppTitle"] = "RyzenQuiet PRO v4.14",
                 ["Silent"] = "Leise",
                 ["SilentFull"] = "🌿 Leise (99%)",
                 ["Boost"] = "Boost",
@@ -528,6 +530,7 @@ namespace RyzenQuietPro
                 ["ServerSync_TestBtn"] = "Prüfen",
                 ["ServerSync_Testing"] = "Prüfung...",
                 ["ServerSync_Synced"] = "Synchronisiert",
+                ["ServerSync_Deleted"] = "Gelöscht",
                 ["ServerSync_Offline"] = "Offline",
                 ["ServerSync_Queue"] = "Warteschlange",
                 ["ServerSync_File"] = "Datei",
@@ -667,7 +670,7 @@ namespace RyzenQuietPro
             },
             ["es"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.13",
+                ["AppTitle"] = "RyzenQuiet PRO v4.14",
                 ["Silent"] = "Silencioso",
                 ["SilentFull"] = "🌿 Silencioso (99%)",
                 ["Boost"] = "Turbo",
@@ -692,6 +695,7 @@ namespace RyzenQuietPro
                 ["ServerSync_TestBtn"] = "Probar",
                 ["ServerSync_Testing"] = "Probando...",
                 ["ServerSync_Synced"] = "Sincronizado",
+                ["ServerSync_Deleted"] = "Eliminación",
                 ["ServerSync_Offline"] = "Desconectado",
                 ["ServerSync_Queue"] = "Cola",
                 ["ServerSync_File"] = "Archivo",
@@ -831,7 +835,7 @@ namespace RyzenQuietPro
             },
             ["fr"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.13",
+                ["AppTitle"] = "RyzenQuiet PRO v4.14",
                 ["Silent"] = "Silencieux",
                 ["SilentFull"] = "🌿 Silencieux (99%)",
                 ["Boost"] = "Turbo",
@@ -856,6 +860,7 @@ namespace RyzenQuietPro
                 ["ServerSync_TestBtn"] = "Tester",
                 ["ServerSync_Testing"] = "Test en cours...",
                 ["ServerSync_Synced"] = "Synchronisé",
+                ["ServerSync_Deleted"] = "Suppression",
                 ["ServerSync_Offline"] = "Hors ligne",
                 ["ServerSync_Queue"] = "File d'attente",
                 ["ServerSync_File"] = "Fichier",
@@ -995,7 +1000,7 @@ namespace RyzenQuietPro
             },
             ["ja"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.13",
+                ["AppTitle"] = "RyzenQuiet PRO v4.14",
                 ["Silent"] = "静音",
                 ["SilentFull"] = "🌿 静音モード (99%)",
                 ["Boost"] = "ブースト",
@@ -1020,6 +1025,7 @@ namespace RyzenQuietPro
                 ["ServerSync_TestBtn"] = "テスト",
                 ["ServerSync_Testing"] = "テスト中...",
                 ["ServerSync_Synced"] = "同期完了",
+                ["ServerSync_Deleted"] = "削除中",
                 ["ServerSync_Offline"] = "オフライン",
                 ["ServerSync_Queue"] = "キュー",
                 ["ServerSync_File"] = "ファイル",
@@ -1159,7 +1165,7 @@ namespace RyzenQuietPro
             },
             ["pt"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.13",
+                ["AppTitle"] = "RyzenQuiet PRO v4.14",
                 ["Silent"] = "Silencioso",
                 ["SilentFull"] = "🌿 Silencioso (99%)",
                 ["Boost"] = "Turbo",
@@ -1184,6 +1190,7 @@ namespace RyzenQuietPro
                 ["ServerSync_TestBtn"] = "Testar",
                 ["ServerSync_Testing"] = "Testando...",
                 ["ServerSync_Synced"] = "Sincronizado",
+                ["ServerSync_Deleted"] = "Exclusão",
                 ["ServerSync_Offline"] = "Offline",
                 ["ServerSync_Queue"] = "Fila",
                 ["ServerSync_File"] = "Arquivo",
@@ -1323,7 +1330,7 @@ namespace RyzenQuietPro
             },
             ["zh"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.13",
+                ["AppTitle"] = "RyzenQuiet PRO v4.14",
                 ["Silent"] = "静音",
                 ["SilentFull"] = "🌿 静音模式 (99%)",
                 ["Boost"] = "加速",
@@ -1348,6 +1355,7 @@ namespace RyzenQuietPro
                 ["ServerSync_TestBtn"] = "测试",
                 ["ServerSync_Testing"] = "测试中...",
                 ["ServerSync_Synced"] = "已同步",
+                ["ServerSync_Deleted"] = "正在删除",
                 ["ServerSync_Offline"] = "离线",
                 ["ServerSync_Queue"] = "队列",
                 ["ServerSync_File"] = "文件",

@@ -41,6 +41,12 @@ namespace RyzenQuietPro
         public float OverallPercent { get; private set; }
         public int EtaSeconds { get; private set; }
 
+        // Deletion status tracking
+        public bool IsDeleting { get; private set; }
+        public string LastDeletedName { get; private set; } = "";
+        public bool LastDeletedIsDir { get; private set; }
+        public DateTime LastDeleteTime { get; private set; } = DateTime.MinValue;
+
         public DateTime LastUpdateTime { get; private set; } = DateTime.MinValue;
 
         public event Action? ProgressUpdated;
@@ -141,6 +147,10 @@ namespace RyzenQuietPro
             QueueTotalBytes = 0;
             OverallPercent = 100f;
             EtaSeconds = 0;
+            IsDeleting = false;
+            LastDeletedName = "";
+            LastDeletedIsDir = false;
+            LastDeleteTime = DateTime.MinValue;
         }
 
         private async Task PollLoopAsync(CancellationToken token)
@@ -163,12 +173,33 @@ namespace RyzenQuietPro
 
                         bool prevSyncing = IsSyncing;
                         bool prevOnline = IsOnline;
+                        bool prevDeleting = IsDeleting;
 
                         IsOnline = true;
                         IsSyncing = root.TryGetProperty("is_syncing", out var pSync) && pSync.GetBoolean();
                         PeerConnected = root.TryGetProperty("peer_connected", out var pConn) && pConn.GetBoolean();
                         PeerName = root.TryGetProperty("peer_name", out var pPeer) && pPeer.ValueKind == JsonValueKind.String ? pPeer.GetString() : null;
                         Direction = root.TryGetProperty("direction", out var pDir) && pDir.ValueKind == JsonValueKind.String ? pDir.GetString() ?? "idle" : "idle";
+
+                        if (root.TryGetProperty("recent_delete", out var pDel) && pDel.ValueKind == JsonValueKind.Object)
+                        {
+                            bool active = pDel.TryGetProperty("active", out var pAct) && pAct.GetBoolean();
+                            if (active)
+                            {
+                                IsDeleting = true;
+                                LastDeletedName = pDel.TryGetProperty("name", out var pName) ? pName.GetString() ?? "" : "";
+                                LastDeletedIsDir = pDel.TryGetProperty("is_dir", out var pIsDir) && pIsDir.GetBoolean();
+                                LastDeleteTime = DateTime.Now;
+                            }
+                            else if ((DateTime.Now - LastDeleteTime).TotalSeconds >= 3.0)
+                            {
+                                IsDeleting = false;
+                            }
+                        }
+                        else if ((DateTime.Now - LastDeleteTime).TotalSeconds >= 3.0)
+                        {
+                            IsDeleting = false;
+                        }
 
                         if (root.TryGetProperty("current_file", out var curFile) && curFile.ValueKind == JsonValueKind.Object)
                         {
@@ -203,10 +234,10 @@ namespace RyzenQuietPro
 
                         LastUpdateTime = DateTime.Now;
 
-                        // Fast adaptive polling when syncing, slower when idle
-                        delayMs = IsSyncing ? 550 : 2500;
+                        // Fast adaptive polling when syncing or deleting, slower when idle
+                        delayMs = (IsSyncing || IsDeleting) ? 550 : 2500;
 
-                        if (prevSyncing != IsSyncing || prevOnline != IsOnline)
+                        if (prevSyncing != IsSyncing || prevOnline != IsOnline || prevDeleting != IsDeleting)
                         {
                             StatusChanged?.Invoke();
                         }

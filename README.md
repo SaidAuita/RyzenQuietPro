@@ -1,12 +1,12 @@
 <div align="center">
 
-# ⚡ RyzenQuiet PRO (v4.13)
+# ⚡ RyzenQuiet PRO (v4.14)
 **Sleek, lightweight hardware HUD & power-plan optimizer for Windows with AMD Ryzen CPB toggle, GPU power limiting & acoustic tuning, multi-stopwatch per-app process profiling with per-counter scaling, automated HDD awake schedule & keep-alive, enhanced multi-disk telemetry, modular fan monitoring, collapsible sections, seamless Windows Task Manager startup integration, start-minimized boot mode, and ServerSync exchange progress monitoring.**
 
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011%20(64--bit)-blue.svg)](#)
 [![.NET](https://img.shields.io/badge/.NET-8.0-purple.svg)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/Release-v4.13-orange.svg)](https://github.com/SaidAuita/RyzenQuietPro/releases)
+[![Release](https://img.shields.io/badge/Release-v4.14-orange.svg)](https://github.com/SaidAuita/RyzenQuietPro/releases)
 [![Telemetry](https://img.shields.io/badge/Telemetry-Zero%20%2F%20100%25%20Offline-brightgreen.svg)](#)
 
 <br/>
@@ -29,7 +29,7 @@
 <p align="center">
   <img src="images/RyzenQuietPro-v4_09.png" alt="RyzenQuiet PRO v4.09 Collapsible Sections into Compact Single-Line Strips" width="370" />
   &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="images/RyzenQuietPro-v4_13.png" alt="RyzenQuiet PRO v4.13 ServerSync Live Exchange Progress HUD" width="370" />
+  <img src="images/RyzenQuietPro-v4_13.png" alt="RyzenQuiet PRO v4.14 ServerSync Live Exchange Progress HUD" width="370" />
 </p>
 
 <br/>
@@ -152,14 +152,14 @@ All subsystem graphs share a synchronized 60-second historical canvas rendered w
 * **CLI Parameter Support (`--minimized`):** When auto-start is enabled with minimized mode, the registry `Run` key is registered with `--minimized` (`"path\RyzenQuietPro.exe" --minimized`), preventing HUD popups even if floating desktop mode was active.
 * **Instant Activation:** The main HUD remains one click away via the tray icon or by launching the application shortcut again.
 
-### 13. 🔄 ServerSync Exchange Monitor (v4.13)
+### 13. 🔄 ServerSync Exchange Monitor (v4.14)
 * **What is ServerSync:** A dedicated, lightweight module designed to monitor real-time file synchronization between private servers (e.g. Work and Home network nodes) powered by the **[ServerSync](https://github.com/SaidAuita/ServerSync)** bidirectional daemon.
 * **Dual Progress Bars:** 
   * *Current File:* Live transfer progress (filename, transferred/total MB, %, current MB/s speed, and transfer direction: ⬆ Upload or ⬇ Download).
   * *Queue:* Total remaining files in queue, cumulative transfer volume (MB/GB), overall completion percentage, and estimated time remaining (ETA).
 
 <p align="center">
-  <img src="images/RyzenQuietPro-v4_13.png" alt="ServerSync Live Progress Monitor with Dual Per-File and Overall Queue Tracking in RyzenQuiet PRO v4.13" width="370" />
+  <img src="images/RyzenQuietPro-v4_13.png" alt="ServerSync Live Progress Monitor with Dual Per-File and Overall Queue Tracking in RyzenQuiet PRO v4.14" width="370" />
 </p>
 * **How to Connect:**
   * Open Settings (`⚙`) and enable the **ServerSync** card.
@@ -270,7 +270,7 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 <a name="русский"></a>
 <div align="center">
 
-# ⚡ RyzenQuiet PRO (v4.13) — Описание на русском
+# ⚡ RyzenQuiet PRO (v4.14) — Описание на русском
 **Стильный, легковесный аппаратный HUD-монитор и менеджер профилей питания для Windows с мгновенным отключением CPB у процессоров AMD Ryzen, акустическим контролем и ограничением мощности видеокарт (GPU Power Limiting), мульти-секундомером с привязкой к приложениям и независимым масштабом графиков, автоматическим расписанием работы HDD без сна и защитой от остановки шпинделей, расширенным мониторингом накопителей с раскрытием процессов I/O, модульным мониторингом вентиляторов, компактным сворачиванием блоков, интеграцией с Диспетчером задач Windows, автостартом в трей и мониторингом сервера обмена ServerSync.**
 
 </div>
@@ -381,14 +381,14 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 * **Поддержка аргументов командной строки (`--minimized`):** При включении опции в реестр автозапуска `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` автоматически прописывается аргумент `--minimized`, гарантирующий запуск утилиты в трей.
 * **Мгновенное разворачивание:** Приложение продолжает работать в фоне, а дашборд мгновенно разворачивается по клику на иконку в трее или при повторном запуске ярлыка.
 
-### 13. 🔄 Мониторинг синхронизации сервера обмена ServerSync (v4.13)
+### 13. 🔄 Мониторинг синхронизации сервера обмена ServerSync (v4.14)
 * **Что такое ServerSync:** Встроенный модуль мониторинга непрерывной двусторонней синхронизации рабочих файлов между серверами Дома и Работы под управлением демона **[ServerSync](https://github.com/SaidAuita/ServerSync)**.
 * **Двойная шкала прогресса в HUD:**
   * *Текущий файл:* Пофайловая индикация передачи (имя файла с умным сокращением путей, переданный объем / общий размер в KB/MB/GB, процент, мгновенная скорость в МБ/с и направление: ⬆ Отправка или ⬇ Скачивание).
   * *Общая очередь:* Иконка 📦, количество оставшихся файлов, суммарный объем данных в очереди, общий процент выполнения и расчетный ETA.
 
 <p align="center">
-  <img src="images/RyzenQuietPro-v4_13.png" alt="Мониторинг прогресса синхронизации файлов ServerSync в RyzenQuiet PRO v4.13" width="370" />
+  <img src="images/RyzenQuietPro-v4_13.png" alt="Мониторинг прогресса синхронизации файлов ServerSync в RyzenQuiet PRO v4.14" width="370" />
 </p>
 * **Как подключиться и настроить:**
   * Откройте меню настроек (`⚙`) и перейдите к блоку **Сервер обмена**.
@@ -442,8 +442,8 @@ build.bat
 ```
 
 Исполняемые файлы будут скомпилированы в каталог `build\`:
-* `build\RyzenQuietPro-v4.13.exe` (Standalone)
-* `build\RyzenQuietPro-v4.13-Lite.exe` (Lite)
+* `build\RyzenQuietPro-v4.14.exe` (Standalone)
+* `build\RyzenQuietPro-v4.14-Lite.exe` (Lite)
 * `build\plugins\FanService\RyzenQuiet.FanService.exe` (Fan Monitor Addon)
 
 ---
