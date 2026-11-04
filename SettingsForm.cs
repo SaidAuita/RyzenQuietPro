@@ -159,6 +159,7 @@ namespace RyzenQuietPro
         private TextBox _txtServerSyncPort = null!;
         private Button _btnServerSyncTest = null!;
         private Label _lblServerSyncTestStatus = null!;
+        private Label _lblServerSyncHint = null!;
 
         private HardwareInfoForm? _infoForm;
         private FanSelectionForm? _fanSelectionForm;
@@ -175,7 +176,7 @@ namespace RyzenQuietPro
             _onModeChangeRequested = onModeChangeRequested;
 
             bool multiGpu = _hardware.Gpu.GpuCount > 1;
-            int totalFormH = (multiGpu ? 1740 : 1710) + 144;
+            int totalFormH = (multiGpu ? 1740 : 1710) + 185;
 
             var screen = Screen.FromPoint(Cursor.Position);
             int availH = screen.WorkingArea.Height - 30;
@@ -1580,7 +1581,7 @@ namespace RyzenQuietPro
             curY += cardHddH + 8;
 
             // ================= SERVERSYNC CARD =================
-            int cardServerSyncH = 136;
+            int cardServerSyncH = 175;
             var cardServerSync = CreateCard(cardX, curY, cardW, cardServerSyncH);
             _pnlBody.Controls.Add(cardServerSync);
 
@@ -1599,13 +1600,13 @@ namespace RyzenQuietPro
             _pnlServerSyncControls = new Panel
             {
                 Location = new Point(14, 56),
-                Size = new Size(cardW - 28, 70),
+                Size = new Size(cardW - 28, 105),
                 BackColor = Color.Transparent,
                 Enabled = _settings.ServerSyncEnabled
             };
             cardServerSync.Controls.Add(_pnlServerSyncControls);
 
-            // Row 1: Host and Port
+            // Row 1: Host and Port (dynamically positioned so label never overlaps input)
             _lblServerSyncHost = new Label
             {
                 Text = Loc.Get("ServerSync_Host"),
@@ -1618,8 +1619,8 @@ namespace RyzenQuietPro
 
             _txtServerSyncHost = new TextBox
             {
-                Location = new Point(135, 3),
-                Size = new Size(130, 22),
+                Location = new Point(68, 3),
+                Size = new Size(140, 22),
                 BackColor = Color.FromArgb(24, 24, 32),
                 ForeColor = Color.FromArgb(45, 212, 191),
                 BorderStyle = BorderStyle.FixedSingle,
@@ -1634,14 +1635,14 @@ namespace RyzenQuietPro
                 Text = Loc.Get("ServerSync_Port"),
                 Font = new Font("Segoe UI", 8.25f),
                 ForeColor = Color.FromArgb(200, 200, 215),
-                Location = new Point(280, 6),
+                Location = new Point(218, 6),
                 AutoSize = true
             };
             _pnlServerSyncControls.Controls.Add(_lblServerSyncPort);
 
             _txtServerSyncPort = new TextBox
             {
-                Location = new Point(330, 3),
+                Location = new Point(268, 3),
                 Size = new Size(60, 22),
                 BackColor = Color.FromArgb(24, 24, 32),
                 ForeColor = Color.FromArgb(45, 212, 191),
@@ -1652,13 +1653,13 @@ namespace RyzenQuietPro
             _txtServerSyncPort.Leave += (s, e) => SaveServerSyncConfig();
             _pnlServerSyncControls.Controls.Add(_txtServerSyncPort);
 
-            // Row 2: Test button & status
+            // Row 2: Test button & status (30px height, bold font, no clipped descenders)
             _btnServerSyncTest = new Button
             {
                 Text = Loc.Get("ServerSync_TestBtn"),
-                Font = new Font("Segoe UI", 8.25f),
-                Size = new Size(125, 26),
-                Location = new Point(0, 36),
+                Font = new Font("Segoe UI", 8.25f, FontStyle.Bold),
+                Size = new Size(115, 30),
+                Location = new Point(0, 34),
                 FlatStyle = FlatStyle.Flat,
                 BackColor = Color.FromArgb(32, 36, 48),
                 ForeColor = Color.FromArgb(56, 189, 248),
@@ -1671,8 +1672,8 @@ namespace RyzenQuietPro
 
             _lblServerSyncTestStatus = new Label
             {
-                Location = new Point(135, 41),
-                Size = new Size(cardW - 28 - 140, 20),
+                Location = new Point(125, 39),
+                Size = new Size(cardW - 28 - 130, 22),
                 Font = new Font("Segoe UI", 8.25f),
                 ForeColor = Color.FromArgb(160, 160, 175),
                 TextAlign = ContentAlignment.MiddleLeft,
@@ -1680,6 +1681,18 @@ namespace RyzenQuietPro
                 Text = ""
             };
             _pnlServerSyncControls.Controls.Add(_lblServerSyncTestStatus);
+
+            // Row 3: ServerSync Hint / Help text explaining purpose and ports
+            _lblServerSyncHint = new Label
+            {
+                Text = Loc.Get("ServerSync_Hint"),
+                Font = new Font("Segoe UI", 7.5f),
+                ForeColor = Color.FromArgb(135, 140, 155),
+                Location = new Point(0, 70),
+                Size = new Size(cardW - 28, 32),
+                AutoEllipsis = true
+            };
+            _pnlServerSyncControls.Controls.Add(_lblServerSyncHint);
 
             curY += cardServerSyncH + 8;
 
@@ -2578,6 +2591,14 @@ namespace RyzenQuietPro
             if (_lblServerSyncHost != null) _lblServerSyncHost.Text = Loc.Get("ServerSync_Host");
             if (_lblServerSyncPort != null) _lblServerSyncPort.Text = Loc.Get("ServerSync_Port");
             if (_btnServerSyncTest != null) _btnServerSyncTest.Text = Loc.Get("ServerSync_TestBtn");
+            if (_lblServerSyncHint != null) _lblServerSyncHint.Text = Loc.Get("ServerSync_Hint");
+            if (_lblServerSyncHost != null && _txtServerSyncHost != null && _lblServerSyncPort != null && _txtServerSyncPort != null)
+            {
+                int hostX = Math.Max(68, _lblServerSyncHost.Right + 8);
+                _txtServerSyncHost.Location = new Point(hostX, 3);
+                _lblServerSyncPort.Location = new Point(_txtServerSyncHost.Right + 12, 6);
+                _txtServerSyncPort.Location = new Point(_lblServerSyncPort.Right + 8, 3);
+            }
 
             UpdateFanModeUI();
             UpdateFanStatusUI();

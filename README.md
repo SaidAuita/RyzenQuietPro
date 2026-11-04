@@ -151,10 +151,17 @@ All subsystem graphs share a synchronized 60-second historical canvas rendered w
 * **Instant Activation:** The main HUD remains one click away via the tray icon or by launching the application shortcut again.
 
 ### 13. 🔄 ServerSync Exchange Monitor (v4.12)
-* **Real-Time Exchange Progress:** Dedicated pluggable module to monitor file sync between Work and Home systems.
-* **Dual Progress Bars:** Displays both per-file transfer progress (filename, transferred/total MB, %, current MB/s speed, upload/download direction) and overall queue completion (files count, remaining MB, overall %, ETA).
-* **Zero Resource Overhead:** Completely idle with 0 threads, 0 polling, and 0 memory consumption when disabled.
-* **Adaptive Polling:** Automatically switches to high-frequency updates (550ms) during active transfers and relaxes to 2.5s when synchronized.
+* **What is ServerSync:** A dedicated, lightweight module designed to monitor real-time file synchronization between private servers (e.g. Work and Home network nodes) powered by the ServerSync bidirectional daemon.
+* **Dual Progress Bars:** 
+  * *Current File:* Live transfer progress (filename, transferred/total MB, %, current MB/s speed, and transfer direction: ⬆ Upload or ⬇ Download).
+  * *Queue:* Total remaining files in queue, cumulative transfer volume (MB/GB), overall completion percentage, and estimated time remaining (ETA).
+* **How to Connect:**
+  * Open Settings (`⚙`) and enable the **ServerSync** card.
+  * Enter the IP address of the ServerSync server running on your **current local network**:
+    * When at work: specify your local work server IP (e.g. `192.168.0.22`, port `19888`).
+    * When at home: specify your local home server IP (e.g. `192.168.1.4`, port `19888`).
+  * Click **[ Test ]** to verify real-time connectivity (`✓ Connected ↔ peer-node`).
+* **Adaptive Polling & Zero Overhead:** Completely idle with 0 threads and 0 network requests when disabled. Automatically switches between fast updates (550ms) during active transfers and relaxed heartbeat (2.5s) when fully synchronized.
 
 ---
 
@@ -366,10 +373,17 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 * **Мгновенное разворачивание:** Приложение продолжает работать в фоне, а дашборд мгновенно разворачивается по клику на иконку в трее или при повторном запуске ярлыка.
 
 ### 13. 🔄 Мониторинг синхронизации сервера обмена ServerSync (v4.12)
-* **Прогресс обмена в реальном времени:** Подключаемый модуль для отслеживания синхронизации файлов между серверами Дома и Работы.
-* **Двойная шкала прогресса:** Детальная пофайловая индикация (имя файла, передано/всего МБ, %, скорость МБ/с, направление ⬆/⬇) и общий статус очереди (остаток файлов, общий объем МБ, %, ETA).
-* **Нулевые накладные расходы:** При отключенном модуле потребляет 0 ресурсов (0 потоков, 0 таймеров, 0 фоновых запросов).
-* **Адаптивный опрос:** Автоматически ускоряет опрос (до 550 мс) при активном копировании файлов и снижает частоту до 2.5 с в режиме синхронизации.
+* **Что такое ServerSync:** Встроенный модуль мониторинга непрерывной двусторонней синхронизации рабочих файлов между серверами Дома и Работы под управлением демона ServerSync.
+* **Двойная шкала прогресса в HUD:**
+  * *Текущий файл:* Пофайловая индикация передачи (имя файла с умным сокращением путей, переданный объем / общий размер в KB/MB/GB, процент, мгновенная скорость в МБ/с и направление: ⬆ Отправка или ⬇ Скачивание).
+  * *Общая очередь:* Иконка 📦, количество оставшихся файлов, суммарный объем данных в очереди, общий процент выполнения и расчетный ETA.
+* **Как подключиться и настроить:**
+  * Откройте меню настроек (`⚙`) и перейдите к блоку **Сервер обмена**.
+  * Укажите IP-адрес сервера ServerSync в вашей **текущей локальной сети**:
+    * Находясь на работе: введите локальный IP рабочего сервера (например, `192.168.0.22`, порт `19888`).
+    * Находясь дома: введите локальный IP домашнего сервера (например, `192.168.1.4`, порт `19888`).
+  * Нажмите кнопку **[ Проверить ]** — утилита мгновенно опросит локальный эндпоинт телеметрии и покажет имя подключенного пира (`✓ work-server ↔ cladovka-server`).
+* **Адаптивный опрос и нулевые накладные расходы:** При выключенном чекбоксе потребляет ровно 0 ресурсов (0 потоков, 0 таймеров, 0 запросов). В активном режиме динамически ускоряет опрос (до 550 мс) при передаче файлов и снижает частоту до 2.5 с в режиме синхронизации.
 
 ---
 

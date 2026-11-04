@@ -416,7 +416,7 @@ namespace RyzenQuietPro
                 totalH += (int)Math.Round(28 * scale);
                 if (!_settings.SectionServerSyncCollapsed)
                 {
-                    totalH += (int)Math.Round(62 * scale);
+                    totalH += (int)Math.Round(72 * scale);
                 }
             }
 
@@ -1137,7 +1137,7 @@ namespace RyzenQuietPro
             }
             if (showDisk) fixedH += sepH + sepGap + headerRowH + (!_settings.SectionDiskCollapsed && (showFans || showServerSync) ? (int)Math.Round(6 * scale) : 0);
             if (showFans) fixedH += sepH + (int)Math.Round(6 * scale) + (int)Math.Round(24 * scale);
-            if (showServerSync) fixedH += sepH + sepGap + headerRowH + (!_settings.SectionServerSyncCollapsed ? (int)Math.Round(58 * scale) + (int)Math.Round(6 * scale) : (int)Math.Round(4 * scale));
+            if (showServerSync) fixedH += sepH + sepGap + headerRowH + (!_settings.SectionServerSyncCollapsed ? (int)Math.Round(66 * scale) + (int)Math.Round(6 * scale) : (int)Math.Round(4 * scale));
 
             int fanH;
             int graphH;
@@ -1201,6 +1201,25 @@ namespace RyzenQuietPro
                 fanH = 0;
                 int remainingForGraphs = Math.Max((int)Math.Round(40 * scale), availableH - fixedH);
                 graphH = Math.Max(minGraphH, remainingForGraphs / activeGraphCount);
+            }
+
+            int totalNeededH = topY + fixedH + (activeGraphCount * minGraphH) + footerH + (int)Math.Round(8 * scale);
+            if (this.ClientSize.Height < totalNeededH)
+            {
+                var screen = Screen.FromControl(this) ?? Screen.PrimaryScreen;
+                int maxScreenH = screen != null ? screen.WorkingArea.Height : totalNeededH;
+                int newH = Math.Min(totalNeededH, maxScreenH);
+                if (this.ClientSize.Height < newH)
+                {
+                    this.ClientSize = new Size(this.ClientSize.Width, newH);
+                    _settings.WindowHeight = newH;
+                    h = this.ClientSize.Height;
+                    footerY = h - footerH;
+                    _footerPanel.Location = new Point(0, footerY);
+                    availableH = Math.Max((int)Math.Round(150 * scale), (footerY - (int)Math.Round(8 * scale)) - topY);
+                    int remForGraphs = Math.Max((int)Math.Round(40 * scale), availableH - fixedH);
+                    graphH = Math.Max(minGraphH, remForGraphs / activeGraphCount);
+                }
             }
 
             int curY = topY;
@@ -1554,7 +1573,7 @@ namespace RyzenQuietPro
 
                 if (!isServerSyncCollapsed)
                 {
-                    int ssPanelH = (int)Math.Round(58 * scale);
+                    int ssPanelH = (int)Math.Round(66 * scale);
                     _pnlServerSync.Location = new Point(marginX, curY);
                     _pnlServerSync.Size = new Size(contentW, ssPanelH);
                     curY += ssPanelH + (int)Math.Round(6 * scale);
@@ -5076,7 +5095,7 @@ namespace RyzenQuietPro
             int barH = (int)Math.Max(4, Math.Round(5 * scale));
 
             // --- BAR 1: Current File ---
-            int row1Y = (int)Math.Round(5 * scale);
+            int row1Y = (int)Math.Round(6 * scale);
             string dirIcon = (ss.Direction == "upload") ? "⬆" : "⬇";
             string fileName = string.IsNullOrEmpty(ss.CurrentFileName) ? Loc.Get("ServerSync_File") : ss.CurrentFileName;
             string fileLeft = $"{dirIcon} {fileName}";
@@ -5085,13 +5104,13 @@ namespace RyzenQuietPro
             Size rightSz = TextRenderer.MeasureText(g, fileRight, fontBold, Size.Empty, TextFormatFlags.NoPadding);
 
             int leftMaxW = Math.Max(40, barW - rightSz.Width - 8);
-            var leftRect = new Rectangle(padX, row1Y, leftMaxW, (int)Math.Round(14 * scale));
+            var leftRect = new Rectangle(padX, row1Y, leftMaxW, (int)Math.Round(16 * scale));
             TextRenderer.DrawText(g, fileLeft, fontLabel, leftRect, Color.FromArgb(220, 225, 235),
                 TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPadding);
 
             TextRenderer.DrawText(g, fileRight, fontBold, new Point(w - padX - rightSz.Width, row1Y), Color.FromArgb(45, 212, 191), TextFormatFlags.NoPadding);
 
-            int bar1Y = row1Y + (int)Math.Round(15 * scale);
+            int bar1Y = row1Y + (int)Math.Round(17 * scale);
             using (var trackBrush = new SolidBrush(Color.FromArgb(32, 34, 44)))
             {
                 g.FillRectangle(trackBrush, padX, bar1Y, barW, barH);
@@ -5105,19 +5124,19 @@ namespace RyzenQuietPro
             }
 
             // --- BAR 2: Overall Queue ---
-            int row2Y = bar1Y + barH + (int)Math.Round(5 * scale);
+            int row2Y = bar1Y + barH + (int)Math.Round(6 * scale);
             string qLeft = $"📦 {Loc.Get("ServerSync_Queue")}: {ss.QueueFilesCount} {Loc.Get("ServerSync_FilesRemaining")} ({FormatBytes(ss.QueueTotalBytes)})";
             string qRight = $"{ss.OverallPercent:F0}%{(ss.CurrentSpeedMbps > 0 ? $" • {ss.CurrentSpeedMbps:F1} MB/s" : "")}";
             Size qRightSz = TextRenderer.MeasureText(g, qRight, fontBold, Size.Empty, TextFormatFlags.NoPadding);
 
             int qLeftMaxW = Math.Max(40, barW - qRightSz.Width - 8);
-            var qLeftRect = new Rectangle(padX, row2Y, qLeftMaxW, (int)Math.Round(14 * scale));
+            var qLeftRect = new Rectangle(padX, row2Y, qLeftMaxW, (int)Math.Round(16 * scale));
             TextRenderer.DrawText(g, qLeft, fontLabel, qLeftRect, Color.FromArgb(200, 205, 215),
                 TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPadding);
 
             TextRenderer.DrawText(g, qRight, fontBold, new Point(w - padX - qRightSz.Width, row2Y), Color.FromArgb(129, 140, 248), TextFormatFlags.NoPadding);
 
-            int bar2Y = row2Y + (int)Math.Round(15 * scale);
+            int bar2Y = row2Y + (int)Math.Round(17 * scale);
             using (var trackBrush2 = new SolidBrush(Color.FromArgb(32, 34, 44)))
             {
                 g.FillRectangle(trackBrush2, padX, bar2Y, barW, barH);
