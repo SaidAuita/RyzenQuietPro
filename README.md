@@ -153,7 +153,7 @@ All subsystem graphs share a synchronized 60-second historical canvas rendered w
 * **Instant Activation:** The main HUD remains one click away via the tray icon or by launching the application shortcut again.
 
 ### 13. 🔄 ServerSync Exchange Monitor (v4.13)
-* **What is ServerSync:** A dedicated, lightweight module designed to monitor real-time file synchronization between private servers (e.g. Work and Home network nodes) powered by the ServerSync bidirectional daemon.
+* **What is ServerSync:** A dedicated, lightweight module designed to monitor real-time file synchronization between private servers (e.g. Work and Home network nodes) powered by the **[ServerSync](https://github.com/SaidAuita/ServerSync)** bidirectional daemon.
 * **Dual Progress Bars:** 
   * *Current File:* Live transfer progress (filename, transferred/total MB, %, current MB/s speed, and transfer direction: ⬆ Upload or ⬇ Download).
   * *Queue:* Total remaining files in queue, cumulative transfer volume (MB/GB), overall completion percentage, and estimated time remaining (ETA).
@@ -231,6 +231,9 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 
 **[ComfyUI Photoshop Plugin (PH-CU-S)](https://github.com/SaidAuita/ComfyUI_PH-CU-S)**
 * A powerful Photoshop plugin powered by ComfyUI, providing direct integration with local generative models.
+
+**[ServerSync](https://github.com/SaidAuita/ServerSync)**
+* Ultra-fast, lightweight bi-directional real-time file synchronization daemon over WebSockets with inotify, SQLite journal, chunked streaming, and embedded HTTP telemetry.
 
 **[AI Dimension](https://github.com/SaidAuita/AI-Dimension)**
 * Automatic technical dimensioning, bounds, leader lines, and drafting scales extension for Adobe Illustrator.
@@ -379,7 +382,7 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 * **Мгновенное разворачивание:** Приложение продолжает работать в фоне, а дашборд мгновенно разворачивается по клику на иконку в трее или при повторном запуске ярлыка.
 
 ### 13. 🔄 Мониторинг синхронизации сервера обмена ServerSync (v4.13)
-* **Что такое ServerSync:** Встроенный модуль мониторинга непрерывной двусторонней синхронизации рабочих файлов между серверами Дома и Работы под управлением демона ServerSync.
+* **Что такое ServerSync:** Встроенный модуль мониторинга непрерывной двусторонней синхронизации рабочих файлов между серверами Дома и Работы под управлением демона **[ServerSync](https://github.com/SaidAuita/ServerSync)**.
 * **Двойная шкала прогресса в HUD:**
   * *Текущий файл:* Пофайловая индикация передачи (имя файла с умным сокращением путей, переданный объем / общий размер в KB/MB/GB, процент, мгновенная скорость в МБ/с и направление: ⬆ Отправка или ⬇ Скачивание).
   * *Общая очередь:* Иконка 📦, количество оставшихся файлов, суммарный объем данных в очереди, общий процент выполнения и расчетный ETA.
@@ -452,6 +455,9 @@ build.bat
 
 **[ComfyUI Photoshop Plugin (PH-CU-S)](https://github.com/SaidAuita/ComfyUI_PH-CU-S)**
 * Мощный плагин для Photoshop на базе ComfyUI, обеспечивающий прямую интеграцию с локальными генеративными моделями.
+
+**[ServerSync](https://github.com/SaidAuita/ServerSync)**
+* Легковесный высокоскоростной демон двусторонней синхронизации файлов между серверами по WebSockets с поддержкой inotify, SQLite-журнала, докачки чанками и встроенной телеметрии.
 
 **[AI Dimension](https://github.com/SaidAuita/AI-Dimension)**
 * Аналогичное расширение для автоматической расстановки размеров в Adobe Illustrator.
