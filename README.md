@@ -1,12 +1,12 @@
 <div align="center">
 
-# ⚡ RyzenQuiet PRO (v4.12)
+# ⚡ RyzenQuiet PRO (v4.13)
 **Sleek, lightweight hardware HUD & power-plan optimizer for Windows with AMD Ryzen CPB toggle, GPU power limiting & acoustic tuning, multi-stopwatch per-app process profiling with per-counter scaling, automated HDD awake schedule & keep-alive, enhanced multi-disk telemetry, modular fan monitoring, collapsible sections, seamless Windows Task Manager startup integration, start-minimized boot mode, and ServerSync exchange progress monitoring.**
 
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011%20(64--bit)-blue.svg)](#)
 [![.NET](https://img.shields.io/badge/.NET-8.0-purple.svg)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/Release-v4.12-orange.svg)](https://github.com/SaidAuita/RyzenQuietPro/releases)
+[![Release](https://img.shields.io/badge/Release-v4.13-orange.svg)](https://github.com/SaidAuita/RyzenQuietPro/releases)
 [![Telemetry](https://img.shields.io/badge/Telemetry-Zero%20%2F%20100%25%20Offline-brightgreen.svg)](#)
 
 <br/>
@@ -158,8 +158,8 @@ All subsystem graphs share a synchronized 60-second historical canvas rendered w
 * **How to Connect:**
   * Open Settings (`⚙`) and enable the **ServerSync** card.
   * Enter the IP address of the ServerSync server running on your **current local network**:
-    * When at work: specify your local work server IP (e.g. `192.168.0.22`, port `19888`).
-    * When at home: specify your local home server IP (e.g. `192.168.1.4`, port `19888`).
+    * When at work: specify your local work server IP (e.g. `192.168.1.100`, port `19888`).
+    * When at home: specify your local home server IP (e.g. `192.168.1.200`, port `19888`).
   * Click **[ Test ]** to verify real-time connectivity (`✓ Connected ↔ peer-node`).
 * **Adaptive Polling & Zero Overhead:** Completely idle with 0 threads and 0 network requests when disabled. Automatically switches between fast updates (550ms) during active transfers and relaxed heartbeat (2.5s) when fully synchronized.
 
@@ -261,7 +261,7 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 <a name="русский"></a>
 <div align="center">
 
-# ⚡ RyzenQuiet PRO (v4.12) — Описание на русском
+# ⚡ RyzenQuiet PRO (v4.13) — Описание на русском
 **Стильный, легковесный аппаратный HUD-монитор и менеджер профилей питания для Windows с мгновенным отключением CPB у процессоров AMD Ryzen, акустическим контролем и ограничением мощности видеокарт (GPU Power Limiting), мульти-секундомером с привязкой к приложениям и независимым масштабом графиков, автоматическим расписанием работы HDD без сна и защитой от остановки шпинделей, расширенным мониторингом накопителей с раскрытием процессов I/O, модульным мониторингом вентиляторов, компактным сворачиванием блоков, интеграцией с Диспетчером задач Windows, автостартом в трей и мониторингом сервера обмена ServerSync.**
 
 </div>
@@ -380,8 +380,8 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 * **Как подключиться и настроить:**
   * Откройте меню настроек (`⚙`) и перейдите к блоку **Сервер обмена**.
   * Укажите IP-адрес сервера ServerSync в вашей **текущей локальной сети**:
-    * Находясь на работе: введите локальный IP рабочего сервера (например, `192.168.0.22`, порт `19888`).
-    * Находясь дома: введите локальный IP домашнего сервера (например, `192.168.1.4`, порт `19888`).
+    * Находясь на работе: введите локальный IP рабочего сервера (например, `192.168.1.100`, порт `19888`).
+    * Находясь дома: введите локальный IP домашнего сервера (например, `192.168.1.200`, порт `19888`).
   * Нажмите кнопку **[ Проверить ]** — утилита мгновенно опросит локальный эндпоинт телеметрии и покажет имя подключенного пира (`✓ work-server ↔ cladovka-server`).
 * **Адаптивный опрос и нулевые накладные расходы:** При выключенном чекбоксе потребляет ровно 0 ресурсов (0 потоков, 0 таймеров, 0 запросов). В активном режиме динамически ускоряет опрос (до 550 мс) при передаче файлов и снижает частоту до 2.5 с в режиме синхронизации.
 
@@ -429,8 +429,8 @@ build.bat
 ```
 
 Исполняемые файлы будут скомпилированы в каталог `build\`:
-* `build\RyzenQuietPro-v4.12.exe` (Standalone)
-* `build\RyzenQuietPro-v4.12-Lite.exe` (Lite)
+* `build\RyzenQuietPro-v4.13.exe` (Standalone)
+* `build\RyzenQuietPro-v4.13-Lite.exe` (Lite)
 * `build\plugins\FanService\RyzenQuiet.FanService.exe` (Fan Monitor Addon)
 
 ---

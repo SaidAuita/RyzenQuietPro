@@ -53,7 +53,7 @@ namespace RyzenQuietPro
 
         // ServerSync Integration Module (Exchange server sync telemetry)
         public bool ServerSyncEnabled { get; set; } = false;
-        public string ServerSyncHost { get; set; } = "192.168.0.22";
+        public string ServerSyncHost { get; set; } = "127.0.0.1";
         public int ServerSyncPort { get; set; } = 19888;
 
         public bool ShowGpuGraph { get; set; } = true;
