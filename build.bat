@@ -1,6 +1,6 @@
 @echo off
 setlocal
-set VERSION=v4.11
+set VERSION=v4.12
  
 rem Clear proxy environment variables to allow direct access
 set "HTTPS_PROXY="
@@ -20,6 +20,14 @@ rem Close running instance if any to allow replacing binary
 taskkill /F /IM RyzenQuietPro.exe >nul 2>&1
 taskkill /F /IM RyzenQuietPro-%VERSION%.exe >nul 2>&1
 taskkill /F /IM RyzenQuietPro-%VERSION%-Lite.exe >nul 2>&1
+taskkill /F /IM RyzenQuietPro-v4.11.exe >nul 2>&1
+taskkill /F /IM RyzenQuietPro-v4.11-Lite.exe >nul 2>&1
+taskkill /F /IM RyzenQuietPro-v4.10.exe >nul 2>&1
+taskkill /F /IM RyzenQuietPro-v4.10-Lite.exe >nul 2>&1
+taskkill /F /IM RyzenQuietPro-v4.09.exe >nul 2>&1
+taskkill /F /IM RyzenQuietPro-v4.09-Lite.exe >nul 2>&1
+taskkill /F /IM RyzenQuietPro-v4.08.exe >nul 2>&1
+taskkill /F /IM RyzenQuietPro-v4.08-Lite.exe >nul 2>&1
 taskkill /F /IM RyzenQuietPro-v4.07.exe >nul 2>&1
 taskkill /F /IM RyzenQuietPro-v4.07-Lite.exe >nul 2>&1
 taskkill /F /IM RyzenQuietPro-v4.06.exe >nul 2>&1

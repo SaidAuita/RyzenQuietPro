@@ -85,6 +85,7 @@ namespace RyzenQuietPro
         private ModuleSeparator _sepVram = null!;
         private ModuleSeparator _sepDisk = null!;
         private ModuleSeparator _sepFans = null!;
+        private ModuleSeparator _sepServerSync = null!;
 
         // Metrics Headers & Graphs
         private Label _lblCpu = null!;
@@ -135,6 +136,10 @@ namespace RyzenQuietPro
         private Label _lblFans = null!;
         private Label _lblFansSub = null!;
         private SmoothPanel _pnlFansGraph = null!;
+
+        private Label _lblServerSync = null!;
+        private Label _lblServerSyncSub = null!;
+        private SmoothPanel _pnlServerSync = null!;
 
         // Fan Visual Mode & Animation
         private readonly Dictionary<string, float> _fanAngles = new();
@@ -246,6 +251,19 @@ namespace RyzenQuietPro
                 }
             };
             _stopwatchTimer.Start();
+
+            _hardware.ServerSync.ProgressUpdated += () => {
+                if (this.IsHandleCreated && !this.IsDisposed)
+                {
+                    try { this.BeginInvoke((Action)UpdateServerSyncUI); } catch { }
+                }
+            };
+            _hardware.ServerSync.StatusChanged += () => {
+                if (this.IsHandleCreated && !this.IsDisposed)
+                {
+                    try { this.BeginInvoke((Action)UpdateServerSyncUI); } catch { }
+                }
+            };
         }
 
         private int _lastLayoutFanCount = -1;
@@ -393,6 +411,15 @@ namespace RyzenQuietPro
                 }
             }
 
+            if (_settings.ServerSyncEnabled)
+            {
+                totalH += (int)Math.Round(28 * scale);
+                if (!_settings.SectionServerSyncCollapsed)
+                {
+                    totalH += (int)Math.Round(62 * scale);
+                }
+            }
+
             return Math.Max((int)Math.Round(160 * scale), totalH);
         }
 
@@ -458,6 +485,9 @@ namespace RyzenQuietPro
 
             if (_lblFans != null) _lblFans.Font = new Font("Segoe UI", (float)Math.Max(5.5, Math.Round(9.5f * scale, 1)), FontStyle.Bold);
             if (_lblFansSub != null) _lblFansSub.Font = new Font("Segoe UI", (float)Math.Max(4.8, Math.Round(8.0f * scale, 1)));
+
+            if (_lblServerSync != null) _lblServerSync.Font = new Font("Segoe UI", (float)Math.Max(5.5, Math.Round(9.5f * scale, 1)), FontStyle.Bold);
+            if (_lblServerSyncSub != null) _lblServerSyncSub.Font = new Font("Segoe UI", (float)Math.Max(4.8, Math.Round(8.0f * scale, 1)));
 
             if (_btnSilent != null) _btnSilent.Font = new Font("Segoe UI", (float)Math.Max(5.2, Math.Round(8.5f * scale, 1)), FontStyle.Bold);
             if (_btnBoost != null) _btnBoost.Font = new Font("Segoe UI", (float)Math.Max(5.2, Math.Round(8.5f * scale, 1)), FontStyle.Bold);
@@ -824,6 +854,24 @@ namespace RyzenQuietPro
             };
             this.Controls.Add(_pnlFansGraph);
 
+            // ServerSync Module
+            _sepServerSync = new ModuleSeparator(Color.FromArgb(45, 212, 191));
+            _sepServerSync.Click += (s, e) => ToggleSectionServerSync();
+            this.Controls.Add(_sepServerSync);
+
+            _lblServerSync = CreateMetricHeader(Loc.Get("SectionServerSync"), Color.FromArgb(45, 212, 191));
+            _lblServerSync.Click += (s, e) => ToggleSectionServerSync();
+            _lblServerSyncSub = CreateMetricSubHeader(Loc.Get("ServerSync_Offline"));
+            this.Controls.Add(_lblServerSync);
+            this.Controls.Add(_lblServerSyncSub);
+
+            _pnlServerSync = new SmoothPanel
+            {
+                BackColor = Color.FromArgb(16, 16, 20)
+            };
+            _pnlServerSync.Paint += DrawServerSyncPanel;
+            this.Controls.Add(_pnlServerSync);
+
             // 3. Footer Panel (Fixed height at bottom: Mode switch + Checkboxes)
             // 3. Footer Panel (Slim row: Silent, Boost, Gear)
             _footerPanel = new Panel
@@ -1034,6 +1082,7 @@ namespace RyzenQuietPro
             bool showVram = _settings.ShowVramGraph;
             bool showDisk = _settings.ShowDiskGraph;
             bool showFans = _settings.ShowFanGraph;
+            bool showServerSync = _settings.ServerSyncEnabled;
 
             int activeGraphCount = 0;
             if (_settings.ShowCpuGraph && !_settings.SectionCpuCollapsed) activeGraphCount++;
@@ -1076,7 +1125,7 @@ namespace RyzenQuietPro
             }
             if (showRam) fixedH += sepH + sepGap + headerRowH + (!_settings.SectionRamCollapsed ? (int)Math.Round(6 * scale) : 0);
             if (showGpu) fixedH += sepH + sepGap + headerRowH + (!_settings.SectionGpuCollapsed ? (int)Math.Round(6 * scale) : 0);
-            if (showVram) fixedH += sepH + sepGap + headerRowH + (!_settings.SectionVramCollapsed && (showDisk || showFans) ? (int)Math.Round(6 * scale) : 0);
+            if (showVram) fixedH += sepH + sepGap + headerRowH + (!_settings.SectionVramCollapsed && (showDisk || showFans || showServerSync) ? (int)Math.Round(6 * scale) : 0);
 
             int diskLegendH = 0;
             if (showDisk && !_settings.SectionDiskCollapsed && _settings.EnhancedDiskMode && _settings.DiskLegendExpanded)
@@ -1086,8 +1135,9 @@ namespace RyzenQuietPro
                 diskLegendH = (int)Math.Round((driveCount * 22 + 4 + extraH) * scale);
                 fixedH += diskLegendH + (int)Math.Round(4 * scale);
             }
-            if (showDisk) fixedH += sepH + sepGap + headerRowH + (!_settings.SectionDiskCollapsed && showFans ? (int)Math.Round(6 * scale) : 0);
+            if (showDisk) fixedH += sepH + sepGap + headerRowH + (!_settings.SectionDiskCollapsed && (showFans || showServerSync) ? (int)Math.Round(6 * scale) : 0);
             if (showFans) fixedH += sepH + (int)Math.Round(6 * scale) + (int)Math.Round(24 * scale);
+            if (showServerSync) fixedH += sepH + sepGap + headerRowH + (!_settings.SectionServerSyncCollapsed ? (int)Math.Round(58 * scale) + (int)Math.Round(6 * scale) : (int)Math.Round(4 * scale));
 
             int fanH;
             int graphH;
@@ -1475,6 +1525,39 @@ namespace RyzenQuietPro
                 {
                     _pnlFansGraph.Location = new Point(marginX, curY);
                     _pnlFansGraph.Size = new Size(contentW, fanH);
+                    curY += fanH + (showServerSync ? (int)Math.Round(6 * scale) : 0);
+                }
+                else
+                {
+                    curY += (int)Math.Round(4 * scale);
+                }
+            }
+
+            // --- SERVERSYNC ---
+            bool isServerSyncCollapsed = _settings.SectionServerSyncCollapsed;
+            _sepServerSync.Visible = showServerSync;
+            _lblServerSync.Visible = showServerSync;
+            _lblServerSyncSub.Visible = showServerSync;
+            _pnlServerSync.Visible = showServerSync && !isServerSyncCollapsed;
+
+            if (showServerSync)
+            {
+                _sepServerSync.Location = new Point(0, curY);
+                _sepServerSync.Size = new Size(w, sepH);
+                curY += sepGap;
+
+                _lblServerSync.Location = new Point(marginX, curY);
+                int ssLabelW = Math.Max((int)(70 * scale), _lblServerSync.PreferredWidth);
+                _lblServerSyncSub.Location = new Point(marginX + ssLabelW + (int)Math.Round(6 * scale), curY);
+                _lblServerSyncSub.Size = new Size(Math.Max(50, contentW - ssLabelW - (int)Math.Round(6 * scale)), headerRowH);
+                curY += headerRowH;
+
+                if (!isServerSyncCollapsed)
+                {
+                    int ssPanelH = (int)Math.Round(58 * scale);
+                    _pnlServerSync.Location = new Point(marginX, curY);
+                    _pnlServerSync.Size = new Size(contentW, ssPanelH);
+                    curY += ssPanelH + (int)Math.Round(6 * scale);
                 }
                 else
                 {
@@ -3173,6 +3256,11 @@ namespace RyzenQuietPro
                 }
             }
 
+            if (_settings.ServerSyncEnabled)
+            {
+                UpdateServerSyncUI();
+            }
+
             if (_pnlCpuGraph.Visible) _pnlCpuGraph.Invalidate();
             if (_pnlCoresMatrix.Visible) _pnlCoresMatrix.Invalidate();
             if (_pnlTopProcesses.Visible) _pnlTopProcesses.Invalidate();
@@ -3182,6 +3270,7 @@ namespace RyzenQuietPro
             if (_pnlDiskGraph.Visible) _pnlDiskGraph.Invalidate();
             if (_pnlDiskLegend.Visible) _pnlDiskLegend.Invalidate();
             if (_pnlFansGraph.Visible) _pnlFansGraph.Invalidate();
+            if (_pnlServerSync.Visible) _pnlServerSync.Invalidate();
         }
 
         private void DrawGraphInternal(Graphics g, Panel pnl, IReadOnlyList<float> history, Color strokeColor, Color topFill, float maxPercent = 100f)
@@ -4572,6 +4661,7 @@ namespace RyzenQuietPro
         private void ToggleSectionVram() => ToggleSectionCollapse(() => _settings.SectionVramCollapsed = !_settings.SectionVramCollapsed);
         private void ToggleSectionDisk() => ToggleSectionCollapse(() => _settings.SectionDiskCollapsed = !_settings.SectionDiskCollapsed);
         private void ToggleSectionFans() => ToggleSectionCollapse(() => _settings.SectionFansCollapsed = !_settings.SectionFansCollapsed);
+        private void ToggleSectionServerSync() => ToggleSectionCollapse(() => _settings.SectionServerSyncCollapsed = !_settings.SectionServerSyncCollapsed);
 
         private void ToggleSectionCollapse(Action toggleState)
         {
@@ -4893,6 +4983,162 @@ namespace RyzenQuietPro
             {
                 Logger.Log($"DrawTopProcesses error: {ex.Message}");
             }
+        }
+
+        private void UpdateServerSyncUI()
+        {
+            if (!_settings.ServerSyncEnabled || _lblServerSync == null) return;
+
+            var ss = _hardware.ServerSync;
+            string ssArrow = _settings.SectionServerSyncCollapsed ? "▸ " : "▾ ";
+            _lblServerSync.Text = $"{ssArrow}{Loc.Get("SectionServerSync")}";
+
+            if (!ss.IsOnline)
+            {
+                _lblServerSyncSub.Text = Loc.Get("ServerSync_Offline");
+                _lblServerSyncSub.ForeColor = Color.FromArgb(140, 140, 150);
+            }
+            else if (ss.IsSyncing)
+            {
+                string dirStr = (ss.Direction == "upload") ? $"⬆ {Loc.Get("ServerSync_Upload")}" : $"⬇ {Loc.Get("ServerSync_Download")}";
+                string spdStr = $"{ss.CurrentSpeedMbps:F1} MB/s";
+                string etaStr = ss.EtaSeconds > 0
+                    ? (ss.EtaSeconds >= 60 ? $" | ETA {ss.EtaSeconds / 60}m {ss.EtaSeconds % 60}s" : $" | ETA {ss.EtaSeconds}s")
+                    : "";
+                string peerStr = !string.IsNullOrEmpty(ss.PeerName) ? $" ↔ {ss.PeerName}" : "";
+                _lblServerSyncSub.Text = $"{dirStr} | {spdStr}{etaStr}{peerStr}";
+                _lblServerSyncSub.ForeColor = Color.FromArgb(45, 212, 191);
+            }
+            else
+            {
+                string peerStr = !string.IsNullOrEmpty(ss.PeerName) ? $" ↔ {ss.PeerName}" : (ss.PeerConnected ? "" : " (Ожидание)");
+                _lblServerSyncSub.Text = $"✓ {Loc.Get("ServerSync_Synced")}{peerStr}";
+                _lblServerSyncSub.ForeColor = ss.PeerConnected ? Color.FromArgb(52, 211, 153) : Color.FromArgb(180, 180, 190);
+            }
+
+            if (_pnlServerSync != null && _pnlServerSync.Visible)
+            {
+                _pnlServerSync.Invalidate();
+            }
+        }
+
+        private void DrawServerSyncPanel(object? sender, PaintEventArgs e)
+        {
+            var g = e.Graphics;
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
+
+            int w = _pnlServerSync.Width;
+            int h = _pnlServerSync.Height;
+            if (w <= 10 || h <= 10) return;
+
+            float scale = _currentUiScale;
+            var ss = _hardware.ServerSync;
+
+            // Background card
+            using (var bgBrush = new SolidBrush(Color.FromArgb(20, 20, 26)))
+            using (var borderPen = new Pen(Color.FromArgb(40, 42, 52), 1f))
+            {
+                g.FillRectangle(bgBrush, 0, 0, w - 1, h - 1);
+                g.DrawRectangle(borderPen, 0, 0, w - 1, h - 1);
+            }
+
+            if (!ss.IsOnline)
+            {
+                using var fontMuted = new Font("Segoe UI", (float)Math.Max(5.5, Math.Round(8.0f * scale, 1)), FontStyle.Regular);
+                string offText = $"✕ {Loc.Get("ServerSync_Offline")}: {_settings.ServerSyncHost}:{_settings.ServerSyncPort}";
+                TextRenderer.DrawText(g, offText, fontMuted, new Rectangle(10, 0, w - 20, h), Color.FromArgb(140, 140, 155),
+                    TextFormatFlags.VerticalCenter | TextFormatFlags.HorizontalCenter | TextFormatFlags.EndEllipsis);
+                return;
+            }
+
+            if (!ss.IsSyncing)
+            {
+                using var fontOk = new Font("Segoe UI", (float)Math.Max(5.5, Math.Round(8.5f * scale, 1)), FontStyle.Bold);
+                using var fontSub = new Font("Segoe UI", (float)Math.Max(5.0, Math.Round(7.2f * scale, 1)), FontStyle.Regular);
+
+                string syncText = $"✓ {Loc.Get("ServerSync_Synced")}";
+                string peerInfo = !string.IsNullOrEmpty(ss.PeerName)
+                    ? $"{_settings.ServerSyncHost}:{_settings.ServerSyncPort} ↔ {ss.PeerName}"
+                    : (ss.PeerConnected ? $"{_settings.ServerSyncHost}:{_settings.ServerSyncPort}" : $"{_settings.ServerSyncHost}:{_settings.ServerSyncPort} (Ожидание соединения)");
+
+                TextRenderer.DrawText(g, syncText, fontOk, new Point(14, (int)Math.Round(8 * scale)), Color.FromArgb(52, 211, 153), TextFormatFlags.NoPadding);
+                TextRenderer.DrawText(g, peerInfo, fontSub, new Point(14, (int)Math.Round(28 * scale)), Color.FromArgb(160, 160, 175), TextFormatFlags.NoPadding);
+                return;
+            }
+
+            // Syncing mode: Two rich progress bars
+            using var fontLabel = new Font("Segoe UI", (float)Math.Max(5.0, Math.Round(7.2f * scale, 1)), FontStyle.Regular);
+            using var fontBold = new Font("Segoe UI", (float)Math.Max(5.2, Math.Round(7.5f * scale, 1)), FontStyle.Bold);
+
+            int padX = (int)Math.Round(8 * scale);
+            int barW = w - (padX * 2);
+            int barH = (int)Math.Max(4, Math.Round(5 * scale));
+
+            // --- BAR 1: Current File ---
+            int row1Y = (int)Math.Round(5 * scale);
+            string dirIcon = (ss.Direction == "upload") ? "⬆" : "⬇";
+            string fileName = string.IsNullOrEmpty(ss.CurrentFileName) ? Loc.Get("ServerSync_File") : ss.CurrentFileName;
+            string fileLeft = $"{dirIcon} {fileName}";
+
+            string fileRight = $"{FormatBytes(ss.CurrentTransferredBytes)} / {FormatBytes(ss.CurrentTotalBytes)} ({ss.CurrentFilePercent:F0}%)";
+            Size rightSz = TextRenderer.MeasureText(g, fileRight, fontBold, Size.Empty, TextFormatFlags.NoPadding);
+
+            int leftMaxW = Math.Max(40, barW - rightSz.Width - 8);
+            var leftRect = new Rectangle(padX, row1Y, leftMaxW, (int)Math.Round(14 * scale));
+            TextRenderer.DrawText(g, fileLeft, fontLabel, leftRect, Color.FromArgb(220, 225, 235),
+                TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPadding);
+
+            TextRenderer.DrawText(g, fileRight, fontBold, new Point(w - padX - rightSz.Width, row1Y), Color.FromArgb(45, 212, 191), TextFormatFlags.NoPadding);
+
+            int bar1Y = row1Y + (int)Math.Round(15 * scale);
+            using (var trackBrush = new SolidBrush(Color.FromArgb(32, 34, 44)))
+            {
+                g.FillRectangle(trackBrush, padX, bar1Y, barW, barH);
+            }
+            float normFile = Math.Clamp(ss.CurrentFilePercent / 100f, 0f, 1f);
+            int fillW1 = (int)Math.Round(barW * normFile);
+            if (fillW1 > 0)
+            {
+                using var fillBrush = new SolidBrush(Color.FromArgb(45, 212, 191));
+                g.FillRectangle(fillBrush, padX, bar1Y, fillW1, barH);
+            }
+
+            // --- BAR 2: Overall Queue ---
+            int row2Y = bar1Y + barH + (int)Math.Round(5 * scale);
+            string qLeft = $"📦 {Loc.Get("ServerSync_Queue")}: {ss.QueueFilesCount} {Loc.Get("ServerSync_FilesRemaining")} ({FormatBytes(ss.QueueTotalBytes)})";
+            string qRight = $"{ss.OverallPercent:F0}%{(ss.CurrentSpeedMbps > 0 ? $" • {ss.CurrentSpeedMbps:F1} MB/s" : "")}";
+            Size qRightSz = TextRenderer.MeasureText(g, qRight, fontBold, Size.Empty, TextFormatFlags.NoPadding);
+
+            int qLeftMaxW = Math.Max(40, barW - qRightSz.Width - 8);
+            var qLeftRect = new Rectangle(padX, row2Y, qLeftMaxW, (int)Math.Round(14 * scale));
+            TextRenderer.DrawText(g, qLeft, fontLabel, qLeftRect, Color.FromArgb(200, 205, 215),
+                TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPadding);
+
+            TextRenderer.DrawText(g, qRight, fontBold, new Point(w - padX - qRightSz.Width, row2Y), Color.FromArgb(129, 140, 248), TextFormatFlags.NoPadding);
+
+            int bar2Y = row2Y + (int)Math.Round(15 * scale);
+            using (var trackBrush2 = new SolidBrush(Color.FromArgb(32, 34, 44)))
+            {
+                g.FillRectangle(trackBrush2, padX, bar2Y, barW, barH);
+            }
+            float normOvr = Math.Clamp(ss.OverallPercent / 100f, 0f, 1f);
+            int fillW2 = (int)Math.Round(barW * normOvr);
+            if (fillW2 > 0)
+            {
+                using var fillBrush2 = new SolidBrush(Color.FromArgb(129, 140, 248));
+                g.FillRectangle(fillBrush2, padX, bar2Y, fillW2, barH);
+            }
+        }
+
+        private static string FormatBytes(long bytes)
+        {
+            if (bytes <= 0) return "0 B";
+            string[] suf = { "B", "KB", "MB", "GB", "TB" };
+            int place = Convert.ToInt32(Math.Floor(Math.Log(bytes, 1024)));
+            place = Math.Clamp(place, 0, suf.Length - 1);
+            double num = Math.Round(bytes / Math.Pow(1024, place), 1);
+            return $"{num:F1} {suf[place]}";
         }
 
         protected override void OnPaint(PaintEventArgs e)

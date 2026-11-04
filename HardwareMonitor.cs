@@ -14,6 +14,7 @@ namespace RyzenQuietPro
         public GpuTuningManager GpuTuning { get; }
         public StopwatchManager Stopwatch { get; }
         public HddScheduleManager HddSchedule { get; }
+        public ServerSyncClient ServerSync { get; }
 
         private readonly AppSettings _settings;
         private System.Threading.Timer? _timer;
@@ -49,6 +50,8 @@ namespace RyzenQuietPro
             GpuTuning = new GpuTuningManager(this, appSettings);
             Stopwatch = new StopwatchManager(appSettings);
             HddSchedule = new HddScheduleManager(appSettings, this);
+            ServerSync = new ServerSyncClient(appSettings);
+            ServerSync.ProgressUpdated += () => MetricsUpdated?.Invoke();
         }
 
         public void Start(int intervalMs = 1000)
@@ -135,6 +138,7 @@ namespace RyzenQuietPro
             Processes.Dispose();
             Fans.Dispose();
             HddSchedule.Dispose();
+            ServerSync.Dispose();
         }
     }
 }

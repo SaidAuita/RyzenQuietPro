@@ -1,12 +1,12 @@
 <div align="center">
 
-# ⚡ RyzenQuiet PRO (v4.11)
-**Sleek, lightweight hardware HUD & power-plan optimizer for Windows with AMD Ryzen CPB toggle, GPU power limiting & acoustic tuning, multi-stopwatch per-app process profiling with per-counter scaling, automated HDD awake schedule & keep-alive, enhanced multi-disk telemetry, modular fan monitoring, collapsible sections, seamless Windows Task Manager startup integration, and start-minimized boot mode.**
+# ⚡ RyzenQuiet PRO (v4.12)
+**Sleek, lightweight hardware HUD & power-plan optimizer for Windows with AMD Ryzen CPB toggle, GPU power limiting & acoustic tuning, multi-stopwatch per-app process profiling with per-counter scaling, automated HDD awake schedule & keep-alive, enhanced multi-disk telemetry, modular fan monitoring, collapsible sections, seamless Windows Task Manager startup integration, start-minimized boot mode, and ServerSync exchange progress monitoring.**
 
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011%20(64--bit)-blue.svg)](#)
 [![.NET](https://img.shields.io/badge/.NET-8.0-purple.svg)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/Release-v4.11-orange.svg)](https://github.com/SaidAuita/RyzenQuietPro/releases)
+[![Release](https://img.shields.io/badge/Release-v4.12-orange.svg)](https://github.com/SaidAuita/RyzenQuietPro/releases)
 [![Telemetry](https://img.shields.io/badge/Telemetry-Zero%20%2F%20100%25%20Offline-brightgreen.svg)](#)
 
 <br/>
@@ -150,6 +150,12 @@ All subsystem graphs share a synchronized 60-second historical canvas rendered w
 * **CLI Parameter Support (`--minimized`):** When auto-start is enabled with minimized mode, the registry `Run` key is registered with `--minimized` (`"path\RyzenQuietPro.exe" --minimized`), preventing HUD popups even if floating desktop mode was active.
 * **Instant Activation:** The main HUD remains one click away via the tray icon or by launching the application shortcut again.
 
+### 13. 🔄 ServerSync Exchange Monitor (v4.12)
+* **Real-Time Exchange Progress:** Dedicated pluggable module to monitor file sync between Work and Home systems.
+* **Dual Progress Bars:** Displays both per-file transfer progress (filename, transferred/total MB, %, current MB/s speed, upload/download direction) and overall queue completion (files count, remaining MB, overall %, ETA).
+* **Zero Resource Overhead:** Completely idle with 0 threads, 0 polling, and 0 memory consumption when disabled.
+* **Adaptive Polling:** Automatically switches to high-frequency updates (550ms) during active transfers and relaxes to 2.5s when synchronized.
+
 ---
 
 ## ⌨️ Controls & Shortcuts
@@ -157,7 +163,7 @@ All subsystem graphs share a synchronized 60-second historical canvas rendered w
 | Shortcut / Button | Action |
 |---|---|
 | <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Q</kbd> | Toggle **Quiet Mode (99%)** / **Boost Mode (100%)** |
-| `Click Title / Bar` | **Collapse or expand section** (CPU, RAM, GPU, VRAM, DISK, FANS, Stopwatch) into a single compact status strip |
+| `Click Title / Bar` | **Collapse or expand section** (CPU, RAM, GPU, VRAM, DISK, FANS, ServerSync, Stopwatch) into a single compact status strip |
 | `⏱` **Stopwatch** | Start (`▶`), pause (`⏸`), reset (`↺`), or arm auto-start (`⚡`) by CPU/GPU power load or target app |
 | `[+]` **Header** | Add a new independent stopwatch counter with custom app binding & color |
 | `[⊞ Scale]` **Button** | Cycle individual counter curve zoom (`Auto`, `x2`, `x4`, `x8`, `x16`, `1x`, `Off`) |
@@ -248,8 +254,8 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 <a name="русский"></a>
 <div align="center">
 
-# ⚡ RyzenQuiet PRO (v4.11) — Описание на русском
-**Стильный, легковесный аппаратный HUD-монитор и менеджер профилей питания для Windows с мгновенным отключением CPB у процессоров AMD Ryzen, акустическим контролем и ограничением мощности видеокарт (GPU Power Limiting), мульти-секундомером с привязкой к приложениям и независимым масштабом графиков, автоматическим расписанием работы HDD без сна и защитой от остановки шпинделей, расширенным мониторингом накопителей с раскрытием процессов I/O и модульным мониторингом вентиляторов.**
+# ⚡ RyzenQuiet PRO (v4.12) — Описание на русском
+**Стильный, легковесный аппаратный HUD-монитор и менеджер профилей питания для Windows с мгновенным отключением CPB у процессоров AMD Ryzen, акустическим контролем и ограничением мощности видеокарт (GPU Power Limiting), мульти-секундомером с привязкой к приложениям и независимым масштабом графиков, автоматическим расписанием работы HDD без сна и защитой от остановки шпинделей, расширенным мониторингом накопителей с раскрытием процессов I/O, модульным мониторингом вентиляторов, компактным сворачиванием блоков, интеграцией с Диспетчером задач Windows, автостартом в трей и мониторингом сервера обмена ServerSync.**
 
 </div>
 
@@ -359,6 +365,12 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 * **Поддержка аргументов командной строки (`--minimized`):** При включении опции в реестр автозапуска `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` автоматически прописывается аргумент `--minimized`, гарантирующий запуск утилиты в трей.
 * **Мгновенное разворачивание:** Приложение продолжает работать в фоне, а дашборд мгновенно разворачивается по клику на иконку в трее или при повторном запуске ярлыка.
 
+### 13. 🔄 Мониторинг синхронизации сервера обмена ServerSync (v4.12)
+* **Прогресс обмена в реальном времени:** Подключаемый модуль для отслеживания синхронизации файлов между серверами Дома и Работы.
+* **Двойная шкала прогресса:** Детальная пофайловая индикация (имя файла, передано/всего МБ, %, скорость МБ/с, направление ⬆/⬇) и общий статус очереди (остаток файлов, общий объем МБ, %, ETA).
+* **Нулевые накладные расходы:** При отключенном модуле потребляет 0 ресурсов (0 потоков, 0 таймеров, 0 фоновых запросов).
+* **Адаптивный опрос:** Автоматически ускоряет опрос (до 550 мс) при активном копировании файлов и снижает частоту до 2.5 с в режиме синхронизации.
+
 ---
 
 ## ⌨️ Управление и горячие клавиши
@@ -366,7 +378,7 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 | Сочетание / Кнопка | Действие |
 |---|---|
 | <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Q</kbd> | Переключение между **Тихим режимом (99%)** и **Boost (100%)** |
-| `Клик по заголовку / полоске` | **Свернуть или развернуть раздел** (CPU, RAM, GPU, VRAM, DISK, FANS, Секундомер) в компактную информационную полоску |
+| `Клик по заголовку / полоске` | **Свернуть или развернуть раздел** (CPU, RAM, GPU, VRAM, DISK, FANS, Сервер обмена, Секундомер) в компактную информационную полоску |
 | `⏱` **Секундомер** | Старт (`▶`), пауза (`⏸`), сброс (`↺`) или взвод автостарта (`⚡`) по мощности CPU/GPU или приложению |
 | `[+]` **В шапке таймеров** | Добавить новый независимый секундомер с привязкой к программе и выбором цвета |
 | `[⊞ Scale]` **Кнопка** | Циклическое переключение персонального масштаба кривой (`Auto`, `x2`, `x4`, `x8`, `x16`, `1x`, `Off`) |
@@ -403,8 +415,8 @@ build.bat
 ```
 
 Исполняемые файлы будут скомпилированы в каталог `build\`:
-* `build\RyzenQuietPro-v4.11.exe` (Standalone)
-* `build\RyzenQuietPro-v4.11-Lite.exe` (Lite)
+* `build\RyzenQuietPro-v4.12.exe` (Standalone)
+* `build\RyzenQuietPro-v4.12-Lite.exe` (Lite)
 * `build\plugins\FanService\RyzenQuiet.FanService.exe` (Fan Monitor Addon)
 
 ---

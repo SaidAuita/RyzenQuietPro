@@ -49,6 +49,12 @@ namespace RyzenQuietPro
         public bool SectionVramCollapsed { get; set; } = false;
         public bool SectionDiskCollapsed { get; set; } = false;
         public bool SectionFansCollapsed { get; set; } = false;
+        public bool SectionServerSyncCollapsed { get; set; } = false;
+
+        // ServerSync Integration Module (Exchange server sync telemetry)
+        public bool ServerSyncEnabled { get; set; } = false;
+        public string ServerSyncHost { get; set; } = "192.168.0.22";
+        public int ServerSyncPort { get; set; } = 19888;
 
         public bool ShowGpuGraph { get; set; } = true;
         public bool ShowGpuTempLine { get; set; } = true;

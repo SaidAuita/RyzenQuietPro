@@ -149,6 +149,17 @@ namespace RyzenQuietPro
         private Button _btnTools = null!;
         private Button _btnClose = null!;
 
+        // ServerSync Card
+        private Label _lblSecServerSync = null!;
+        private CheckBox _chkServerSync = null!;
+        private Panel _pnlServerSyncControls = null!;
+        private Label _lblServerSyncHost = null!;
+        private TextBox _txtServerSyncHost = null!;
+        private Label _lblServerSyncPort = null!;
+        private TextBox _txtServerSyncPort = null!;
+        private Button _btnServerSyncTest = null!;
+        private Label _lblServerSyncTestStatus = null!;
+
         private HardwareInfoForm? _infoForm;
         private FanSelectionForm? _fanSelectionForm;
 
@@ -164,7 +175,7 @@ namespace RyzenQuietPro
             _onModeChangeRequested = onModeChangeRequested;
 
             bool multiGpu = _hardware.Gpu.GpuCount > 1;
-            int totalFormH = multiGpu ? 1740 : 1710;
+            int totalFormH = (multiGpu ? 1740 : 1710) + 144;
 
             var screen = Screen.FromPoint(Cursor.Position);
             int availH = screen.WorkingArea.Height - 30;
@@ -1568,6 +1579,110 @@ namespace RyzenQuietPro
 
             curY += cardHddH + 8;
 
+            // ================= SERVERSYNC CARD =================
+            int cardServerSyncH = 136;
+            var cardServerSync = CreateCard(cardX, curY, cardW, cardServerSyncH);
+            _pnlBody.Controls.Add(cardServerSync);
+
+            _lblSecServerSync = CreateSectionHeader(Loc.Get("ServerSync_Module"), 12, 8);
+            cardServerSync.Controls.Add(_lblSecServerSync);
+
+            _chkServerSync = CreateCheckbox(Loc.Get("ServerSync_Enable"), 14, 30, _settings.ServerSyncEnabled, v => {
+                _settings.ServerSyncEnabled = v;
+                _hardware.ServerSync.SetEnabled(v);
+                _pnlServerSyncControls.Enabled = v;
+                _settings.Save();
+                _onSettingsUpdated?.Invoke();
+            });
+            cardServerSync.Controls.Add(_chkServerSync);
+
+            _pnlServerSyncControls = new Panel
+            {
+                Location = new Point(14, 56),
+                Size = new Size(cardW - 28, 70),
+                BackColor = Color.Transparent,
+                Enabled = _settings.ServerSyncEnabled
+            };
+            cardServerSync.Controls.Add(_pnlServerSyncControls);
+
+            // Row 1: Host and Port
+            _lblServerSyncHost = new Label
+            {
+                Text = Loc.Get("ServerSync_Host"),
+                Font = new Font("Segoe UI", 8.25f),
+                ForeColor = Color.FromArgb(200, 200, 215),
+                Location = new Point(0, 6),
+                AutoSize = true
+            };
+            _pnlServerSyncControls.Controls.Add(_lblServerSyncHost);
+
+            _txtServerSyncHost = new TextBox
+            {
+                Location = new Point(135, 3),
+                Size = new Size(130, 22),
+                BackColor = Color.FromArgb(24, 24, 32),
+                ForeColor = Color.FromArgb(45, 212, 191),
+                BorderStyle = BorderStyle.FixedSingle,
+                Font = new Font("Segoe UI", 8.5f),
+                Text = _settings.ServerSyncHost
+            };
+            _txtServerSyncHost.Leave += (s, e) => SaveServerSyncConfig();
+            _pnlServerSyncControls.Controls.Add(_txtServerSyncHost);
+
+            _lblServerSyncPort = new Label
+            {
+                Text = Loc.Get("ServerSync_Port"),
+                Font = new Font("Segoe UI", 8.25f),
+                ForeColor = Color.FromArgb(200, 200, 215),
+                Location = new Point(280, 6),
+                AutoSize = true
+            };
+            _pnlServerSyncControls.Controls.Add(_lblServerSyncPort);
+
+            _txtServerSyncPort = new TextBox
+            {
+                Location = new Point(330, 3),
+                Size = new Size(60, 22),
+                BackColor = Color.FromArgb(24, 24, 32),
+                ForeColor = Color.FromArgb(45, 212, 191),
+                BorderStyle = BorderStyle.FixedSingle,
+                Font = new Font("Segoe UI", 8.5f),
+                Text = _settings.ServerSyncPort.ToString()
+            };
+            _txtServerSyncPort.Leave += (s, e) => SaveServerSyncConfig();
+            _pnlServerSyncControls.Controls.Add(_txtServerSyncPort);
+
+            // Row 2: Test button & status
+            _btnServerSyncTest = new Button
+            {
+                Text = Loc.Get("ServerSync_TestBtn"),
+                Font = new Font("Segoe UI", 8.25f),
+                Size = new Size(125, 26),
+                Location = new Point(0, 36),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.FromArgb(32, 36, 48),
+                ForeColor = Color.FromArgb(56, 189, 248),
+                Cursor = Cursors.Hand
+            };
+            _btnServerSyncTest.FlatAppearance.BorderSize = 1;
+            _btnServerSyncTest.FlatAppearance.BorderColor = Color.FromArgb(50, 60, 80);
+            _btnServerSyncTest.Click += async (s, e) => await TestServerSyncConnectionAsync();
+            _pnlServerSyncControls.Controls.Add(_btnServerSyncTest);
+
+            _lblServerSyncTestStatus = new Label
+            {
+                Location = new Point(135, 41),
+                Size = new Size(cardW - 28 - 140, 20),
+                Font = new Font("Segoe UI", 8.25f),
+                ForeColor = Color.FromArgb(160, 160, 175),
+                TextAlign = ContentAlignment.MiddleLeft,
+                AutoEllipsis = true,
+                Text = ""
+            };
+            _pnlServerSyncControls.Controls.Add(_lblServerSyncTestStatus);
+
+            curY += cardServerSyncH + 8;
+
             // ================= 3. TRAY ICON CARD =================
             var cardTray = CreateCard(cardX, curY, cardW, 70);
             _pnlBody.Controls.Add(cardTray);
@@ -2289,6 +2404,13 @@ namespace RyzenQuietPro
                 _lblHddWakeStatus.Width = Math.Max(50, cardW - 28 - 222);
             }
 
+            // ServerSync Card elements
+            if (_pnlServerSyncControls != null)
+            {
+                _pnlServerSyncControls.Width = cardW - 28;
+                if (_lblServerSyncTestStatus != null) _lblServerSyncTestStatus.Width = Math.Max(50, cardW - 28 - 140);
+            }
+
             // Footer close button
             if (_btnClose != null)
             {
@@ -2450,6 +2572,12 @@ namespace RyzenQuietPro
             }
             if (_btnTools != null) _toolTip?.SetToolTip(_btnTools, "https://ph-cu-s.com/tools");
             if (_btnClose != null) _btnClose.Text = Loc.Get("InfoClose");
+
+            if (_lblSecServerSync != null) _lblSecServerSync.Text = Loc.Get("ServerSync_Module");
+            if (_chkServerSync != null) _chkServerSync.Text = Loc.Get("ServerSync_Enable");
+            if (_lblServerSyncHost != null) _lblServerSyncHost.Text = Loc.Get("ServerSync_Host");
+            if (_lblServerSyncPort != null) _lblServerSyncPort.Text = Loc.Get("ServerSync_Port");
+            if (_btnServerSyncTest != null) _btnServerSyncTest.Text = Loc.Get("ServerSync_TestBtn");
 
             UpdateFanModeUI();
             UpdateFanStatusUI();
@@ -2772,6 +2900,49 @@ namespace RyzenQuietPro
             if (_chkTopProcesses != null && _chkTopProcesses.Checked != _settings.ShowTopProcesses)
             {
                 _chkTopProcesses.Checked = _settings.ShowTopProcesses;
+            }
+        }
+        private void SaveServerSyncConfig()
+        {
+            if (_txtServerSyncHost == null || _txtServerSyncPort == null) return;
+            string host = _txtServerSyncHost.Text.Trim();
+            if (int.TryParse(_txtServerSyncPort.Text.Trim(), out int port) && port > 0)
+            {
+                _hardware.ServerSync.UpdateConfig(host, port);
+            }
+        }
+
+        private async Task TestServerSyncConnectionAsync()
+        {
+            if (_btnServerSyncTest == null || _lblServerSyncTestStatus == null) return;
+
+            string host = _txtServerSyncHost.Text.Trim();
+            if (!int.TryParse(_txtServerSyncPort.Text.Trim(), out int port) || port <= 0)
+            {
+                port = 19888;
+                _txtServerSyncPort.Text = "19888";
+            }
+
+            _btnServerSyncTest.Enabled = false;
+            _lblServerSyncTestStatus.Text = Loc.Get("ServerSync_Testing");
+            _lblServerSyncTestStatus.ForeColor = Color.FromArgb(250, 204, 21);
+
+            var res = await _hardware.ServerSync.TestConnectionAsync(host, port);
+
+            if (!this.IsDisposed)
+            {
+                _btnServerSyncTest.Enabled = true;
+                if (res.success)
+                {
+                    _lblServerSyncTestStatus.Text = $"✓ {res.message}";
+                    _lblServerSyncTestStatus.ForeColor = Color.FromArgb(52, 211, 153);
+                    SaveServerSyncConfig();
+                }
+                else
+                {
+                    _lblServerSyncTestStatus.Text = $"✕ {res.message}";
+                    _lblServerSyncTestStatus.ForeColor = Color.FromArgb(248, 113, 113);
+                }
             }
         }
 
