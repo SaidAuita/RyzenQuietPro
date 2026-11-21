@@ -31,7 +31,7 @@ namespace RyzenQuietPro
 
         private NotifyIcon _notifyIcon = null!;
         private ContextMenuStrip _contextMenu = null!;
-        private ToolStripMenuItem _openDashItem = null!;
+        private ToolStripMenuItem _titleItem = null!;
         private ToolStripMenuItem _quietMenuItem = null!;
         private ToolStripMenuItem _normalMenuItem = null!;
         private ToolStripMenuItem _detachMenuItem = null!;
@@ -170,16 +170,12 @@ namespace RyzenQuietPro
         {
             _contextMenu = new ContextMenuStrip();
 
-            var titleItem = new ToolStripMenuItem(Loc.Get("AppTitle"))
+            _titleItem = new ToolStripMenuItem(Loc.Get("AppTitle"))
             {
-                Enabled = false,
                 Font = new Font(SystemFonts.DefaultFont, FontStyle.Bold)
             };
-            _contextMenu.Items.Add(titleItem);
-
-            _openDashItem = new ToolStripMenuItem(Loc.Get("AppTitle"));
-            _openDashItem.Click += (s, e) => ShowDashboard();
-            _contextMenu.Items.Add(_openDashItem);
+            _titleItem.Click += (s, e) => ShowDashboard();
+            _contextMenu.Items.Add(_titleItem);
 
             _detachMenuItem = new ToolStripMenuItem(_settings.IsDetached ? Loc.Get("TipDock") : Loc.Get("TipDetach"));
             _detachMenuItem.Click += (s, e) => {
@@ -285,7 +281,7 @@ namespace RyzenQuietPro
 
         private void LocalizeContextMenu()
         {
-            if (_openDashItem != null) _openDashItem.Text = Loc.Get("AppTitle");
+            if (_titleItem != null) _titleItem.Text = Loc.Get("AppTitle");
             if (_detachMenuItem != null) _detachMenuItem.Text = _settings.IsDetached ? Loc.Get("TipDock") : Loc.Get("TipDetach");
             if (_quietMenuItem != null) _quietMenuItem.Text = Loc.Get("SilentFull");
             if (_normalMenuItem != null) _normalMenuItem.Text = Loc.Get("BoostActive");

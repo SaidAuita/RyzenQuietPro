@@ -652,7 +652,10 @@ namespace RyzenQuietPro
             _btnSwDashboardAdd.FlatAppearance.BorderColor = Color.FromArgb(44, 44, 56);
             _toolTip.SetToolTip(_btnSwDashboardAdd, Loc.Get("StopwatchAdd"));
             _btnSwDashboardAdd.Click += (s, e) => {
-                using var dlg = new StopwatchEditDialog(null, _hardware.Processes);
+                using var dlg = new StopwatchEditDialog(null, _hardware.Processes)
+                {
+                    TopMost = this.TopMost
+                };
                 if (dlg.ShowDialog(this) == DialogResult.OK)
                 {
                     _settings.Stopwatches.Add(dlg.Profile);
@@ -4625,6 +4628,7 @@ namespace RyzenQuietPro
 
             _settings.Save();
             _settingsForm?.UpdateTopProcessesCheckbox();
+            SnapBottomToDockOrTaskbar();
             LayoutComponents();
             this.Invalidate();
         }
@@ -4669,6 +4673,7 @@ namespace RyzenQuietPro
             }
 
             _settings.Save();
+            SnapBottomToDockOrTaskbar();
             LayoutComponents();
             this.Invalidate();
         }
@@ -4711,6 +4716,7 @@ namespace RyzenQuietPro
 
             _settings.WindowHeight = this.Height;
             _settings.Save();
+            SnapBottomToDockOrTaskbar();
             LayoutComponents();
             UpdateMetricsUI();
             this.Invalidate(true);
@@ -4741,8 +4747,25 @@ namespace RyzenQuietPro
                     this.Height = minH;
                 }
             }
+            SnapBottomToDockOrTaskbar();
             LayoutComponents();
             this.Invalidate();
+        }
+
+        private void SnapBottomToDockOrTaskbar()
+        {
+            if (!_isDetached)
+            {
+                PositionAtTray();
+            }
+            else
+            {
+                var screen = Screen.FromControl(this) ?? Screen.PrimaryScreen;
+                if (screen != null && Math.Abs(this.Bottom - screen.WorkingArea.Bottom) <= 16)
+                {
+                    this.Top = screen.WorkingArea.Bottom - this.Height;
+                }
+            }
         }
 
         private void DrawMultiDiskGraphInternal(Graphics g, Panel pnl)

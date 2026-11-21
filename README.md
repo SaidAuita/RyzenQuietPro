@@ -1,12 +1,12 @@
 <div align="center">
 
-# ⚡ RyzenQuiet PRO (v4.14)
+# ⚡ RyzenQuiet PRO (v4.15)
 **Sleek, lightweight hardware HUD & power-plan optimizer for Windows with AMD Ryzen CPB toggle, GPU power limiting & acoustic tuning, multi-stopwatch per-app process profiling with per-counter scaling, automated HDD awake schedule & keep-alive, enhanced multi-disk telemetry, modular fan monitoring, collapsible sections, seamless Windows Task Manager startup integration, start-minimized boot mode, and ServerSync exchange progress monitoring.**
 
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011%20(64--bit)-blue.svg)](#)
 [![.NET](https://img.shields.io/badge/.NET-8.0-purple.svg)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/Release-v4.14-orange.svg)](https://github.com/SaidAuita/RyzenQuietPro/releases)
+[![Release](https://img.shields.io/badge/Release-v4.15-orange.svg)](https://github.com/SaidAuita/RyzenQuietPro/releases)
 [![Telemetry](https://img.shields.io/badge/Telemetry-Zero%20%2F%20100%25%20Offline-brightgreen.svg)](#)
 
 <br/>
@@ -25,6 +25,11 @@
   <img src="images/RyzenQuietPro-v4_2.png" alt="GPU Acoustic & Power Tuning Settings Dialog with Background Dimming" width="340" />
   &nbsp;&nbsp;&nbsp;&nbsp;
   <img src="images/RyzenQuietPro-v4_3.png" alt="Hardware Specifications & System Diagnostics" width="380" />
+</p>
+<p align="center">
+  <img src="images/RyzenQuietPro-v4_15-1.png" alt="RyzenQuiet PRO v4.15 Enhanced Stopwatch Settings with No Horizontal Scrollbar" width="370" />
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="images/RyzenQuietPro-v4_15-2.png" alt="RyzenQuiet PRO v4.15 Clean Tray Menu & Smart Auto-Dock to Tray" width="370" />
 </p>
 <p align="center">
   <img src="images/RyzenQuietPro-v4_09.png" alt="RyzenQuiet PRO v4.09 Collapsible Sections into Compact Single-Line Strips" width="370" />
@@ -169,6 +174,19 @@ All subsystem graphs share a synchronized 60-second historical canvas rendered w
   * Click **[ Test ]** to verify real-time connectivity (`✓ Connected ↔ peer-node`).
 * **Adaptive Polling & Zero Overhead:** Completely idle with 0 threads and 0 network requests when disabled. Automatically switches between fast updates (550ms) during active transfers and relaxed heartbeat (2.5s) when fully synchronized.
 
+### 14. ⏱ Enhanced Stopwatch Manager & Auto-Dock to Tray (v4.15)
+* **Zero Horizontal Scrollbar in Settings:** Dynamic row layout calculation accounts for the vertical scrollbar width (`SystemInformation.VerticalScrollBarWidth`), with single-line labels, automatic ellipsis (`AutoEllipsis`), and full tooltip on hover (`ToolTip`).
+* **Foreground Modal Dialogs:** Fixed Z-order stacking for `StopwatchEditDialog` and `ProcessSelectDialog` (`TopMost = true`, working area boundary clamping, and instant activation) — edit windows now always appear reliably in front of the dashboard and never hide behind it.
+* **Always-Visible Target App Assignment & Disk Browse:** Specific application selection is now visible and active by default for all new stopwatches, plus a new **📁 Browse...** button allows choosing any `.exe` from disk via native `OpenFileDialog`.
+* **Clean System Tray Menu:** Removed duplicate title item from the tray context menu, leaving a single bold interactive title that opens the dashboard.
+* **Smart Auto-Dock to Tray on Collapse:** In Dock to Tray mode, collapsing any section or stopwatch list automatically shifts the window down and docks it flush against the taskbar boundary (`workingArea.Bottom - 6`), eliminating manual un-dock and re-dock adjustments.
+
+<p align="center">
+  <img src="images/RyzenQuietPro-v4_15-1.png" alt="RyzenQuiet PRO v4.15 Stopwatch Settings Without Horizontal Scrollbar" width="370" />
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="images/RyzenQuietPro-v4_15-2.png" alt="RyzenQuiet PRO v4.15 Clean Tray Menu & Docked HUD" width="370" />
+</p>
+
 ---
 
 ## ⌨️ Controls & Shortcuts
@@ -270,7 +288,7 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 <a name="русский"></a>
 <div align="center">
 
-# ⚡ RyzenQuiet PRO (v4.14) — Описание на русском
+# ⚡ RyzenQuiet PRO (v4.15) — Описание на русском
 **Стильный, легковесный аппаратный HUD-монитор и менеджер профилей питания для Windows с мгновенным отключением CPB у процессоров AMD Ryzen, акустическим контролем и ограничением мощности видеокарт (GPU Power Limiting), мульти-секундомером с привязкой к приложениям и независимым масштабом графиков, автоматическим расписанием работы HDD без сна и защитой от остановки шпинделей, расширенным мониторингом накопителей с раскрытием процессов I/O, модульным мониторингом вентиляторов, компактным сворачиванием блоков, интеграцией с Диспетчером задач Windows, автостартом в трей и мониторингом сервера обмена ServerSync.**
 
 </div>
@@ -398,6 +416,19 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
   * Нажмите кнопку **[ Проверить ]** — утилита мгновенно опросит локальный эндпоинт телеметрии и покажет имя подключенного пира (`✓ work-server ↔ cladovka-server`).
 * **Адаптивный опрос и нулевые накладные расходы:** При выключенном чекбоксе потребляет ровно 0 ресурсов (0 потоков, 0 таймеров, 0 запросов). В активном режиме динамически ускоряет опрос (до 550 мс) при передаче файлов и снижает частоту до 2.5 с в режиме синхронизации.
 
+### 14. ⏱ Улучшенный менеджер таймеров и умный авто-док к трею (v4.15)
+* **Отсутствие горизонтальной полосы прокрутки в настройках:** Динамический расчет ширины карточек в списке таймеров с точным учетом ширины вертикального скроллбара (`SystemInformation.VerticalScrollBarWidth`), элегантное сокращение длинных имен с троеточием (`AutoEllipsis`) и полный тултип с названием программы при наведении.
+* **Надежное отображение модальных окон поверх интерфейса:** Исправлен Z-порядок и исключена блокировка окон `StopwatchEditDialog` и `ProcessSelectDialog` (`TopMost = true`, центрирование, удержание в рабочей области экрана и мгновенная передача фокуса) — окна редактирования таймеров гарантированно открываются на переднем плане и больше не теряются за дашбордом.
+* **Постоянно видимый выбор приложения и кнопка «Обзор...»:** При создании новых таймеров опция выбора конкретного приложения теперь активна по умолчанию, а также добавлена кнопка **📁 Обзор...** для быстрого выбора любого исполняемого файла (`.exe`) с диска через системный диалог.
+* **Лаконичное контекстное меню в трее:** Убран дублирующийся верхний пункт заголовка — оставлен один кликабельный жирный пункт для мгновенного разворачивания дашборда.
+* **Умный авто-док к панели задач при сворачивании разделов:** В режиме Dock to Tray сворачивание любого блока (CPU, RAM, GPU, диски, кулеры, таймеры) автоматически сдвигает окно вниз и аккуратно стыкует его с границей панели задач (`workingArea.Bottom - 6`) без необходимости вручную выключать и снова включать прикрепление к трею.
+
+<p align="center">
+  <img src="images/RyzenQuietPro-v4_15-1.png" alt="RyzenQuiet PRO v4.15 Настройки таймеров без горизонтального скроллбара" width="370" />
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="images/RyzenQuietPro-v4_15-2.png" alt="RyzenQuiet PRO v4.15 Очищенное меню трея и авто-док" width="370" />
+</p>
+
 ---
 
 ## ⌨️ Управление и горячие клавиши
@@ -442,8 +473,8 @@ build.bat
 ```
 
 Исполняемые файлы будут скомпилированы в каталог `build\`:
-* `build\RyzenQuietPro-v4.14.exe` (Standalone)
-* `build\RyzenQuietPro-v4.14-Lite.exe` (Lite)
+* `build\RyzenQuietPro-v4.15.exe` (Standalone)
+* `build\RyzenQuietPro-v4.15-Lite.exe` (Lite)
 * `build\plugins\FanService\RyzenQuiet.FanService.exe` (Fan Monitor Addon)
 
 ---

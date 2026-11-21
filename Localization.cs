@@ -28,7 +28,7 @@ namespace RyzenQuietPro
         {
             ["ru"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.14",
+                ["AppTitle"] = "RyzenQuiet PRO v4.15",
                 ["Silent"] = "Тихий",
                 ["SilentFull"] = "🌿 Тихий (99%)",
                 ["Boost"] = "Турбо",
@@ -103,6 +103,10 @@ namespace RyzenQuietPro
                 ["StopwatchSpecificAppDesc"] = "Срабатывать только для определенной программы",
                 ["StopwatchSelectApp"] = "Выбор программы для отслеживания",
                 ["StopwatchSelectAppBtn"] = "Выбрать...",
+                ["StopwatchBrowseExe"] = "Обзор...",
+                ["StopwatchSelectExeFilter"] = "Программы (*.exe)|*.exe|Все файлы (*.*)|*.*",
+                ["StopwatchBrowseTitle"] = "Выберите исполняемый файл программы",
+                ["StopwatchAllAppsActiveHint"] = "(Суммарная нагрузка всех программ)",
                 ["StopwatchSearchProc"] = "Поиск среди запущенных процессов:",
                 ["StopwatchColApp"] = "Приложение",
                 ["StopwatchColProcs"] = "Процессов",
@@ -269,7 +273,7 @@ namespace RyzenQuietPro
             },
             ["en"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.14",
+                ["AppTitle"] = "RyzenQuiet PRO v4.15",
                 ["Silent"] = "Silent",
                 ["SilentFull"] = "🌿 Silent (99%)",
                 ["Boost"] = "Boost",
@@ -343,6 +347,10 @@ namespace RyzenQuietPro
                 ["StopwatchSpecificAppDesc"] = "Trigger only for a specific application",
                 ["StopwatchSelectApp"] = "Select Application to Track",
                 ["StopwatchSelectAppBtn"] = "Select...",
+                ["StopwatchBrowseExe"] = "Browse...",
+                ["StopwatchSelectExeFilter"] = "Programs (*.exe)|*.exe|All files (*.*)|*.*",
+                ["StopwatchBrowseTitle"] = "Select Program Executable",
+                ["StopwatchAllAppsActiveHint"] = "(Total load of all applications)",
                 ["StopwatchSearchProc"] = "Search running processes:",
                 ["StopwatchColApp"] = "Application",
                 ["StopwatchColProcs"] = "Processes",
@@ -505,7 +513,7 @@ namespace RyzenQuietPro
             },
             ["de"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.14",
+                ["AppTitle"] = "RyzenQuiet PRO v4.15",
                 ["Silent"] = "Leise",
                 ["SilentFull"] = "🌿 Leise (99%)",
                 ["Boost"] = "Boost",
@@ -670,7 +678,7 @@ namespace RyzenQuietPro
             },
             ["es"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.14",
+                ["AppTitle"] = "RyzenQuiet PRO v4.15",
                 ["Silent"] = "Silencioso",
                 ["SilentFull"] = "🌿 Silencioso (99%)",
                 ["Boost"] = "Turbo",
@@ -835,7 +843,7 @@ namespace RyzenQuietPro
             },
             ["fr"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.14",
+                ["AppTitle"] = "RyzenQuiet PRO v4.15",
                 ["Silent"] = "Silencieux",
                 ["SilentFull"] = "🌿 Silencieux (99%)",
                 ["Boost"] = "Turbo",
@@ -1000,7 +1008,7 @@ namespace RyzenQuietPro
             },
             ["ja"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.14",
+                ["AppTitle"] = "RyzenQuiet PRO v4.15",
                 ["Silent"] = "静音",
                 ["SilentFull"] = "🌿 静音モード (99%)",
                 ["Boost"] = "ブースト",
@@ -1165,7 +1173,7 @@ namespace RyzenQuietPro
             },
             ["pt"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.14",
+                ["AppTitle"] = "RyzenQuiet PRO v4.15",
                 ["Silent"] = "Silencioso",
                 ["SilentFull"] = "🌿 Silencioso (99%)",
                 ["Boost"] = "Turbo",
@@ -1330,7 +1338,7 @@ namespace RyzenQuietPro
             },
             ["zh"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.14",
+                ["AppTitle"] = "RyzenQuiet PRO v4.15",
                 ["Silent"] = "静音",
                 ["SilentFull"] = "🌿 静音模式 (99%)",
                 ["Boost"] = "加速",

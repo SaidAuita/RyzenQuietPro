@@ -39,6 +39,8 @@ namespace RyzenQuietPro
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
+            this.ShowInTaskbar = false;
+            this.TopMost = true;
             this.BackColor = Color.FromArgb(20, 20, 26);
             this.ForeColor = Color.FromArgb(240, 240, 248);
             this.Font = new Font("Segoe UI", 9f, FontStyle.Regular);
@@ -107,32 +109,47 @@ namespace RyzenQuietPro
             this.Controls.Add(_lvProcesses);
             curY += lvH + 8;
 
+            // Bottom Buttons
+            int btnW = 90;
+            int btnH = 28;
+            int btnY = curY;
+
+            var btnBrowse = new Button
+            {
+                Text = "📁 " + Loc.Get("StopwatchBrowseExe"),
+                Size = new Size(100, btnH),
+                Location = new Point(pad, btnY),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.FromArgb(40, 40, 54),
+                ForeColor = Color.FromArgb(220, 220, 240),
+                Cursor = Cursors.Hand,
+                Font = new Font("Segoe UI", 8.25f, FontStyle.Bold)
+            };
+            btnBrowse.FlatAppearance.BorderColor = Color.FromArgb(60, 60, 80);
+            btnBrowse.Click += (s, e) => BrowseExecutable();
+            this.Controls.Add(btnBrowse);
+
             // Status label
             _lblStatus = new Label
             {
-                Location = new Point(pad, curY),
-                Size = new Size(240, 22),
+                Location = new Point(pad + 108, curY + 4),
+                Size = new Size(130, 22),
                 ForeColor = Color.FromArgb(140, 140, 160),
                 Font = new Font("Segoe UI", 8.25f),
                 TextAlign = ContentAlignment.MiddleLeft
             };
             this.Controls.Add(_lblStatus);
 
-            // Bottom Buttons
-            int btnW = 100;
-            int btnH = 28;
-            int btnY = curY;
-
             _btnAnyApp = new Button
             {
                 Text = Loc.Get("StopwatchAllApps"),
-                Size = new Size(130, btnH),
-                Location = new Point(this.ClientSize.Width - pad - btnW * 2 - 140, btnY),
+                Size = new Size(100, btnH),
+                Location = new Point(this.ClientSize.Width - pad - btnW * 2 - 110, btnY),
                 FlatStyle = FlatStyle.Flat,
                 BackColor = Color.FromArgb(38, 38, 50),
                 ForeColor = Color.FromArgb(56, 189, 248),
                 Cursor = Cursors.Hand,
-                Font = new Font("Segoe UI", 8.5f, FontStyle.Bold)
+                Font = new Font("Segoe UI", 8.25f, FontStyle.Bold)
             };
             _btnAnyApp.FlatAppearance.BorderColor = Color.FromArgb(56, 189, 248);
             _btnAnyApp.Click += (s, e) => {
@@ -173,6 +190,60 @@ namespace RyzenQuietPro
             _btnCancel.FlatAppearance.BorderColor = Color.FromArgb(50, 50, 65);
             _btnCancel.Click += (s, e) => this.Close();
             this.Controls.Add(_btnCancel);
+        }
+
+        protected override void OnShown(EventArgs e)
+        {
+            base.OnShown(e);
+            if (this.Owner != null)
+            {
+                int x = this.Owner.Location.X + (this.Owner.Width - this.Width) / 2;
+                int y = this.Owner.Location.Y + (this.Owner.Height - this.Height) / 2;
+                var screen = Screen.FromPoint(this.Owner.Location);
+                x = Math.Clamp(x, screen.WorkingArea.Left + 10, Math.Max(screen.WorkingArea.Left + 10, screen.WorkingArea.Right - this.Width - 10));
+                y = Math.Clamp(y, screen.WorkingArea.Top + 10, Math.Max(screen.WorkingArea.Top + 10, screen.WorkingArea.Bottom - this.Height - 10));
+                this.Location = new Point(x, y);
+            }
+            this.TopMost = true;
+            this.BringToFront();
+            this.Activate();
+        }
+
+        private void BrowseExecutable()
+        {
+            using var ofd = new OpenFileDialog
+            {
+                Filter = Loc.Get("StopwatchSelectExeFilter"),
+                Title = Loc.Get("StopwatchBrowseTitle"),
+                CheckFileExists = true
+            };
+            if (ofd.ShowDialog(this) == DialogResult.OK)
+            {
+                try
+                {
+                    string filePath = ofd.FileName;
+                    string exeName = System.IO.Path.GetFileName(filePath);
+                    string friendlyName = exeName;
+                    try
+                    {
+                        var fvi = System.Diagnostics.FileVersionInfo.GetVersionInfo(filePath);
+                        if (!string.IsNullOrWhiteSpace(fvi.FileDescription))
+                        {
+                            friendlyName = fvi.FileDescription.Trim();
+                        }
+                    }
+                    catch { }
+
+                    SelectedExeName = exeName;
+                    SelectedFriendlyName = friendlyName;
+                    this.DialogResult = DialogResult.OK;
+                    this.Close();
+                }
+                catch (Exception ex)
+                {
+                    Logger.Log($"ProcessSelectDialog browse error: {ex.Message}");
+                }
+            }
         }
 
         private void LoadProcesses()

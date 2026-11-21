@@ -17,6 +17,7 @@ namespace RyzenQuietPro
         private Panel _pnlAppSelect = null!;
         private Label _lblTargetApp = null!;
         private Button _btnPickApp = null!;
+        private Button _btnBrowseApp = null!;
         private CheckBox _chkShowOnCpuGraph = null!;
         private CheckBox _chkIsVisible = null!;
         private Button[] _scaleButtons = Array.Empty<Button>();
@@ -65,11 +66,13 @@ namespace RyzenQuietPro
         private void InitializeComponents()
         {
             this.Text = _isNew ? Loc.Get("StopwatchAdd") : Loc.Get("StopwatchEdit");
-            this.Size = new Size(470, 525);
+            this.Size = new Size(470, 530);
             this.StartPosition = FormStartPosition.CenterParent;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
+            this.ShowInTaskbar = false;
+            this.TopMost = true;
             this.BackColor = Color.FromArgb(20, 20, 26);
             this.ForeColor = Color.FromArgb(240, 240, 248);
             this.Font = new Font("Segoe UI", 9f);
@@ -185,7 +188,7 @@ namespace RyzenQuietPro
             this.Controls.Add(lblTarget);
             curY += 20;
 
-            bool isSpecific = !string.IsNullOrWhiteSpace(_targetExe);
+            bool isSpecific = !string.IsNullOrWhiteSpace(_targetExe) || _isNew;
 
             _rbAllApps = new RadioButton
             {
@@ -194,7 +197,8 @@ namespace RyzenQuietPro
                 AutoSize = true,
                 Checked = !isSpecific,
                 ForeColor = Color.FromArgb(220, 220, 235),
-                Font = new Font("Segoe UI", 9f)
+                Font = new Font("Segoe UI", 9f),
+                Cursor = Cursors.Hand
             };
             _rbAllApps.CheckedChanged += (s, e) => UpdateAppSelectionUI();
             this.Controls.Add(_rbAllApps);
@@ -207,36 +211,53 @@ namespace RyzenQuietPro
                 AutoSize = true,
                 Checked = isSpecific,
                 ForeColor = Color.FromArgb(220, 220, 235),
-                Font = new Font("Segoe UI", 9f)
+                Font = new Font("Segoe UI", 9f),
+                Cursor = Cursors.Hand
             };
             _rbSpecificApp.CheckedChanged += (s, e) => UpdateAppSelectionUI();
             this.Controls.Add(_rbSpecificApp);
             curY += 28;
 
+            int pnlW = this.ClientSize.Width - (pad * 2) - 20;
             _pnlAppSelect = new Panel
             {
                 Location = new Point(pad + 20, curY),
-                Size = new Size(this.ClientSize.Width - (pad * 2) - 20, 38),
+                Size = new Size(pnlW, 38),
                 BackColor = Color.FromArgb(26, 26, 36)
             };
+            _pnlAppSelect.Click += (s, e) => {
+                if (!_rbSpecificApp.Checked) _rbSpecificApp.Checked = true;
+            };
             this.Controls.Add(_pnlAppSelect);
+
+            int browseBtnW = 82;
+            int pickBtnW = 92;
+            int btnGap = 6;
+            int browseBtnX = pnlW - browseBtnW - 6;
+            int pickBtnX = browseBtnX - pickBtnW - btnGap;
+            int labelW = Math.Max(50, pickBtnX - 12);
 
             _lblTargetApp = new Label
             {
                 Location = new Point(8, 9),
-                Size = new Size(_pnlAppSelect.Width - 110, 20),
+                Size = new Size(labelW, 20),
                 ForeColor = Color.FromArgb(56, 189, 248),
                 Font = new Font("Segoe UI", 9f, FontStyle.Bold),
                 AutoEllipsis = true,
-                Text = GetDisplayTargetText()
+                Text = GetDisplayTargetText(),
+                Cursor = Cursors.Hand
+            };
+            _lblTargetApp.Click += (s, e) => {
+                if (!_rbSpecificApp.Checked) _rbSpecificApp.Checked = true;
+                OpenProcessPicker();
             };
             _pnlAppSelect.Controls.Add(_lblTargetApp);
 
             _btnPickApp = new Button
             {
-                Text = Loc.Get("StopwatchSelectAppBtn"),
-                Location = new Point(_pnlAppSelect.Width - 96, 6),
-                Size = new Size(90, 26),
+                Text = "⚡ " + Loc.Get("StopwatchSelectAppBtn"),
+                Location = new Point(pickBtnX, 6),
+                Size = new Size(pickBtnW, 26),
                 FlatStyle = FlatStyle.Flat,
                 BackColor = Color.FromArgb(40, 40, 54),
                 ForeColor = Color.FromArgb(240, 240, 248),
@@ -244,8 +265,29 @@ namespace RyzenQuietPro
                 Cursor = Cursors.Hand
             };
             _btnPickApp.FlatAppearance.BorderColor = Color.FromArgb(60, 60, 80);
-            _btnPickApp.Click += (s, e) => OpenProcessPicker();
+            _btnPickApp.Click += (s, e) => {
+                if (!_rbSpecificApp.Checked) _rbSpecificApp.Checked = true;
+                OpenProcessPicker();
+            };
             _pnlAppSelect.Controls.Add(_btnPickApp);
+
+            _btnBrowseApp = new Button
+            {
+                Text = "📁 " + Loc.Get("StopwatchBrowseExe"),
+                Location = new Point(browseBtnX, 6),
+                Size = new Size(browseBtnW, 26),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.FromArgb(40, 40, 54),
+                ForeColor = Color.FromArgb(240, 240, 248),
+                Font = new Font("Segoe UI", 8.25f, FontStyle.Bold),
+                Cursor = Cursors.Hand
+            };
+            _btnBrowseApp.FlatAppearance.BorderColor = Color.FromArgb(60, 60, 80);
+            _btnBrowseApp.Click += (s, e) => {
+                if (!_rbSpecificApp.Checked) _rbSpecificApp.Checked = true;
+                BrowseExecutable();
+            };
+            _pnlAppSelect.Controls.Add(_btnBrowseApp);
 
             curY += 46;
             UpdateAppSelectionUI();
@@ -390,11 +432,46 @@ namespace RyzenQuietPro
             }
         }
 
+        protected override void OnShown(EventArgs e)
+        {
+            base.OnShown(e);
+            if (this.Owner != null)
+            {
+                int x = this.Owner.Location.X + (this.Owner.Width - this.Width) / 2;
+                int y = this.Owner.Location.Y + (this.Owner.Height - this.Height) / 2;
+                var screen = Screen.FromPoint(this.Owner.Location);
+                x = Math.Clamp(x, screen.WorkingArea.Left + 10, Math.Max(screen.WorkingArea.Left + 10, screen.WorkingArea.Right - this.Width - 10));
+                y = Math.Clamp(y, screen.WorkingArea.Top + 10, Math.Max(screen.WorkingArea.Top + 10, screen.WorkingArea.Bottom - this.Height - 10));
+                this.Location = new Point(x, y);
+            }
+            this.TopMost = true;
+            this.BringToFront();
+            this.Activate();
+        }
+
         private void UpdateAppSelectionUI()
         {
             bool specific = _rbSpecificApp.Checked;
-            _pnlAppSelect.Visible = specific;
-            _lblTargetApp.Text = GetDisplayTargetText();
+            _pnlAppSelect.Visible = true; // Always visible so setting is never hidden!
+
+            if (specific)
+            {
+                _lblTargetApp.ForeColor = Color.FromArgb(56, 189, 248);
+                _lblTargetApp.Text = GetDisplayTargetText();
+                _btnPickApp.ForeColor = Color.FromArgb(240, 240, 248);
+                _btnPickApp.BackColor = Color.FromArgb(40, 40, 54);
+                _btnBrowseApp.ForeColor = Color.FromArgb(240, 240, 248);
+                _btnBrowseApp.BackColor = Color.FromArgb(40, 40, 54);
+            }
+            else
+            {
+                _lblTargetApp.ForeColor = Color.FromArgb(120, 120, 135);
+                _lblTargetApp.Text = Loc.Get("StopwatchAllAppsActiveHint");
+                _btnPickApp.ForeColor = Color.FromArgb(150, 150, 165);
+                _btnPickApp.BackColor = Color.FromArgb(30, 30, 40);
+                _btnBrowseApp.ForeColor = Color.FromArgb(150, 150, 165);
+                _btnBrowseApp.BackColor = Color.FromArgb(30, 30, 40);
+            }
         }
 
         private string GetDisplayTargetText()
@@ -410,9 +487,53 @@ namespace RyzenQuietPro
             return _targetExe;
         }
 
+        private void BrowseExecutable()
+        {
+            using var ofd = new OpenFileDialog
+            {
+                Filter = Loc.Get("StopwatchSelectExeFilter"),
+                Title = Loc.Get("StopwatchBrowseTitle"),
+                CheckFileExists = true
+            };
+            if (ofd.ShowDialog(this) == DialogResult.OK)
+            {
+                try
+                {
+                    string filePath = ofd.FileName;
+                    string exeName = System.IO.Path.GetFileName(filePath);
+                    string friendlyName = exeName;
+                    try
+                    {
+                        var fvi = System.Diagnostics.FileVersionInfo.GetVersionInfo(filePath);
+                        if (!string.IsNullOrWhiteSpace(fvi.FileDescription))
+                        {
+                            friendlyName = fvi.FileDescription.Trim();
+                        }
+                    }
+                    catch { }
+
+                    _targetExe = exeName;
+                    _targetFriendlyName = friendlyName;
+                    _rbSpecificApp.Checked = true;
+                    if (string.IsNullOrWhiteSpace(_txtName.Text) || _txtName.Text == Loc.Get("StopwatchAnyProgram"))
+                    {
+                        _txtName.Text = friendlyName;
+                    }
+                    UpdateAppSelectionUI();
+                }
+                catch (Exception ex)
+                {
+                    Logger.Log($"BrowseExecutable error: {ex.Message}");
+                }
+            }
+        }
+
         private void OpenProcessPicker()
         {
-            using var dlg = new ProcessSelectDialog(_monitor, _targetExe);
+            using var dlg = new ProcessSelectDialog(_monitor, _targetExe)
+            {
+                TopMost = this.TopMost
+            };
             if (dlg.ShowDialog(this) == DialogResult.OK)
             {
                 if (string.IsNullOrEmpty(dlg.SelectedExeName))
@@ -426,6 +547,10 @@ namespace RyzenQuietPro
                     _targetExe = dlg.SelectedExeName;
                     _targetFriendlyName = dlg.SelectedFriendlyName;
                     _rbSpecificApp.Checked = true;
+                    if (string.IsNullOrWhiteSpace(_txtName.Text) || _txtName.Text == Loc.Get("StopwatchAnyProgram"))
+                    {
+                        _txtName.Text = !string.IsNullOrWhiteSpace(_targetFriendlyName) ? _targetFriendlyName : _targetExe;
+                    }
                 }
                 UpdateAppSelectionUI();
             }
