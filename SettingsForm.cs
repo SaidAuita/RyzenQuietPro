@@ -161,6 +161,22 @@ namespace RyzenQuietPro
         private Label _lblServerSyncTestStatus = null!;
         private Label _lblServerSyncHint = null!;
 
+        // Keyboard Layout Switcher Card (Punto Switcher)
+        private Label _lblSecLayout = null!;
+        private CheckBox _chkLayoutSwitch = null!;
+        private Panel _pnlLayoutControls = null!;
+        private FlowLayoutPanel _flowModifiers = null!;
+        private Label _lblLayoutHotkey = null!;
+        private CheckBox _chkModCtrl = null!;
+        private CheckBox _chkModAlt = null!;
+        private CheckBox _chkModShift = null!;
+        private CheckBox _chkModWin = null!;
+        private FlowLayoutPanel _flowKeyRow = null!;
+        private Label _lblLayoutKey = null!;
+        private ComboBox _cbLayoutKey = null!;
+        private Button _btnResetLayoutHotkey = null!;
+        private Label _lblLayoutSwitchHint = null!;
+
         private HardwareInfoForm? _infoForm;
         private FanSelectionForm? _fanSelectionForm;
 
@@ -1701,6 +1717,216 @@ namespace RyzenQuietPro
 
             curY += cardServerSyncH + 8;
 
+            // ================= KEYBOARD LAYOUT SWITCHER CARD =================
+            int cardLayoutH = 142;
+            var cardLayout = CreateCard(cardX, curY, cardW, cardLayoutH);
+            _pnlBody.Controls.Add(cardLayout);
+
+            _lblSecLayout = CreateSectionHeader(Loc.Get("SecLayoutSwitcher"), 12, 8);
+            cardLayout.Controls.Add(_lblSecLayout);
+
+            _chkLayoutSwitch = new CheckBox
+            {
+                Text = Loc.Get("LayoutSwitch_Enable"),
+                Font = new Font("Segoe UI", 8.5f),
+                ForeColor = Color.FromArgb(220, 220, 235),
+                Location = new Point(14, 28),
+                Size = new Size(cardW - 28, 22),
+                AutoEllipsis = true,
+                Checked = _settings.LayoutSwitchEnabled,
+                Cursor = Cursors.Hand
+            };
+            _chkLayoutSwitch.CheckedChanged += (s, e) => {
+                _settings.LayoutSwitchEnabled = _chkLayoutSwitch.Checked;
+                _pnlLayoutControls.Enabled = _chkLayoutSwitch.Checked;
+                _settings.Save();
+                _onSettingsUpdated?.Invoke();
+            };
+            cardLayout.Controls.Add(_chkLayoutSwitch);
+
+            _pnlLayoutControls = new Panel
+            {
+                Location = new Point(14, 52),
+                Size = new Size(cardW - 28, 82),
+                BackColor = Color.Transparent,
+                Enabled = _settings.LayoutSwitchEnabled
+            };
+            cardLayout.Controls.Add(_pnlLayoutControls);
+
+            // Row 1: FlowLayoutPanel for Modifiers
+            _flowModifiers = new FlowLayoutPanel
+            {
+                Location = new Point(0, 0),
+                Size = new Size(cardW - 28, 25),
+                BackColor = Color.Transparent,
+                WrapContents = false,
+                AutoSize = false
+            };
+            _pnlLayoutControls.Controls.Add(_flowModifiers);
+
+            _lblLayoutHotkey = new Label
+            {
+                Text = Loc.Get("LayoutSwitch_Hotkey"),
+                Font = new Font("Segoe UI", 8.25f),
+                ForeColor = Color.FromArgb(200, 200, 215),
+                Margin = new Padding(0, 4, 8, 0),
+                AutoSize = true
+            };
+            _flowModifiers.Controls.Add(_lblLayoutHotkey);
+
+            _chkModCtrl = new CheckBox
+            {
+                Text = "Ctrl",
+                Font = new Font("Segoe UI", 8.25f),
+                ForeColor = Color.FromArgb(220, 220, 235),
+                Margin = new Padding(0, 2, 6, 0),
+                AutoSize = true,
+                Checked = _settings.LayoutSwitchModifiersCtrl,
+                Cursor = Cursors.Hand
+            };
+            _chkModCtrl.CheckedChanged += (s, e) => {
+                _settings.LayoutSwitchModifiersCtrl = _chkModCtrl.Checked;
+                _settings.Save();
+                _onSettingsUpdated?.Invoke();
+            };
+            _flowModifiers.Controls.Add(_chkModCtrl);
+
+            _chkModAlt = new CheckBox
+            {
+                Text = "Alt",
+                Font = new Font("Segoe UI", 8.25f),
+                ForeColor = Color.FromArgb(220, 220, 235),
+                Margin = new Padding(0, 2, 6, 0),
+                AutoSize = true,
+                Checked = _settings.LayoutSwitchModifiersAlt,
+                Cursor = Cursors.Hand
+            };
+            _chkModAlt.CheckedChanged += (s, e) => {
+                _settings.LayoutSwitchModifiersAlt = _chkModAlt.Checked;
+                _settings.Save();
+                _onSettingsUpdated?.Invoke();
+            };
+            _flowModifiers.Controls.Add(_chkModAlt);
+
+            _chkModShift = new CheckBox
+            {
+                Text = "Shift",
+                Font = new Font("Segoe UI", 8.25f),
+                ForeColor = Color.FromArgb(220, 220, 235),
+                Margin = new Padding(0, 2, 6, 0),
+                AutoSize = true,
+                Checked = _settings.LayoutSwitchModifiersShift,
+                Cursor = Cursors.Hand
+            };
+            _chkModShift.CheckedChanged += (s, e) => {
+                _settings.LayoutSwitchModifiersShift = _chkModShift.Checked;
+                _settings.Save();
+                _onSettingsUpdated?.Invoke();
+            };
+            _flowModifiers.Controls.Add(_chkModShift);
+
+            _chkModWin = new CheckBox
+            {
+                Text = "Win",
+                Font = new Font("Segoe UI", 8.25f),
+                ForeColor = Color.FromArgb(220, 220, 235),
+                Margin = new Padding(0, 2, 0, 0),
+                AutoSize = true,
+                Checked = _settings.LayoutSwitchModifiersWin,
+                Cursor = Cursors.Hand
+            };
+            _chkModWin.CheckedChanged += (s, e) => {
+                _settings.LayoutSwitchModifiersWin = _chkModWin.Checked;
+                _settings.Save();
+                _onSettingsUpdated?.Invoke();
+            };
+            _flowModifiers.Controls.Add(_chkModWin);
+
+            // Row 2: FlowLayoutPanel for Key & Reset
+            _flowKeyRow = new FlowLayoutPanel
+            {
+                Location = new Point(0, 27),
+                Size = new Size(cardW - 28, 28),
+                BackColor = Color.Transparent,
+                WrapContents = false,
+                AutoSize = false
+            };
+            _pnlLayoutControls.Controls.Add(_flowKeyRow);
+
+            _lblLayoutKey = new Label
+            {
+                Text = Loc.Get("LayoutSwitch_Key"),
+                Font = new Font("Segoe UI", 8.25f),
+                ForeColor = Color.FromArgb(200, 200, 215),
+                Margin = new Padding(0, 5, 8, 0),
+                AutoSize = true
+            };
+            _flowKeyRow.Controls.Add(_lblLayoutKey);
+
+            _cbLayoutKey = new ComboBox
+            {
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                BackColor = Color.FromArgb(24, 24, 32),
+                ForeColor = Color.FromArgb(45, 212, 191),
+                Font = new Font("Segoe UI", 8.5f),
+                Size = new Size(110, 24),
+                Margin = new Padding(0, 1, 10, 0)
+            };
+            PopulateLayoutKeyComboBox();
+            _cbLayoutKey.SelectedIndexChanged += (s, e) => {
+                if (_cbLayoutKey.SelectedItem is KeyOptionItem item)
+                {
+                    _settings.LayoutSwitchVirtualKey = (int)item.Key;
+                    _settings.Save();
+                    _onSettingsUpdated?.Invoke();
+                }
+            };
+            _flowKeyRow.Controls.Add(_cbLayoutKey);
+
+            _btnResetLayoutHotkey = new Button
+            {
+                Text = Loc.Get("LayoutSwitch_Reset"),
+                Font = new Font("Segoe UI", 8.25f),
+                Size = new Size(72, 24),
+                Margin = new Padding(0, 1, 0, 0),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.FromArgb(32, 36, 48),
+                ForeColor = Color.FromArgb(160, 160, 175),
+                Cursor = Cursors.Hand
+            };
+            _btnResetLayoutHotkey.FlatAppearance.BorderSize = 1;
+            _btnResetLayoutHotkey.FlatAppearance.BorderColor = Color.FromArgb(50, 60, 80);
+            _toolTip.SetToolTip(_btnResetLayoutHotkey, Loc.Get("LayoutSwitch_ResetTip"));
+            _btnResetLayoutHotkey.Click += (s, e) => {
+                _settings.LayoutSwitchModifiersCtrl = true;
+                _settings.LayoutSwitchModifiersAlt = false;
+                _settings.LayoutSwitchModifiersShift = false;
+                _settings.LayoutSwitchModifiersWin = false;
+                _settings.LayoutSwitchVirtualKey = (int)Keys.Pause;
+                _chkModCtrl.Checked = true;
+                _chkModAlt.Checked = false;
+                _chkModShift.Checked = false;
+                _chkModWin.Checked = false;
+                SelectKeyInComboBox(Keys.Pause);
+                _settings.Save();
+                _onSettingsUpdated?.Invoke();
+            };
+            _flowKeyRow.Controls.Add(_btnResetLayoutHotkey);
+
+            // Row 3: Hint
+            _lblLayoutSwitchHint = new Label
+            {
+                Text = Loc.Get("LayoutSwitch_Hint"),
+                Font = new Font("Segoe UI", 7.5f),
+                ForeColor = Color.FromArgb(135, 140, 155),
+                Location = new Point(0, 56),
+                Size = new Size(cardW - 28, 24),
+                AutoEllipsis = true
+            };
+            _pnlLayoutControls.Controls.Add(_lblLayoutSwitchHint);
+
+            curY += cardLayoutH + 8;
+
             // ================= 3. TRAY ICON CARD =================
             var cardTray = CreateCard(cardX, curY, cardW, 70);
             _pnlBody.Controls.Add(cardTray);
@@ -2469,6 +2695,16 @@ namespace RyzenQuietPro
                 if (_lblServerSyncTestStatus != null) _lblServerSyncTestStatus.Width = Math.Max(50, cardW - 28 - 140);
             }
 
+            // Keyboard Layout Switcher Card elements
+            if (_pnlLayoutControls != null)
+            {
+                _pnlLayoutControls.Width = cardW - 28;
+                if (_chkLayoutSwitch != null) _chkLayoutSwitch.Width = cardW - 28;
+                if (_flowModifiers != null) _flowModifiers.Width = cardW - 28;
+                if (_flowKeyRow != null) _flowKeyRow.Width = cardW - 28;
+                if (_lblLayoutSwitchHint != null) _lblLayoutSwitchHint.Width = cardW - 28;
+            }
+
             // Footer close button
             if (_btnClose != null)
             {
@@ -2637,6 +2873,17 @@ namespace RyzenQuietPro
             if (_lblServerSyncPort != null) _lblServerSyncPort.Text = Loc.Get("ServerSync_Port");
             if (_btnServerSyncTest != null) _btnServerSyncTest.Text = Loc.Get("ServerSync_TestBtn");
             if (_lblServerSyncHint != null) _lblServerSyncHint.Text = Loc.Get("ServerSync_Hint");
+
+            if (_lblSecLayout != null) _lblSecLayout.Text = Loc.Get("SecLayoutSwitcher");
+            if (_chkLayoutSwitch != null) _chkLayoutSwitch.Text = Loc.Get("LayoutSwitch_Enable");
+            if (_lblLayoutHotkey != null) _lblLayoutHotkey.Text = Loc.Get("LayoutSwitch_Hotkey");
+            if (_lblLayoutKey != null) _lblLayoutKey.Text = Loc.Get("LayoutSwitch_Key");
+            if (_btnResetLayoutHotkey != null)
+            {
+                _btnResetLayoutHotkey.Text = Loc.Get("LayoutSwitch_Reset");
+                _toolTip?.SetToolTip(_btnResetLayoutHotkey, Loc.Get("LayoutSwitch_ResetTip"));
+            }
+            if (_lblLayoutSwitchHint != null) _lblLayoutSwitchHint.Text = Loc.Get("LayoutSwitch_Hint");
             if (_lblServerSyncHost != null && _txtServerSyncHost != null && _lblServerSyncPort != null && _txtServerSyncPort != null)
             {
                 int hostX = Math.Max(68, _lblServerSyncHost.Right + 8);
@@ -3010,6 +3257,66 @@ namespace RyzenQuietPro
                     _lblServerSyncTestStatus.ForeColor = Color.FromArgb(248, 113, 113);
                 }
             }
+        }
+
+        private class KeyOptionItem
+        {
+            public string Name { get; set; } = "";
+            public Keys Key { get; set; }
+            public override string ToString() => Name;
+        }
+
+        private void PopulateLayoutKeyComboBox()
+        {
+            if (_cbLayoutKey == null) return;
+            _cbLayoutKey.Items.Clear();
+
+            var keyList = new List<KeyOptionItem>
+            {
+                new() { Name = "Pause", Key = Keys.Pause },
+                new() { Name = "ScrollLock", Key = Keys.Scroll },
+                new() { Name = "Insert", Key = Keys.Insert },
+                new() { Name = "~ (Tilde)", Key = Keys.Oemtilde },
+                new() { Name = "F1", Key = Keys.F1 },
+                new() { Name = "F2", Key = Keys.F2 },
+                new() { Name = "F3", Key = Keys.F3 },
+                new() { Name = "F4", Key = Keys.F4 },
+                new() { Name = "F5", Key = Keys.F5 },
+                new() { Name = "F6", Key = Keys.F6 },
+                new() { Name = "F7", Key = Keys.F7 },
+                new() { Name = "F8", Key = Keys.F8 },
+                new() { Name = "F9", Key = Keys.F9 },
+                new() { Name = "F10", Key = Keys.F10 },
+                new() { Name = "F11", Key = Keys.F11 },
+                new() { Name = "F12", Key = Keys.F12 },
+                new() { Name = "Q", Key = Keys.Q },
+                new() { Name = "R", Key = Keys.R },
+                new() { Name = "T", Key = Keys.T },
+                new() { Name = "Y", Key = Keys.Y },
+                new() { Name = "Space", Key = Keys.Space }
+            };
+
+            foreach (var item in keyList)
+            {
+                _cbLayoutKey.Items.Add(item);
+            }
+
+            SelectKeyInComboBox((Keys)_settings.LayoutSwitchVirtualKey);
+        }
+
+        private void SelectKeyInComboBox(Keys key)
+        {
+            if (_cbLayoutKey == null) return;
+            for (int i = 0; i < _cbLayoutKey.Items.Count; i++)
+            {
+                if (_cbLayoutKey.Items[i] is KeyOptionItem item && item.Key == key)
+                {
+                    _cbLayoutKey.SelectedIndex = i;
+                    return;
+                }
+            }
+            if (_cbLayoutKey.Items.Count > 0)
+                _cbLayoutKey.SelectedIndex = 0;
         }
 
         protected override void Dispose(bool disposing)

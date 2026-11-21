@@ -13,10 +13,10 @@
     <DebugType>None</DebugType>
     <DebugSymbols>false</DebugSymbols>
     <UseWindowsForms>true</UseWindowsForms>
-    <Version>4.15.0</Version>
-    <AssemblyVersion>4.15.0.0</AssemblyVersion>
-    <FileVersion>4.15.0.0</FileVersion>
-    <InformationalVersion>v4.15 PRO</InformationalVersion>
+    <Version>4.16.0</Version>
+    <AssemblyVersion>4.16.0.0</AssemblyVersion>
+    <FileVersion>4.16.0.0</FileVersion>
+    <InformationalVersion>v4.16 PRO</InformationalVersion>
     <Product>RyzenQuiet PRO</Product>
   </PropertyGroup>
 

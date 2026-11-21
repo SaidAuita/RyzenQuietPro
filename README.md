@@ -1,12 +1,12 @@
 <div align="center">
 
-# ⚡ RyzenQuiet PRO (v4.15)
-**Sleek, lightweight hardware HUD & power-plan optimizer for Windows with AMD Ryzen CPB toggle, GPU power limiting & acoustic tuning, multi-stopwatch per-app process profiling with per-counter scaling, automated HDD awake schedule & keep-alive, enhanced multi-disk telemetry, modular fan monitoring, collapsible sections, seamless Windows Task Manager startup integration, start-minimized boot mode, and ServerSync exchange progress monitoring.**
+# ⚡ RyzenQuiet PRO (v4.16)
+**Sleek, lightweight hardware HUD & power-plan optimizer for Windows with AMD Ryzen CPB toggle, GPU power limiting & acoustic tuning, Punto Switcher in-place layout switcher, multi-stopwatch per-app process profiling with per-counter scaling, automated HDD awake schedule & keep-alive, enhanced multi-disk telemetry, modular fan monitoring, collapsible sections, seamless Windows Task Manager startup integration, start-minimized boot mode, and ServerSync exchange progress monitoring.**
 
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011%20(64--bit)-blue.svg)](#)
 [![.NET](https://img.shields.io/badge/.NET-8.0-purple.svg)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/Release-v4.15-orange.svg)](https://github.com/SaidAuita/RyzenQuietPro/releases)
+[![Release](https://img.shields.io/badge/Release-v4.16-orange.svg)](https://github.com/SaidAuita/RyzenQuietPro/releases)
 [![Telemetry](https://img.shields.io/badge/Telemetry-Zero%20%2F%20100%25%20Offline-brightgreen.svg)](#)
 
 <br/>
@@ -187,6 +187,15 @@ All subsystem graphs share a synchronized 60-second historical canvas rendered w
   <img src="images/RyzenQuietPro-v4_15-2.png" alt="RyzenQuiet PRO v4.15 Clean Tray Menu & Docked HUD" width="370" />
 </p>
 
+### 15. 🔤 In-Place Keyboard Layout Switcher (Punto Switcher Mode, v4.16)
+* **Global Low-Level Hook (`WH_KEYBOARD_LL`):** High-performance keyboard hook (`SetWindowsHookEx`) intercepts <kbd>Pause</kbd> / <kbd>Break</kbd> (including Windows `VK_CANCEL` when <kbd>Ctrl</kbd> is held), <kbd>Scroll Lock</kbd>, <kbd>Insert</kbd>, <kbd>~</kbd>, and custom hotkeys across all applications with zero latency.
+* **Smart Auto-Select (`Ctrl+A` Fallback):** If no text is selected when pressing the hotkey or clicking the tray item, RyzenQuiet PRO automatically selects the entire text field (<kbd>Ctrl</kbd> + <kbd>A</kbd>), reads and converts the layout, and pastes the fixed text back (<kbd>Ctrl</kbd> + <kbd>V</kbd>).
+* **Two-Way RU ↔ EN Layout Conversion:** Instantly fixes accidentally mistyped words ("ghbdtn" → "привет", "руддщ" → "hello") including uppercase/lowercase characters, punctuation marks, digits, and special symbols.
+* **Quick Tray Access (2 Separate Items):** Direct context menu items without cumbersome submenus:
+  * `🔤 Switch Text Layout`: Instant conversion in the active window.
+  * `[✓] Layout Switch (Ctrl+Pause)`: One-click background hotkey toggle.
+* **Adaptive Settings UI:** Clean `FlowLayoutPanel` with non-overlapping modifier checkboxes, compact key selectors, and reset buttons.
+
 ---
 
 ## ⌨️ Controls & Shortcuts
@@ -194,6 +203,7 @@ All subsystem graphs share a synchronized 60-second historical canvas rendered w
 | Shortcut / Button | Action |
 |---|---|
 | <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Q</kbd> | Toggle **Quiet Mode (99%)** / **Boost Mode (100%)** |
+| <kbd>Ctrl</kbd> + <kbd>Pause</kbd> *(customizable)* | **In-place keyboard layout switcher (RU ↔ EN)** in Punto Switcher style in any app |
 | `Click Title / Bar` | **Collapse or expand section** (CPU, RAM, GPU, VRAM, DISK, FANS, ServerSync, Stopwatch) into a single compact status strip |
 | `⏱` **Stopwatch** | Start (`▶`), pause (`⏸`), reset (`↺`), or arm auto-start (`⚡`) by CPU/GPU power load or target app |
 | `[+]` **Header** | Add a new independent stopwatch counter with custom app binding & color |
@@ -429,6 +439,15 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
   <img src="images/RyzenQuietPro-v4_15-2.png" alt="RyzenQuiet PRO v4.15 Очищенное меню трея и авто-док" width="370" />
 </p>
 
+### 15. 🔤 Быстрая смена раскладки текста на лету (режим Punto Switcher, v4.16)
+* **Низкоуровневый глобальный хук (`WH_KEYBOARD_LL`):** Перехват системных комбинаций <kbd>Pause</kbd> / <kbd>Break</kbd> (включая перевод Windows в `VK_CANCEL` при зажатом <kbd>Ctrl</kbd>), <kbd>Scroll Lock</kbd>, <kbd>Insert</kbd>, <kbd>~</kbd> и настраиваемых хоткеев без задержек и утечки служебных кодов.
+* **Умная обработка невыделенного текста:** Если текст не был предварительно выделен, утилита автоматически выделяет весь текст в активном поле ввода (<kbd>Ctrl</kbd> + <kbd>A</kbd>), конвертирует раскладку и вставляет исправленный текст (<kbd>Ctrl</kbd> + <kbd>V</kbd>).
+* **Двусторонняя конвертация RU ↔ EN:** Мгновенное исправление ошибочно набранного текста («ghbdtn» → «привет», «руддщ» → «hello») с сохранением регистра, спецсимволов и знаков препинания.
+* **Удобный доступ в трее (2 прямых пункта):** Доступ без вложенных меню:
+  * `🔤 Сменить раскладку текста` — моментальная смена раскладки в текущем активном окне.
+  * `[✓] Смена раскладки (Ctrl+Pause)` — быстрое включение/отключение фонового хоткея в один клик.
+* **Адаптивный интерфейс настроек:** Использование адаптивных `FlowLayoutPanel` для модификаторов и селектора клавиш — отсутствие наложений и обрезания кнопок на любых масштабах DPI.
+
 ---
 
 ## ⌨️ Управление и горячие клавиши
@@ -436,6 +455,7 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 | Сочетание / Кнопка | Действие |
 |---|---|
 | <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Q</kbd> | Переключение между **Тихим режимом (99%)** и **Boost (100%)** |
+| <kbd>Ctrl</kbd> + <kbd>Pause</kbd> *(настраиваемо)* | **Смена раскладки выделенного текста (RU ↔ EN)** в стиле Punto Switcher в любой программе |
 | `Клик по заголовку / полоске` | **Свернуть или развернуть раздел** (CPU, RAM, GPU, VRAM, DISK, FANS, Сервер обмена, Секундомер) в компактную информационную полоску |
 | `⏱` **Секундомер** | Старт (`▶`), пауза (`⏸`), сброс (`↺`) или взвод автостарта (`⚡`) по мощности CPU/GPU или приложению |
 | `[+]` **В шапке таймеров** | Добавить новый независимый секундомер с привязкой к программе и выбором цвета |
@@ -473,8 +493,8 @@ build.bat
 ```
 
 Исполняемые файлы будут скомпилированы в каталог `build\`:
-* `build\RyzenQuietPro-v4.15.exe` (Standalone)
-* `build\RyzenQuietPro-v4.15-Lite.exe` (Lite)
+* `build\RyzenQuietPro-v4.16.exe` (Standalone)
+* `build\RyzenQuietPro-v4.16-Lite.exe` (Lite)
 * `build\plugins\FanService\RyzenQuiet.FanService.exe` (Fan Monitor Addon)
 
 ---

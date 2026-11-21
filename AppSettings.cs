@@ -56,6 +56,14 @@ namespace RyzenQuietPro
         public string ServerSyncHost { get; set; } = "127.0.0.1";
         public int ServerSyncPort { get; set; } = 19888;
 
+        // Keyboard Layout Switcher (Punto Switcher mode)
+        public bool LayoutSwitchEnabled { get; set; } = true;
+        public bool LayoutSwitchModifiersCtrl { get; set; } = true;
+        public bool LayoutSwitchModifiersAlt { get; set; } = false;
+        public bool LayoutSwitchModifiersShift { get; set; } = false;
+        public bool LayoutSwitchModifiersWin { get; set; } = false;
+        public int LayoutSwitchVirtualKey { get; set; } = (int)Keys.Pause; // Default: Ctrl + Pause
+
         public bool ShowGpuGraph { get; set; } = true;
         public bool ShowGpuTempLine { get; set; } = true;
         public bool ShowGpuFanSpeed { get; set; } = true;

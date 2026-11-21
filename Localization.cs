@@ -28,7 +28,7 @@ namespace RyzenQuietPro
         {
             ["ru"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.15",
+                ["AppTitle"] = "RyzenQuiet PRO v4.16",
                 ["Silent"] = "Тихий",
                 ["SilentFull"] = "🌿 Тихий (99%)",
                 ["Boost"] = "Турбо",
@@ -65,6 +65,16 @@ namespace RyzenQuietPro
                 ["ServerSync_Eta"] = "ETA",
                 ["ServerSync_Hint"] = "💡 Мониторинг синхронизации файлов ServerSync (порт 19888). Укажите IP-адрес сервера вашей локальной сети (на работе — рабочий, дома — домашний).",
                 ["ServerSync_Timeout"] = "Таймаут (проверьте IP и порт)",
+                ["SecLayoutSwitcher"] = "РАСКЛАДКА КЛАВИАТУРЫ (PUNTO SWITCHER)",
+                ["LayoutSwitch_Menu"] = "🔤 Раскладка (Punto Switcher)",
+                ["LayoutSwitch_RunNow"] = "🔤 Сменить раскладку текста",
+                ["LayoutSwitch_EnableShort"] = "Смена раскладки",
+                ["LayoutSwitch_Enable"] = "Смена раскладки выделенного текста (Punto Switcher)",
+                ["LayoutSwitch_Hint"] = "💡 Выделите ошибочно набранный текст и нажмите хоткей для смены RU ↔ EN.",
+                ["LayoutSwitch_Hotkey"] = "Модификаторы:",
+                ["LayoutSwitch_Key"] = "Клавиша:",
+                ["LayoutSwitch_Reset"] = "↺ Сброс",
+                ["LayoutSwitch_ResetTip"] = "Сброс хоткея на значение по умолчанию (Ctrl+Pause)",
                 ["Stopwatch"] = "СЕКУНДОМЕР",
                 ["StopwatchModule"] = "⏱️ Секундомер",
                 ["StopwatchStart"] = "▶ Старт",
@@ -273,7 +283,7 @@ namespace RyzenQuietPro
             },
             ["en"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.15",
+                ["AppTitle"] = "RyzenQuiet PRO v4.16",
                 ["Silent"] = "Silent",
                 ["SilentFull"] = "🌿 Silent (99%)",
                 ["Boost"] = "Boost",
@@ -309,6 +319,16 @@ namespace RyzenQuietPro
                 ["ServerSync_Eta"] = "ETA",
                 ["ServerSync_Hint"] = "💡 ServerSync file exchange monitor (port 19888). Enter the IP address of your local network server (work server when at work, home server when at home).",
                 ["ServerSync_Timeout"] = "Connection timed out",
+                ["SecLayoutSwitcher"] = "KEYBOARD LAYOUT (PUNTO SWITCHER)",
+                ["LayoutSwitch_Menu"] = "🔤 Layout (Punto Switcher)",
+                ["LayoutSwitch_RunNow"] = "🔤 Switch text layout",
+                ["LayoutSwitch_EnableShort"] = "Layout Switcher",
+                ["LayoutSwitch_Enable"] = "In-place layout switch for selected text (Punto Switcher)",
+                ["LayoutSwitch_Hint"] = "💡 Select mistyped text and press hotkey to switch RU ↔ EN in-place.",
+                ["LayoutSwitch_Hotkey"] = "Modifiers:",
+                ["LayoutSwitch_Key"] = "Key:",
+                ["LayoutSwitch_Reset"] = "↺ Reset",
+                ["LayoutSwitch_ResetTip"] = "Reset hotkey to default (Ctrl+Pause)",
                 ["Stopwatch"] = "STOPWATCH",
                 ["StopwatchModule"] = "⏱️ Stopwatch",
                 ["StopwatchStart"] = "▶ Start",
@@ -513,7 +533,7 @@ namespace RyzenQuietPro
             },
             ["de"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.15",
+                ["AppTitle"] = "RyzenQuiet PRO v4.16",
                 ["Silent"] = "Leise",
                 ["SilentFull"] = "🌿 Leise (99%)",
                 ["Boost"] = "Boost",
@@ -678,7 +698,7 @@ namespace RyzenQuietPro
             },
             ["es"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.15",
+                ["AppTitle"] = "RyzenQuiet PRO v4.16",
                 ["Silent"] = "Silencioso",
                 ["SilentFull"] = "🌿 Silencioso (99%)",
                 ["Boost"] = "Turbo",
@@ -843,7 +863,7 @@ namespace RyzenQuietPro
             },
             ["fr"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.15",
+                ["AppTitle"] = "RyzenQuiet PRO v4.16",
                 ["Silent"] = "Silencieux",
                 ["SilentFull"] = "🌿 Silencieux (99%)",
                 ["Boost"] = "Turbo",
@@ -1008,7 +1028,7 @@ namespace RyzenQuietPro
             },
             ["ja"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.15",
+                ["AppTitle"] = "RyzenQuiet PRO v4.16",
                 ["Silent"] = "静音",
                 ["SilentFull"] = "🌿 静音モード (99%)",
                 ["Boost"] = "ブースト",
@@ -1173,7 +1193,7 @@ namespace RyzenQuietPro
             },
             ["pt"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.15",
+                ["AppTitle"] = "RyzenQuiet PRO v4.16",
                 ["Silent"] = "Silencioso",
                 ["SilentFull"] = "🌿 Silencioso (99%)",
                 ["Boost"] = "Turbo",
@@ -1338,7 +1358,7 @@ namespace RyzenQuietPro
             },
             ["zh"] = new()
             {
-                ["AppTitle"] = "RyzenQuiet PRO v4.15",
+                ["AppTitle"] = "RyzenQuiet PRO v4.16",
                 ["Silent"] = "静音",
                 ["SilentFull"] = "🌿 静音模式 (99%)",
                 ["Boost"] = "加速",

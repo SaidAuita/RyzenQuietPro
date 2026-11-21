@@ -46,6 +46,9 @@ namespace RyzenQuietPro
         private ToolStripMenuItem _metricRamItem = null!;
         private ToolStripMenuItem _metricNoneItem = null!;
         private ToolStripMenuItem _exitMenuItem = null!;
+        private ToolStripMenuItem _layoutSwitchRunItem = null!;
+        private ToolStripMenuItem _layoutSwitchToggleItem = null!;
+        private IntPtr _lastForegroundWindow;
 
         private Bitmap _quietBitmap = null!;
         private Bitmap _normalBitmap = null!;
@@ -88,6 +91,7 @@ namespace RyzenQuietPro
             InitializeContextMenu();
             InitializeTrayIcon();
             RegisterGlobalHotkey();
+            KeyboardLayoutService.StartHook(_settings);
 
             _dashboard = new DashboardPro(
                 _hardware,
@@ -169,6 +173,10 @@ namespace RyzenQuietPro
         private void InitializeContextMenu()
         {
             _contextMenu = new ContextMenuStrip();
+            _contextMenu.Opening += (s, e) => {
+                _lastForegroundWindow = KeyboardLayoutService.GetForegroundWindow();
+                UpdateContextMenuState();
+            };
 
             _titleItem = new ToolStripMenuItem(Loc.Get("AppTitle"))
             {
@@ -274,6 +282,27 @@ namespace RyzenQuietPro
 
             _contextMenu.Items.Add(new ToolStripSeparator());
 
+            // 2 separate top-level items for keyboard layout switcher
+            _layoutSwitchRunItem = new ToolStripMenuItem(Loc.Get("LayoutSwitch_RunNow"));
+            _layoutSwitchRunItem.Click += (s, e) => {
+                IntPtr target = _lastForegroundWindow;
+                Task.Run(() => KeyboardLayoutService.SwitchSelectedTextLayout(target));
+            };
+            _contextMenu.Items.Add(_layoutSwitchRunItem);
+
+            _layoutSwitchToggleItem = new ToolStripMenuItem(Loc.Get("LayoutSwitch_EnableShort"))
+            {
+                Checked = _settings.LayoutSwitchEnabled
+            };
+            _layoutSwitchToggleItem.Click += (s, e) => {
+                _settings.LayoutSwitchEnabled = !_settings.LayoutSwitchEnabled;
+                _settings.Save();
+                OnSettingsChanged();
+            };
+            _contextMenu.Items.Add(_layoutSwitchToggleItem);
+
+            _contextMenu.Items.Add(new ToolStripSeparator());
+
             _exitMenuItem = new ToolStripMenuItem(Loc.Get("Exit"));
             _exitMenuItem.Click += (s, e) => Application.Exit();
             _contextMenu.Items.Add(_exitMenuItem);
@@ -295,6 +324,12 @@ namespace RyzenQuietPro
             if (_startMinimizedMenuItem != null) _startMinimizedMenuItem.Text = Loc.Get("StartMinimized");
             if (_topProcessesMenuItem != null) _topProcessesMenuItem.Text = Loc.Get("TopProcesses");
             if (_showAllGpusMenuItem != null) _showAllGpusMenuItem.Text = Loc.Get("ShowAllGpus");
+            if (_layoutSwitchRunItem != null) _layoutSwitchRunItem.Text = Loc.Get("LayoutSwitch_RunNow");
+            if (_layoutSwitchToggleItem != null)
+            {
+                _layoutSwitchToggleItem.Text = $"{Loc.Get("LayoutSwitch_EnableShort")} ({GetHotkeyDisplayString()})";
+                _layoutSwitchToggleItem.Checked = _settings.LayoutSwitchEnabled;
+            }
             if (_exitMenuItem != null) _exitMenuItem.Text = Loc.Get("Exit");
         }
 
@@ -332,6 +367,24 @@ namespace RyzenQuietPro
             }
             _detachMenuItem.Text = _settings.IsDetached ? Loc.Get("TipDock") : Loc.Get("TipDetach");
             if (_startMinimizedMenuItem != null) _startMinimizedMenuItem.Checked = _settings.StartMinimized;
+            if (_layoutSwitchToggleItem != null)
+            {
+                _layoutSwitchToggleItem.Checked = _settings.LayoutSwitchEnabled;
+                _layoutSwitchToggleItem.Text = $"{Loc.Get("LayoutSwitch_EnableShort")} ({GetHotkeyDisplayString()})";
+            }
+        }
+
+        private string GetHotkeyDisplayString()
+        {
+            var parts = new List<string>();
+            if (_settings.LayoutSwitchModifiersCtrl) parts.Add("Ctrl");
+            if (_settings.LayoutSwitchModifiersAlt) parts.Add("Alt");
+            if (_settings.LayoutSwitchModifiersShift) parts.Add("Shift");
+            if (_settings.LayoutSwitchModifiersWin) parts.Add("Win");
+            string keyName = ((Keys)_settings.LayoutSwitchVirtualKey).ToString();
+            if (_settings.LayoutSwitchVirtualKey == (int)Keys.Oemtilde) keyName = "~";
+            parts.Add(keyName);
+            return string.Join("+", parts);
         }
 
         private void InitializeTrayIcon()
@@ -447,6 +500,7 @@ namespace RyzenQuietPro
             _dashboard?.SetStartupState(_startupMenuItem.Checked);
 
             UpdateTrayState();
+            KeyboardLayoutService.StartHook(_settings);
         }
 
         private void OnMetricsUpdated()
@@ -680,6 +734,8 @@ namespace RyzenQuietPro
             if (disposing)
             {
                 Loc.LanguageChanged -= OnLanguageChanged;
+
+                KeyboardLayoutService.StopHook();
 
                 if (_hotkeyRegistered && this.Handle != IntPtr.Zero)
                 {
