@@ -36,6 +36,9 @@
   &nbsp;&nbsp;&nbsp;&nbsp;
   <img src="images/RyzenQuietPro-v4_13.png" alt="RyzenQuiet PRO v4.14 ServerSync Live Exchange Progress HUD" width="370" />
 </p>
+<p align="center">
+  <img src="images/RyzenQuietPro-v4_17.png" alt="RyzenQuiet PRO v4.17 Desktop Icon Layout Manager with Save Date in Tray Menu" width="460" />
+</p>
 
 <br/>
 
@@ -196,6 +199,18 @@ All subsystem graphs share a synchronized 60-second historical canvas rendered w
   * `[✓] Layout Switch (Ctrl+Pause)`: One-click background hotkey toggle.
 * **Adaptive Settings UI:** Clean `FlowLayoutPanel` with non-overlapping modifier checkboxes, compact key selectors, and reset buttons.
 
+### 16. 🖥️ Desktop Icon Layout Manager for Multi-Monitors (v4.17)
+<p align="center">
+  <img src="images/RyzenQuietPro-v4_17.png" alt="RyzenQuiet PRO v4.17 Desktop Icon Layout Manager in Tray Menu" width="460" />
+</p>
+
+* **Full Multi-Monitor & Negative Coordinate Compatibility (2, 3+ displays):** Accurately saves and restores desktop icon positions across multi-display setups, including negative virtual screen coordinates (e.g., secondary monitors positioned to the left of the primary display with $X < 0$: `-3840..0`).
+* **Win32 `LVM_SETITEMPOSITION32` (`0x1031`):** Uses 32-bit signed integer `POINT` coordinate marshalling across Explorer process boundaries via `VirtualAllocEx` and `WriteProcessMemory`, completely eliminating the 16-bit position truncation of legacy APIs.
+* **Dynamic Last Saved Date Indication:** The tray context menu dynamically displays the date of the last saved snapshot directly in parentheses: `💾 Save Layout (2026-11-23)`.
+* **Smart Enablement of Restore Item:** The `↺ Restore Layout` item is automatically enabled only when a valid saved snapshot exists.
+* **Auto-Restore on Display Resolution Change:** Optional automatic icon repositioning triggered upon `SystemEvents.DisplaySettingsChanged` with an intelligent 1500ms debounce.
+* **Settings Form Integration:** Includes a dedicated card in Settings with manual Save/Restore buttons, Auto-Restore toggle, live status display (icon count, monitor count, timestamp), and responsive UI scaling.
+
 ---
 
 ## ⌨️ Controls & Shortcuts
@@ -204,6 +219,7 @@ All subsystem graphs share a synchronized 60-second historical canvas rendered w
 |---|---|
 | <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Q</kbd> | Toggle **Quiet Mode (99%)** / **Boost Mode (100%)** |
 | <kbd>Ctrl</kbd> + <kbd>Pause</kbd> *(customizable)* | **In-place keyboard layout switcher (RU ↔ EN)** in Punto Switcher style in any app |
+| `Tray Menu` → **Desktop Icons** | **Save & restore desktop icon layout** across resolution changes with save date and auto-restore |
 | `Click Title / Bar` | **Collapse or expand section** (CPU, RAM, GPU, VRAM, DISK, FANS, ServerSync, Stopwatch) into a single compact status strip |
 | `⏱` **Stopwatch** | Start (`▶`), pause (`⏸`), reset (`↺`), or arm auto-start (`⚡`) by CPU/GPU power load or target app |
 | `[+]` **Header** | Add a new independent stopwatch counter with custom app binding & color |
@@ -298,8 +314,8 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 <a name="русский"></a>
 <div align="center">
 
-# ⚡ RyzenQuiet PRO (v4.15) — Описание на русском
-**Стильный, легковесный аппаратный HUD-монитор и менеджер профилей питания для Windows с мгновенным отключением CPB у процессоров AMD Ryzen, акустическим контролем и ограничением мощности видеокарт (GPU Power Limiting), мульти-секундомером с привязкой к приложениям и независимым масштабом графиков, автоматическим расписанием работы HDD без сна и защитой от остановки шпинделей, расширенным мониторингом накопителей с раскрытием процессов I/O, модульным мониторингом вентиляторов, компактным сворачиванием блоков, интеграцией с Диспетчером задач Windows, автостартом в трей и мониторингом сервера обмена ServerSync.**
+# ⚡ RyzenQuiet PRO (v4.17) — Описание на русском
+**Стильный, легковесный аппаратный HUD-монитор и менеджер профилей питания для Windows с менеджером расположения иконок рабочего стола для 3+ мониторов (v4.17), быстрой сменой раскладки выделенного текста (режим Punto Switcher, v4.16), мгновенным отключением CPB у процессоров AMD Ryzen, акустическим контролем и ограничением мощности видеокарт (GPU Power Limiting), мульти-секундомером с привязкой к приложениям и независимым масштабом графиков, автоматическим расписанием работы HDD без сна и защитой от остановки шпинделей, расширенным мониторингом накопителей с раскрытием процессов I/O, модульным мониторингом вентиляторов, компактным сворачиванием блоков, интеграцией с Диспетчером задач Windows, автостартом в трей и мониторингом сервера обмена ServerSync.**
 
 </div>
 
@@ -448,6 +464,18 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
   * `[✓] Смена раскладки (Ctrl+Pause)` — быстрое включение/отключение фонового хоткея в один клик.
 * **Адаптивный интерфейс настроек:** Использование адаптивных `FlowLayoutPanel` для модификаторов и селектора клавиш — отсутствие наложений и обрезания кнопок на любых масштабах DPI.
 
+### 16. 🖥️ Менеджер расположения иконок рабочего стола (v4.17)
+<p align="center">
+  <img src="images/RyzenQuietPro-v4_17.png" alt="RyzenQuiet PRO v4.17 Меню трея с иконками рабочего стола и датой сохранения" width="460" />
+</p>
+
+* **Полная поддержка мультимониторных конфигураций (2, 3 и более дисплеев):** Безупречное сохранение и восстановление координат значков на сложных рабочих столах, включая мониторы с отрицательными координатами слева от основного ($X < 0$: `-3840..0`).
+* **Использование Win32 API `LVM_SETITEMPOSITION32` (`0x1031`):** Передача 32-битных знаковых координат `POINT` через изоляцию памяти процесса Explorer (`VirtualAllocEx` / `WriteProcessMemory`), что полностью исключает 16-битные искажения и сбивание позиций значков на боковых мониторах.
+* **Динамическое отображение даты сохранения в трее:** В контекстном меню трея рядом с пунктом сохранения в скобках автоматически выводится дата последнего снимка: `💾 Сохранить расположение (2026-11-23)`.
+* **Умная доступность пункта восстановления:** Пункт `↺ Восстановить расположение` активен только тогда, когда в системе есть сохранённый снимок.
+* **Автовосстановление при смене разрешения:** Опция автоматического возвращения значков при системном событии `SystemEvents.DisplaySettingsChanged` с дебаунсом 1.5 секунды.
+* **Карточка в окне настроек (`SettingsForm`):** Кнопки быстрого сохранения и восстановления, чекбокс автовосстановления и подробная строка статуса (количество значков, число мониторов, дата и точное время последнего сохранения).
+
 ---
 
 ## ⌨️ Управление и горячие клавиши
@@ -456,6 +484,7 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 |---|---|
 | <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Q</kbd> | Переключение между **Тихим режимом (99%)** и **Boost (100%)** |
 | <kbd>Ctrl</kbd> + <kbd>Pause</kbd> *(настраиваемо)* | **Смена раскладки выделенного текста (RU ↔ EN)** в стиле Punto Switcher в любой программе |
+| `Меню трея` → **Иконки рабочего стола** | **Сохранение и восстановление расположения иконок** при смене разрешений с датой снимка и автовосстановлением |
 | `Клик по заголовку / полоске` | **Свернуть или развернуть раздел** (CPU, RAM, GPU, VRAM, DISK, FANS, Сервер обмена, Секундомер) в компактную информационную полоску |
 | `⏱` **Секундомер** | Старт (`▶`), пауза (`⏸`), сброс (`↺`) или взвод автостарта (`⚡`) по мощности CPU/GPU или приложению |
 | `[+]` **В шапке таймеров** | Добавить новый независимый секундомер с привязкой к программе и выбором цвета |
