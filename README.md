@@ -1,12 +1,12 @@
 <div align="center">
 
-# ⚡ RyzenQuiet PRO (v4.16)
-**Sleek, lightweight hardware HUD & power-plan optimizer for Windows with AMD Ryzen CPB toggle, GPU power limiting & acoustic tuning, Punto Switcher in-place layout switcher, multi-stopwatch per-app process profiling with per-counter scaling, automated HDD awake schedule & keep-alive, enhanced multi-disk telemetry, modular fan monitoring, collapsible sections, seamless Windows Task Manager startup integration, start-minimized boot mode, and ServerSync exchange progress monitoring.**
+# ⚡ RyzenQuiet PRO (v4.17)
+**Sleek, lightweight hardware HUD & power-plan optimizer for Windows with AMD Ryzen CPB toggle, GPU power limiting & acoustic tuning, multi-monitor desktop icon layout manager, Punto Switcher in-place layout switcher, multi-stopwatch per-app process profiling with per-counter scaling, automated HDD awake schedule & keep-alive, enhanced multi-disk telemetry, modular fan monitoring, collapsible sections, seamless Windows Task Manager startup integration, start-minimized boot mode, and ServerSync exchange progress monitoring.**
 
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011%20(64--bit)-blue.svg)](#)
 [![.NET](https://img.shields.io/badge/.NET-8.0-purple.svg)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/Release-v4.16-orange.svg)](https://github.com/SaidAuita/RyzenQuietPro/releases)
+[![Release](https://img.shields.io/badge/Release-v4.17-orange.svg)](https://github.com/SaidAuita/RyzenQuietPro/releases)
 [![Telemetry](https://img.shields.io/badge/Telemetry-Zero%20%2F%20100%25%20Offline-brightgreen.svg)](#)
 
 <br/>

@@ -64,6 +64,9 @@ namespace RyzenQuietPro
         public bool LayoutSwitchModifiersWin { get; set; } = false;
         public int LayoutSwitchVirtualKey { get; set; } = (int)Keys.Pause; // Default: Ctrl + Pause
 
+        // Desktop Icon Layout Manager (Multi-Monitor)
+        public bool AutoRestoreDesktopIcons { get; set; } = false;
+
         public bool ShowGpuGraph { get; set; } = true;
         public bool ShowGpuTempLine { get; set; } = true;
         public bool ShowGpuFanSpeed { get; set; } = true;

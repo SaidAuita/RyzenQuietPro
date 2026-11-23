@@ -48,6 +48,10 @@ namespace RyzenQuietPro
         private ToolStripMenuItem _exitMenuItem = null!;
         private ToolStripMenuItem _layoutSwitchRunItem = null!;
         private ToolStripMenuItem _layoutSwitchToggleItem = null!;
+        private ToolStripMenuItem _desktopIconsMenu = null!;
+        private ToolStripMenuItem _desktopIconsSaveItem = null!;
+        private ToolStripMenuItem _desktopIconsRestoreItem = null!;
+        private ToolStripMenuItem _desktopIconsAutoRestoreItem = null!;
         private IntPtr _lastForegroundWindow;
 
         private Bitmap _quietBitmap = null!;
@@ -92,6 +96,17 @@ namespace RyzenQuietPro
             InitializeTrayIcon();
             RegisterGlobalHotkey();
             KeyboardLayoutService.StartHook(_settings);
+            DesktopIconService.Initialize(_settings, (msg, success) =>
+            {
+                try
+                {
+                    this.BeginInvoke((Action)(() =>
+                    {
+                        _notifyIcon.ShowBalloonTip(2000, "RyzenQuiet PRO", msg, success ? ToolTipIcon.Info : ToolTipIcon.Warning);
+                    }));
+                }
+                catch { }
+            });
 
             _dashboard = new DashboardPro(
                 _hardware,
@@ -303,6 +318,35 @@ namespace RyzenQuietPro
 
             _contextMenu.Items.Add(new ToolStripSeparator());
 
+            // Desktop Icons Submenu
+            _desktopIconsMenu = new ToolStripMenuItem(Loc.Get("DesktopIcons_Menu"));
+
+            _desktopIconsSaveItem = new ToolStripMenuItem(Loc.Get("DesktopIcons_Save"));
+            _desktopIconsSaveItem.Click += (s, e) => SaveDesktopIcons();
+            _desktopIconsMenu.DropDownItems.Add(_desktopIconsSaveItem);
+
+            _desktopIconsRestoreItem = new ToolStripMenuItem(Loc.Get("DesktopIcons_Restore"));
+            _desktopIconsRestoreItem.Click += (s, e) => RestoreDesktopIcons();
+            _desktopIconsMenu.DropDownItems.Add(_desktopIconsRestoreItem);
+
+            _desktopIconsMenu.DropDownItems.Add(new ToolStripSeparator());
+
+            _desktopIconsAutoRestoreItem = new ToolStripMenuItem(Loc.Get("DesktopIcons_AutoRestore"))
+            {
+                Checked = _settings.AutoRestoreDesktopIcons
+            };
+            _desktopIconsAutoRestoreItem.Click += (s, e) => {
+                _settings.AutoRestoreDesktopIcons = !_settings.AutoRestoreDesktopIcons;
+                _settings.Save();
+                _desktopIconsAutoRestoreItem.Checked = _settings.AutoRestoreDesktopIcons;
+                DesktopIconService.UpdateSettings(_settings);
+            };
+            _desktopIconsMenu.DropDownItems.Add(_desktopIconsAutoRestoreItem);
+
+            _contextMenu.Items.Add(_desktopIconsMenu);
+
+            _contextMenu.Items.Add(new ToolStripSeparator());
+
             _exitMenuItem = new ToolStripMenuItem(Loc.Get("Exit"));
             _exitMenuItem.Click += (s, e) => Application.Exit();
             _contextMenu.Items.Add(_exitMenuItem);
@@ -329,6 +373,20 @@ namespace RyzenQuietPro
             {
                 _layoutSwitchToggleItem.Text = $"{Loc.Get("LayoutSwitch_EnableShort")} ({GetHotkeyDisplayString()})";
                 _layoutSwitchToggleItem.Checked = _settings.LayoutSwitchEnabled;
+            }
+            if (_desktopIconsMenu != null) _desktopIconsMenu.Text = Loc.Get("DesktopIcons_Menu");
+            if (_desktopIconsSaveItem != null)
+            {
+                string? lastSavedDate = DesktopIconService.GetLastSavedDateString();
+                _desktopIconsSaveItem.Text = string.IsNullOrEmpty(lastSavedDate)
+                    ? Loc.Get("DesktopIcons_Save")
+                    : $"{Loc.Get("DesktopIcons_Save")} ({lastSavedDate})";
+            }
+            if (_desktopIconsRestoreItem != null) _desktopIconsRestoreItem.Text = Loc.Get("DesktopIcons_Restore");
+            if (_desktopIconsAutoRestoreItem != null)
+            {
+                _desktopIconsAutoRestoreItem.Text = Loc.Get("DesktopIcons_AutoRestore");
+                _desktopIconsAutoRestoreItem.Checked = _settings.AutoRestoreDesktopIcons;
             }
             if (_exitMenuItem != null) _exitMenuItem.Text = Loc.Get("Exit");
         }
@@ -372,6 +430,70 @@ namespace RyzenQuietPro
                 _layoutSwitchToggleItem.Checked = _settings.LayoutSwitchEnabled;
                 _layoutSwitchToggleItem.Text = $"{Loc.Get("LayoutSwitch_EnableShort")} ({GetHotkeyDisplayString()})";
             }
+            if (_desktopIconsSaveItem != null)
+            {
+                string? lastSavedDate = DesktopIconService.GetLastSavedDateString();
+                _desktopIconsSaveItem.Text = string.IsNullOrEmpty(lastSavedDate)
+                    ? Loc.Get("DesktopIcons_Save")
+                    : $"{Loc.Get("DesktopIcons_Save")} ({lastSavedDate})";
+            }
+            if (_desktopIconsRestoreItem != null)
+            {
+                _desktopIconsRestoreItem.Enabled = DesktopIconService.HasSavedSnapshot();
+            }
+            if (_desktopIconsAutoRestoreItem != null)
+            {
+                _desktopIconsAutoRestoreItem.Checked = _settings.AutoRestoreDesktopIcons;
+            }
+        }
+
+        private void SaveDesktopIcons()
+        {
+            Task.Run(() =>
+            {
+                var result = DesktopIconService.SaveLayout();
+                try
+                {
+                    this.BeginInvoke((Action)(() =>
+                    {
+                        if (result.Success)
+                        {
+                            string msg = string.Format(Loc.Get("DesktopIcons_SavedNotify"), result.Count, result.DisplayCount);
+                            _notifyIcon.ShowBalloonTip(2000, "RyzenQuiet PRO", msg, ToolTipIcon.Info);
+                        }
+                        else
+                        {
+                            _notifyIcon.ShowBalloonTip(2500, "RyzenQuiet PRO", result.Error ?? "Error saving desktop icons", ToolTipIcon.Warning);
+                        }
+                        UpdateContextMenuState();
+                    }));
+                }
+                catch { }
+            });
+        }
+
+        private void RestoreDesktopIcons()
+        {
+            Task.Run(() =>
+            {
+                var result = DesktopIconService.RestoreLayout();
+                try
+                {
+                    this.BeginInvoke((Action)(() =>
+                    {
+                        if (result.Success)
+                        {
+                            string msg = string.Format(Loc.Get("DesktopIcons_RestoredNotify"), result.Restored, result.Total);
+                            _notifyIcon.ShowBalloonTip(2000, "RyzenQuiet PRO", msg, ToolTipIcon.Info);
+                        }
+                        else
+                        {
+                            _notifyIcon.ShowBalloonTip(2500, "RyzenQuiet PRO", result.Error ?? Loc.Get("DesktopIcons_NoSnapshot"), ToolTipIcon.Warning);
+                        }
+                    }));
+                }
+                catch { }
+            });
         }
 
         private string GetHotkeyDisplayString()

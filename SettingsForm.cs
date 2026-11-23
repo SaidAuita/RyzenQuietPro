@@ -177,6 +177,15 @@ namespace RyzenQuietPro
         private Button _btnResetLayoutHotkey = null!;
         private Label _lblLayoutSwitchHint = null!;
 
+        // Desktop Icons Card (Multi-Monitor)
+        private Label _lblSecDesktopIcons = null!;
+        private Panel _pnlDesktopIconsControls = null!;
+        private Button _btnDesktopIconsSave = null!;
+        private Button _btnDesktopIconsRestore = null!;
+        private CheckBox _chkDesktopIconsAutoRestore = null!;
+        private Label _lblDesktopIconsStatus = null!;
+        private Label _lblDesktopIconsHint = null!;
+
         private HardwareInfoForm? _infoForm;
         private FanSelectionForm? _fanSelectionForm;
 
@@ -1927,6 +1936,119 @@ namespace RyzenQuietPro
 
             curY += cardLayoutH + 8;
 
+            // ================= DESKTOP ICONS CARD (MULTI-MONITOR) =================
+            int cardDesktopIconsH = 154;
+            var cardDesktopIcons = CreateCard(cardX, curY, cardW, cardDesktopIconsH);
+            _pnlBody.Controls.Add(cardDesktopIcons);
+
+            _lblSecDesktopIcons = CreateSectionHeader("🖥 " + Loc.Get("DesktopIcons_SecTitle"), 12, 8);
+            cardDesktopIcons.Controls.Add(_lblSecDesktopIcons);
+
+            _pnlDesktopIconsControls = new Panel
+            {
+                Location = new Point(14, 32),
+                Size = new Size(cardW - 28, 114),
+                BackColor = Color.Transparent
+            };
+            cardDesktopIcons.Controls.Add(_pnlDesktopIconsControls);
+
+            int diBtnGap = 8;
+            int diBtnW = (cardW - 28 - diBtnGap) / 2;
+            int diBtnH = 28;
+
+            _btnDesktopIconsSave = new Button
+            {
+                Text = Loc.Get("DesktopIcons_Save"),
+                Font = new Font("Segoe UI", 8.25f, FontStyle.Bold),
+                Location = new Point(0, 0),
+                Size = new Size(diBtnW, diBtnH),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.FromArgb(28, 32, 44),
+                ForeColor = Color.FromArgb(45, 212, 191),
+                Cursor = Cursors.Hand
+            };
+            _btnDesktopIconsSave.FlatAppearance.BorderSize = 1;
+            _btnDesktopIconsSave.FlatAppearance.BorderColor = Color.FromArgb(45, 212, 191, 100);
+            _btnDesktopIconsSave.Click += (s, e) => {
+                _btnDesktopIconsSave.Enabled = false;
+                Task.Run(() => {
+                    var res = DesktopIconService.SaveLayout();
+                    this.BeginInvoke((Action)(() => {
+                        _btnDesktopIconsSave.Enabled = true;
+                        UpdateDesktopIconsUI();
+                    }));
+                });
+            };
+            _pnlDesktopIconsControls.Controls.Add(_btnDesktopIconsSave);
+
+            _btnDesktopIconsRestore = new Button
+            {
+                Text = Loc.Get("DesktopIcons_Restore"),
+                Font = new Font("Segoe UI", 8.25f, FontStyle.Bold),
+                Location = new Point(diBtnW + diBtnGap, 0),
+                Size = new Size(cardW - 28 - diBtnW - diBtnGap, diBtnH),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.FromArgb(28, 32, 44),
+                ForeColor = Color.FromArgb(220, 220, 235),
+                Cursor = Cursors.Hand,
+                Enabled = DesktopIconService.HasSavedSnapshot()
+            };
+            _btnDesktopIconsRestore.FlatAppearance.BorderSize = 1;
+            _btnDesktopIconsRestore.FlatAppearance.BorderColor = Color.FromArgb(60, 68, 88);
+            _btnDesktopIconsRestore.Click += (s, e) => {
+                _btnDesktopIconsRestore.Enabled = false;
+                Task.Run(() => {
+                    var res = DesktopIconService.RestoreLayout();
+                    this.BeginInvoke((Action)(() => {
+                        UpdateDesktopIconsUI();
+                    }));
+                });
+            };
+            _pnlDesktopIconsControls.Controls.Add(_btnDesktopIconsRestore);
+
+            _chkDesktopIconsAutoRestore = new CheckBox
+            {
+                Text = Loc.Get("DesktopIcons_AutoRestore"),
+                Font = new Font("Segoe UI", 8.5f),
+                ForeColor = Color.FromArgb(220, 220, 235),
+                Location = new Point(0, 36),
+                Size = new Size(cardW - 28, 22),
+                AutoEllipsis = true,
+                Checked = _settings.AutoRestoreDesktopIcons,
+                Cursor = Cursors.Hand
+            };
+            _chkDesktopIconsAutoRestore.CheckedChanged += (s, e) => {
+                _settings.AutoRestoreDesktopIcons = _chkDesktopIconsAutoRestore.Checked;
+                _settings.Save();
+                DesktopIconService.UpdateSettings(_settings);
+                _onSettingsUpdated?.Invoke();
+            };
+            _pnlDesktopIconsControls.Controls.Add(_chkDesktopIconsAutoRestore);
+
+            _lblDesktopIconsStatus = new Label
+            {
+                Text = DesktopIconService.GetStatusInfo(),
+                Font = new Font("Segoe UI", 8f),
+                ForeColor = Color.FromArgb(140, 185, 215),
+                Location = new Point(0, 62),
+                Size = new Size(cardW - 28, 18),
+                AutoEllipsis = true
+            };
+            _pnlDesktopIconsControls.Controls.Add(_lblDesktopIconsStatus);
+
+            _lblDesktopIconsHint = new Label
+            {
+                Text = Loc.Get("DesktopIcons_Hint"),
+                Font = new Font("Segoe UI", 7.5f),
+                ForeColor = Color.FromArgb(135, 140, 155),
+                Location = new Point(0, 82),
+                Size = new Size(cardW - 28, 30),
+                AutoEllipsis = true
+            };
+            _pnlDesktopIconsControls.Controls.Add(_lblDesktopIconsHint);
+
+            curY += cardDesktopIconsH + 8;
+
             // ================= 3. TRAY ICON CARD =================
             var cardTray = CreateCard(cardX, curY, cardW, 70);
             _pnlBody.Controls.Add(cardTray);
@@ -2705,6 +2827,23 @@ namespace RyzenQuietPro
                 if (_lblLayoutSwitchHint != null) _lblLayoutSwitchHint.Width = cardW - 28;
             }
 
+            // Desktop Icons Card elements
+            if (_pnlDesktopIconsControls != null)
+            {
+                _pnlDesktopIconsControls.Width = cardW - 28;
+                int diBtnGap = 8;
+                int diBtnW = (cardW - 28 - diBtnGap) / 2;
+                if (_btnDesktopIconsSave != null) _btnDesktopIconsSave.Width = diBtnW;
+                if (_btnDesktopIconsRestore != null)
+                {
+                    _btnDesktopIconsRestore.Left = diBtnW + diBtnGap;
+                    _btnDesktopIconsRestore.Width = cardW - 28 - diBtnW - diBtnGap;
+                }
+                if (_chkDesktopIconsAutoRestore != null) _chkDesktopIconsAutoRestore.Width = cardW - 28;
+                if (_lblDesktopIconsStatus != null) _lblDesktopIconsStatus.Width = cardW - 28;
+                if (_lblDesktopIconsHint != null) _lblDesktopIconsHint.Width = cardW - 28;
+            }
+
             // Footer close button
             if (_btnClose != null)
             {
@@ -2884,6 +3023,13 @@ namespace RyzenQuietPro
                 _toolTip?.SetToolTip(_btnResetLayoutHotkey, Loc.Get("LayoutSwitch_ResetTip"));
             }
             if (_lblLayoutSwitchHint != null) _lblLayoutSwitchHint.Text = Loc.Get("LayoutSwitch_Hint");
+
+            if (_lblSecDesktopIcons != null) _lblSecDesktopIcons.Text = "🖥 " + Loc.Get("DesktopIcons_SecTitle");
+            if (_btnDesktopIconsSave != null) _btnDesktopIconsSave.Text = Loc.Get("DesktopIcons_Save");
+            if (_btnDesktopIconsRestore != null) _btnDesktopIconsRestore.Text = Loc.Get("DesktopIcons_Restore");
+            if (_chkDesktopIconsAutoRestore != null) _chkDesktopIconsAutoRestore.Text = Loc.Get("DesktopIcons_AutoRestore");
+            if (_lblDesktopIconsHint != null) _lblDesktopIconsHint.Text = Loc.Get("DesktopIcons_Hint");
+            UpdateDesktopIconsUI();
             if (_lblServerSyncHost != null && _txtServerSyncHost != null && _lblServerSyncPort != null && _txtServerSyncPort != null)
             {
                 int hostX = Math.Max(68, _lblServerSyncHost.Right + 8);
@@ -3317,6 +3463,22 @@ namespace RyzenQuietPro
             }
             if (_cbLayoutKey.Items.Count > 0)
                 _cbLayoutKey.SelectedIndex = 0;
+        }
+
+        private void UpdateDesktopIconsUI()
+        {
+            if (_lblDesktopIconsStatus != null)
+            {
+                _lblDesktopIconsStatus.Text = DesktopIconService.GetStatusInfo();
+            }
+            if (_btnDesktopIconsRestore != null)
+            {
+                _btnDesktopIconsRestore.Enabled = DesktopIconService.HasSavedSnapshot();
+            }
+            if (_chkDesktopIconsAutoRestore != null)
+            {
+                _chkDesktopIconsAutoRestore.Checked = _settings.AutoRestoreDesktopIcons;
+            }
         }
 
         protected override void Dispose(bool disposing)
