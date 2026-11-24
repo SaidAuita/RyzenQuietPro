@@ -1,16 +1,21 @@
 <div align="center">
 
-# ⚡ RyzenQuiet PRO (v4.17)
-**Sleek, lightweight hardware HUD & power-plan optimizer for Windows with AMD Ryzen CPB toggle, GPU power limiting & acoustic tuning, multi-monitor desktop icon layout manager, Punto Switcher in-place layout switcher, multi-stopwatch per-app process profiling with per-counter scaling, automated HDD awake schedule & keep-alive, enhanced multi-disk telemetry, modular fan monitoring, collapsible sections, seamless Windows Task Manager startup integration, start-minimized boot mode, and ServerSync exchange progress monitoring.**
+# ⚡ RyzenQuiet PRO (v4.18)
+**Sleek, lightweight hardware HUD & power-plan optimizer for Windows with local LLM integration & smart VRAM cleanup (v4.18), floating quick translation window with in-place editing (v4.18), multi-monitor desktop icon layout manager, Punto Switcher in-place layout switcher, multi-stopwatch per-app process profiling with per-counter scaling, automated HDD awake schedule & keep-alive, enhanced multi-disk telemetry, modular fan monitoring, collapsible sections, seamless Windows Task Manager startup integration, start-minimized boot mode, and ServerSync exchange progress monitoring.**
 
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011%20(64--bit)-blue.svg)](#)
 [![.NET](https://img.shields.io/badge/.NET-8.0-purple.svg)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/Release-v4.17-orange.svg)](https://github.com/SaidAuita/RyzenQuietPro/releases)
+[![Release](https://img.shields.io/badge/Release-v4.18-orange.svg)](https://github.com/SaidAuita/RyzenQuietPro/releases)
 [![Telemetry](https://img.shields.io/badge/Telemetry-Zero%20%2F%20100%25%20Offline-brightgreen.svg)](#)
 
 <br/>
 
+<p align="center">
+  <img src="images/RyzenQuietPro-v4_18_1.png" alt="RyzenQuiet PRO v4.18 Translation Module, LLM Integration & Smart VRAM Cleanup HUD" width="370" />
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="images/RyzenQuietPro-v4_18_2.png" alt="RyzenQuiet PRO v4.18 Quick Translation Floating Window with Language Toggles" width="370" />
+</p>
 <p align="center">
   <img src="images/RyzenQuietPro-v4_5.png" alt="RyzenQuiet PRO v4.04 Multi-Stopwatch & Per-App Process Profiling HUD" width="370" />
   &nbsp;&nbsp;&nbsp;&nbsp;
@@ -211,6 +216,19 @@ All subsystem graphs share a synchronized 60-second historical canvas rendered w
 * **Auto-Restore on Display Resolution Change:** Optional automatic icon repositioning triggered upon `SystemEvents.DisplaySettingsChanged` with an intelligent 1500ms debounce.
 * **Settings Form Integration:** Includes a dedicated card in Settings with manual Save/Restore buttons, Auto-Restore toggle, live status display (icon count, monitor count, timestamp), and responsive UI scaling.
 
+### 17. 🌐 Instant Translation, LLM Integration & Smart VRAM Cleanup (v4.18)
+<p align="center">
+  <img src="images/RyzenQuietPro-v4_18_1.png" alt="RyzenQuiet PRO v4.18 Translation Module & VRAM Controls" width="370" />
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="images/RyzenQuietPro-v4_18_2.png" alt="RyzenQuiet PRO v4.18 Quick Translation Window" width="370" />
+</p>
+
+* **Local LLM Backend Integration:** Seamless zero-cloud, 100% offline text translation and inference via local OpenAI-compatible backends (LM Studio at `:1234`, Ollama at `:11434`, or custom API endpoints) with instant connectivity check.
+* **Dedicated VRAM Purge & Anti-OOM Protection (`⚡ VRAM`):** Instant manual VRAM purge button (`/ VRAM`) right in the HUD header, paired with configurable auto-release timeouts (15s, 30s, 1m, 5m). Automatically clears cached weights and frees VRAM to prevent GPU memory starvation, UI freezes, and CUDA OOM crashes when running alongside heavy generative workflows (such as ComfyUI, Stable Diffusion, or 3D rendering).
+* **Floating Quick Translation Window:** Reusable single-instance translation window with in-place text editing (cursor repositioning, typing, pasting, and deleting), quick language direction toggles (e.g., `[RU]`, `[EN]`) directly in the header, and clipboard copy without closing the window.
+* **Screen OCR Integration (`📷 OCR`):** Integrated optical character recognition to instantly capture screen regions, extract printed text, and translate it with one click.
+* **Compact Settings Dialog Layout:** Split CPU Graph Scale options into 2 distinct rows to maintain clean aesthetics down to 320px width, permanently eliminating horizontal scrollbars, paired with quick expand/collapse buttons.
+
 ---
 
 ## ⌨️ Controls & Shortcuts
@@ -314,8 +332,8 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 <a name="русский"></a>
 <div align="center">
 
-# ⚡ RyzenQuiet PRO (v4.17) — Описание на русском
-**Стильный, легковесный аппаратный HUD-монитор и менеджер профилей питания для Windows с менеджером расположения иконок рабочего стола для 3+ мониторов (v4.17), быстрой сменой раскладки выделенного текста (режим Punto Switcher, v4.16), мгновенным отключением CPB у процессоров AMD Ryzen, акустическим контролем и ограничением мощности видеокарт (GPU Power Limiting), мульти-секундомером с привязкой к приложениям и независимым масштабом графиков, автоматическим расписанием работы HDD без сна и защитой от остановки шпинделей, расширенным мониторингом накопителей с раскрытием процессов I/O, модульным мониторингом вентиляторов, компактным сворачиванием блоков, интеграцией с Диспетчером задач Windows, автостартом в трей и мониторингом сервера обмена ServerSync.**
+# ⚡ RyzenQuiet PRO (v4.18) — Описание на русском
+**Стильный, легковесный аппаратный HUD-монитор и менеджер профилей питания для Windows с интеграцией локальных LLM и умной очисткой VRAM (v4.18), плавающим окном быстрого перевода со свободным редактированием текста (v4.18), менеджером расположения иконок рабочего стола для 3+ мониторов (v4.17), быстрой сменой раскладки выделенного текста (режим Punto Switcher, v4.16), мгновенным отключением CPB у процессоров AMD Ryzen, акустическим контролем и ограничением мощности видеокарт (GPU Power Limiting), мульти-секундомером с привязкой к приложениям и независимым масштабом графиков, автоматическим расписанием работы HDD без сна и защитой от остановки шпинделей, расширенным мониторингом накопителей с раскрытием процессов I/O, модульным мониторингом вентиляторов, компактным сворачиванием блоков, интеграцией с Диспетчером задач Windows, автостартом в трей и мониторингом сервера обмена ServerSync.**
 
 </div>
 
@@ -475,6 +493,19 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 * **Умная доступность пункта восстановления:** Пункт `↺ Восстановить расположение` активен только тогда, когда в системе есть сохранённый снимок.
 * **Автовосстановление при смене разрешения:** Опция автоматического возвращения значков при системном событии `SystemEvents.DisplaySettingsChanged` с дебаунсом 1.5 секунды.
 * **Карточка в окне настроек (`SettingsForm`):** Кнопки быстрого сохранения и восстановления, чекбокс автовосстановления и подробная строка статуса (количество значков, число мониторов, дата и точное время последнего сохранения).
+
+### 17. 🌐 Быстрый перевод, интеграция с LLM и умная очистка VRAM (v4.18)
+<p align="center">
+  <img src="images/RyzenQuietPro-v4_18_1.png" alt="RyzenQuiet PRO v4.18 Модуль перевода и элементы управления VRAM" width="370" />
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="images/RyzenQuietPro-v4_18_2.png" alt="RyzenQuiet PRO v4.18 Окно быстрого перевода текстов" width="370" />
+</p>
+
+* **Интеграция с локальными LLM (Ollama / LM Studio):** Полная поддержка локальных систем генеративного ИИ (LM Studio на `:1234`, Ollama на `:11434` или собственных API) для мгновенного и конфиденциального перевода текстов без обращений к внешним облачным сервисам.
+* **Умная очистка VRAM и защита от OOM (`⚡ VRAM`):** Кнопка ручной выгрузки моделей из видеопамяти (`/ VRAM`) в шапке дашборда и настраиваемый тайм-аут автоочистки VRAM (15с, 30с, 1м, 5м). Исключает нехватку памяти (CUDA Out-of-Memory), микрофризы и зависания при одновременной работе с тяжелыми нейросетями (ComfyUI, Stable Diffusion, Blender).
+* **Плавающее окно быстрого перевода:** Единый экземпляр окна перевода со свободным редактированием текста (позиционирование курсора, свободный ввод, вставка, удаление), быстрыми кнопками переключения направлений (`[RU]`, `[EN]`) в заголовке и копированием в буфер без закрытия окна.
+* **Распознавание текста с экрана (`📷 OCR`):** Моментальный захват выбранной области экрана, извлечение печатного текста и автоперевод в один клик.
+* **Компактная компоновка окна настроек:** Разделение шкалы масштаба графиков CPU на две строки, полное устранение горизонтального скроллбара и компактные стрелки сворачивания всех карточек.
 
 ---
 
