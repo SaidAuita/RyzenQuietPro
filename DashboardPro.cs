@@ -5699,8 +5699,8 @@ namespace RyzenQuietPro
             string model = !string.IsNullOrEmpty(_settings.TranslateModel) ? _settings.TranslateModel : "local-model";
             string vramInfo = tr.IsVramLoaded
                 ? (tr.AutoUnloadTime != null && tr.AutoUnloadTime > DateTime.Now
-                    ? $"VRAM: {Loc.Get("Translate_VramLoaded")} ({Loc.Get("Translate_UnloadIn")} {(int)(tr.AutoUnloadTime.Value - DateTime.Now).TotalMinutes}:{((int)(tr.AutoUnloadTime.Value - DateTime.Now).TotalSeconds % 60):D2})"
-                    : $"VRAM: {Loc.Get("Translate_VramLoaded")}")
+                    ? $"{Loc.Get("Translate_VramLoaded")} ({Loc.Get("Translate_UnloadIn")} {(int)(tr.AutoUnloadTime.Value - DateTime.Now).TotalMinutes}:{((int)(tr.AutoUnloadTime.Value - DateTime.Now).TotalSeconds % 60):D2})"
+                    : Loc.Get("Translate_VramLoaded"))
                 : Loc.Get("Translate_VramFreed");
 
             string lineText = $"{model} • {vramInfo}";

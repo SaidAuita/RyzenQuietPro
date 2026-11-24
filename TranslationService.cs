@@ -27,6 +27,8 @@ namespace RyzenQuietPro
         public static TranslationService Instance => _instance ??= new TranslationService();
 
         private readonly HttpClient _httpClient;
+        private static readonly HttpClient _queryClient = new(new HttpClientHandler { UseProxy = false }) { Timeout = TimeSpan.FromSeconds(5) };
+        private static readonly SemaphoreSlim _modelLoadLock = new(1, 1);
         private AppSettings _settings;
         private System.Threading.Timer? _vramTimer;
         private readonly object _lock = new();
@@ -578,9 +580,10 @@ namespace RyzenQuietPro
                 {
                     await EnsureLmsServerRunningAsync();
                 }
+
                 if (!string.IsNullOrWhiteSpace(model) && model != "default" && model != "local-model")
                 {
-                    _ = Task.Run(() => LoadLmsModelAsync(model));
+                    await EnsureSingleLmsModelLoadedAsync(model);
                 }
             }
             else if (baseUrl.Contains(":11434"))
@@ -589,18 +592,247 @@ namespace RyzenQuietPro
                 {
                     await EnsureOllamaServerRunningAsync();
                 }
+
+                if (!string.IsNullOrWhiteSpace(model) && model != "default" && model != "local-model")
+                {
+                    await EnsureSingleOllamaModelLoadedAsync(model);
+                }
             }
         }
 
         public static async Task<bool> LoadLmsModelAsync(string modelKey)
         {
+            return await EnsureSingleLmsModelLoadedAsync(modelKey);
+        }
+
+        public static async Task<bool> EnsureSingleLmsModelLoadedAsync(string modelKey)
+        {
+            if (string.IsNullOrWhiteSpace(modelKey) || modelKey == "default" || modelKey == "local-model")
+                return true;
+
+            await _modelLoadLock.WaitAsync();
+            try
+            {
+                if (!IsPortListening("127.0.0.1", 1234, 150))
+                {
+                    await EnsureLmsServerRunningAsync();
+                }
+
+                var loadedModels = await GetLoadedLmsModelsAsync();
+
+                // 1. If exactly 1 model is loaded and it matches our desired model, we're ready!
+                if (loadedModels.Count == 1 && IsModelMatch(loadedModels[0], modelKey))
+                {
+                    Logger.Log($"[Translation] Model '{modelKey}' is already active in LM Studio VRAM. Skipping redundant load.");
+                    return true;
+                }
+
+                // 2. If any other model is loaded or duplicate instances exist (>1), unload all first to enforce single model rule
+                if (loadedModels.Count > 0)
+                {
+                    Logger.Log($"[Translation] LM Studio has {loadedModels.Count} model(s) in VRAM ({string.Join(", ", loadedModels)}). Unloading to ensure single model...");
+                    await UnloadAllLmsModelsInternalAsync();
+                }
+
+                // 3. Load the single desired model
+                Logger.Log($"[Translation] Loading model '{modelKey}' into VRAM (single instance)...");
+                return await LoadLmsModelInternalAsync(modelKey);
+            }
+            finally
+            {
+                _modelLoadLock.Release();
+            }
+        }
+
+        public static async Task<List<string>> GetLoadedLmsModelsAsync()
+        {
+            var loaded = new List<string>();
+
+            // Method A: Query LM Studio REST API GET /api/v0/models (fast, ~2-5 ms)
+            if (IsPortListening("127.0.0.1", 1234, 100))
+            {
+                try
+                {
+                    using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(1500));
+                    var resp = await _queryClient.GetAsync("http://127.0.0.1:1234/api/v0/models", cts.Token);
+                    if (resp.IsSuccessStatusCode)
+                    {
+                        string json = await resp.Content.ReadAsStringAsync(cts.Token);
+                        using var doc = JsonDocument.Parse(json);
+                        if (doc.RootElement.TryGetProperty("data", out var dataElem) && dataElem.ValueKind == JsonValueKind.Array)
+                        {
+                            foreach (var item in dataElem.EnumerateArray())
+                            {
+                                if (item.TryGetProperty("state", out var stateElem) &&
+                                    string.Equals(stateElem.GetString(), "loaded", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    if (item.TryGetProperty("id", out var idElem))
+                                    {
+                                        string id = idElem.GetString() ?? "";
+                                        if (!string.IsNullOrEmpty(id)) loaded.Add(id);
+                                    }
+                                }
+                            }
+                        }
+                        return loaded;
+                    }
+                }
+                catch { }
+            }
+
+            // Method B: Fallback via CLI 'lms ps --json'
+            string? lms = FindLmsCli();
+            if (!string.IsNullOrEmpty(lms))
+            {
+                try
+                {
+                    var psi = new ProcessStartInfo
+                    {
+                        FileName = lms,
+                        Arguments = "ps --json",
+                        CreateNoWindow = true,
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true
+                    };
+                    using var proc = Process.Start(psi);
+                    if (proc != null)
+                    {
+                        string output = await proc.StandardOutput.ReadToEndAsync();
+                        await proc.WaitForExitAsync();
+                        if (!string.IsNullOrWhiteSpace(output) && output.TrimStart().StartsWith("["))
+                        {
+                            using var doc = JsonDocument.Parse(output);
+                            foreach (var item in doc.RootElement.EnumerateArray())
+                            {
+                                string id = "";
+                                if (item.TryGetProperty("identifier", out var idElem)) id = idElem.GetString() ?? "";
+                                else if (item.TryGetProperty("modelKey", out var mkElem)) id = mkElem.GetString() ?? "";
+
+                                if (!string.IsNullOrEmpty(id)) loaded.Add(id);
+                            }
+                        }
+                    }
+                }
+                catch { }
+            }
+
+            return loaded;
+        }
+
+        public static async Task<bool> EnsureSingleOllamaModelLoadedAsync(string modelKey)
+        {
+            if (string.IsNullOrWhiteSpace(modelKey) || modelKey == "default" || modelKey == "local-model")
+                return true;
+
+            await _modelLoadLock.WaitAsync();
+            try
+            {
+                if (!IsPortListening("127.0.0.1", 11434, 150))
+                {
+                    await EnsureOllamaServerRunningAsync();
+                }
+
+                // Check loaded models via /api/ps
+                var loaded = new List<string>();
+                try
+                {
+                    using var ctsPs = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+                    var psResp = await _queryClient.GetStringAsync("http://127.0.0.1:11434/api/ps", ctsPs.Token);
+                    using var doc = JsonDocument.Parse(psResp);
+                    if (doc.RootElement.TryGetProperty("models", out var modelsElem) && modelsElem.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var m in modelsElem.EnumerateArray())
+                        {
+                            string mName = "";
+                            if (m.TryGetProperty("name", out var n)) mName = n.GetString() ?? "";
+                            else if (m.TryGetProperty("model", out var mn)) mName = mn.GetString() ?? "";
+                            if (!string.IsNullOrEmpty(mName)) loaded.Add(mName);
+                        }
+                    }
+                }
+                catch { }
+
+                // Unload any different models from Ollama to ensure strictly 1 model in memory
+                foreach (var m in loaded)
+                {
+                    if (!IsModelMatch(m, modelKey))
+                    {
+                        try
+                        {
+                            var payload = new { model = m, keep_alive = 0 };
+                            string jsonPayload = JsonSerializer.Serialize(payload);
+                            using var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+                            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+                            await _queryClient.PostAsync("http://127.0.0.1:11434/api/generate", content, cts.Token);
+                            Logger.Log($"[Translation] Ollama: unloaded prior model '{m}' to keep strictly 1 model in VRAM.");
+                        }
+                        catch { }
+                    }
+                }
+
+                return true;
+            }
+            finally
+            {
+                _modelLoadLock.Release();
+            }
+        }
+
+        private static bool IsModelMatch(string loaded, string requested)
+        {
+            if (string.Equals(loaded, requested, StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            // Strip worker suffix if any, e.g. "gemma-4-e4b-it:2" -> "gemma-4-e4b-it"
+            string loadedBase = loaded;
+            int colonIdx = loaded.LastIndexOf(':');
+            if (colonIdx > 0 && int.TryParse(loaded.Substring(colonIdx + 1), out _))
+            {
+                loadedBase = loaded.Substring(0, colonIdx);
+            }
+
+            if (string.Equals(loadedBase, requested, StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            // Check without organization prefix, e.g. "google/gemma-4-e2b" vs "gemma-4-e2b"
+            string requestedBase = requested.Contains('/') ? requested.Substring(requested.LastIndexOf('/') + 1) : requested;
+            string loadedBaseNoOrg = loadedBase.Contains('/') ? loadedBase.Substring(loadedBase.LastIndexOf('/') + 1) : loadedBase;
+
+            return string.Equals(loadedBaseNoOrg, requestedBase, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static async Task<bool> UnloadAllLmsModelsInternalAsync()
+        {
             string? lms = FindLmsCli();
             if (string.IsNullOrEmpty(lms)) return false;
 
-            if (!IsPortListening("127.0.0.1", 1234, 150))
+            try
             {
-                await EnsureLmsServerRunningAsync();
+                var psi = new ProcessStartInfo
+                {
+                    FileName = lms,
+                    Arguments = "unload --all",
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true
+                };
+                using var proc = Process.Start(psi);
+                if (proc != null)
+                {
+                    await proc.WaitForExitAsync();
+                    return proc.ExitCode == 0;
+                }
             }
+            catch { }
+            return false;
+        }
+
+        private static async Task<bool> LoadLmsModelInternalAsync(string modelKey)
+        {
+            string? lms = FindLmsCli();
+            if (string.IsNullOrEmpty(lms)) return false;
 
             try
             {
@@ -842,11 +1074,14 @@ namespace RyzenQuietPro
 
         public async Task<(bool success, string message)> FreeVramAsync()
         {
-            SetStatus(TranslationStatusKind.FreeingVram);
-            bool unloadedAny = false;
-            var details = new StringBuilder();
+            await _modelLoadLock.WaitAsync();
+            try
+            {
+                SetStatus(TranslationStatusKind.FreeingVram);
+                bool unloadedAny = false;
+                var details = new StringBuilder();
 
-            string modelToUnload = _settings.TranslateModel ?? "";
+                string modelToUnload = _settings.TranslateModel ?? "";
 
             // 1. Ollama: query /api/ps and unload all loaded models via keep_alive = 0
             try
@@ -973,6 +1208,11 @@ namespace RyzenQuietPro
 
             Logger.Log($"[Translation] FreeVramAsync: {msg}");
             return (true, msg);
+            }
+            finally
+            {
+                _modelLoadLock.Release();
+            }
         }
 
         #endregion
