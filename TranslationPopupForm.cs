@@ -14,6 +14,18 @@ namespace RyzenQuietPro
         private static extern bool SetForegroundWindow(IntPtr hWnd);
 
         [DllImport("user32.dll")]
+        private static extern uint GetWindowThreadProcessId(IntPtr hWnd, IntPtr ProcessId);
+
+        [DllImport("kernel32.dll")]
+        private static extern uint GetCurrentThreadId();
+
+        [DllImport("user32.dll")]
+        private static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
+
+        [DllImport("user32.dll")]
+        private static extern bool BringWindowToTop(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
         private static extern bool ReleaseCapture();
 
         [DllImport("user32.dll")]
@@ -55,6 +67,8 @@ namespace RyzenQuietPro
         private Label _lblSourceSnippet = null!;
         private TextBox _tbResult = null!;
         private Label _lblLatency = null!;
+        private Button _btnPaste = null!;
+        private Button _btnTranslateNow = null!;
         private Button _btnReplace = null!;
         private Button _btnCopy = null!;
         private Label _lblResizeGrip = null!;
@@ -255,7 +269,8 @@ namespace RyzenQuietPro
                     UpdateQuickButtonsUI();
                 }
                 catch { }
-                StartExecution();
+                bool fromBox = !string.IsNullOrWhiteSpace(_tbResult?.Text) && !_tbResult.Text.StartsWith("⏳") && !_tbResult.Text.StartsWith("❌");
+                StartExecution(forceFromTextBox: fromBox);
             };
             _pnlHeader.Controls.Add(_cbTargetLang);
 
@@ -298,11 +313,13 @@ namespace RyzenQuietPro
             }
             this.Controls.Add(_lblSourceSnippet);
 
-            // Main Text Area
+            // Main Text Area (Editable with context menu)
             _tbResult = new TextBox
             {
                 Multiline = true,
-                ReadOnly = true,
+                ReadOnly = false,
+                AcceptsReturn = true,
+                AcceptsTab = false,
                 ScrollBars = ScrollBars.Vertical,
                 BackColor = Color.FromArgb(18, 20, 26),
                 ForeColor = Color.FromArgb(241, 245, 249),
@@ -311,47 +328,108 @@ namespace RyzenQuietPro
                 Location = new Point(14, 70),
                 Size = new Size(w - 28, h - 124)
             };
+
+            var contextMenu = new ContextMenuStrip();
+            contextMenu.BackColor = Color.FromArgb(28, 32, 44);
+            contextMenu.ForeColor = Color.FromArgb(226, 232, 240);
+            contextMenu.ShowImageMargin = false;
+
+            var mnuCut = new ToolStripMenuItem("✂️  Вырезать (Ctrl+X)", null, (s, e) => _tbResult.Cut());
+            var mnuCopy = new ToolStripMenuItem("📋  Копировать (Ctrl+C)", null, (s, e) => _tbResult.Copy());
+            var mnuPaste = new ToolStripMenuItem("📥  Вставить (Ctrl+V)", null, (s, e) => PasteClipboardToResult());
+            var mnuSelectAll = new ToolStripMenuItem("🔘  Выделить всё (Ctrl+A)", null, (s, e) => _tbResult.SelectAll());
+            var mnuClear = new ToolStripMenuItem("🧹  Очистить", null, (s, e) => _tbResult.Clear());
+            var mnuSep = new ToolStripSeparator();
+            var mnuTranslate = new ToolStripMenuItem("🌐  Перевести этот текст", null, (s, e) => StartExecution(forceFromTextBox: true));
+
+            contextMenu.Items.AddRange(new ToolStripItem[] {
+                mnuCut, mnuCopy, mnuPaste, mnuSelectAll, mnuClear, mnuSep, mnuTranslate
+            });
+            _tbResult.ContextMenuStrip = contextMenu;
             this.Controls.Add(_tbResult);
 
-            // Bottom bar: Latency
+            // Bottom bar: Latency / status label
             _lblLatency = new Label
             {
-                Text = "⏳ Обработка...",
+                Text = "⏳ Готов...",
                 Font = new Font("Segoe UI", 8.5f, FontStyle.Bold),
                 ForeColor = Color.FromArgb(16, 185, 129),
                 Location = new Point(14, h - 42),
-                Size = new Size(160, 28),
-                TextAlign = ContentAlignment.MiddleLeft
+                Size = new Size(Math.Max(50, w - 460), 28),
+                TextAlign = ContentAlignment.MiddleLeft,
+                AutoEllipsis = true
             };
             this.Controls.Add(_lblLatency);
 
-            // Replace button
-            _btnReplace = new Button
+            // 1. Paste from clipboard button
+            _btnPaste = new Button
             {
-                Text = "Вставить (Ctrl+Enter)",
+                Text = "📥 " + Loc.Get("Translate_BtnPaste"),
                 Font = new Font("Segoe UI", 8.5f, FontStyle.Regular),
                 ForeColor = Color.FromArgb(203, 213, 225),
                 BackColor = Color.FromArgb(36, 41, 54),
                 FlatStyle = FlatStyle.Flat,
-                Size = new Size(140, 28),
-                Location = new Point(w - 290, h - 42),
-                Cursor = Cursors.Hand
+                Size = new Size(88, 28),
+                Location = new Point(w - 442, h - 42),
+                Cursor = Cursors.Hand,
+                UseMnemonic = false
+            };
+            _btnPaste.FlatAppearance.BorderColor = Color.FromArgb(51, 65, 85);
+            _btnPaste.MouseEnter += (s, e) => _btnPaste.BackColor = Color.FromArgb(45, 52, 68);
+            _btnPaste.MouseLeave += (s, e) => _btnPaste.BackColor = Color.FromArgb(36, 41, 54);
+            _btnPaste.Click += (s, e) => PasteClipboardToResult();
+            this.Controls.Add(_btnPaste);
+
+            // 2. Translate current text button
+            _btnTranslateNow = new Button
+            {
+                Text = "🌐 " + Loc.Get("Translate_BtnTranslateNow"),
+                Font = new Font("Segoe UI", 8.5f, FontStyle.Regular),
+                ForeColor = Color.FromArgb(56, 189, 248),
+                BackColor = Color.FromArgb(36, 41, 54),
+                FlatStyle = FlatStyle.Flat,
+                Size = new Size(98, 28),
+                Location = new Point(w - 350, h - 42),
+                Cursor = Cursors.Hand,
+                UseMnemonic = false
+            };
+            _btnTranslateNow.FlatAppearance.BorderColor = Color.FromArgb(51, 65, 85);
+            _btnTranslateNow.MouseEnter += (s, e) => _btnTranslateNow.BackColor = Color.FromArgb(45, 52, 68);
+            _btnTranslateNow.MouseLeave += (s, e) => _btnTranslateNow.BackColor = Color.FromArgb(36, 41, 54);
+            _btnTranslateNow.Click += (s, e) => StartExecution(forceFromTextBox: true);
+            this.Controls.Add(_btnTranslateNow);
+
+            // 3. Replace in Target Window button
+            _btnReplace = new Button
+            {
+                Text = Loc.Get("Translate_BtnToWindow"),
+                Font = new Font("Segoe UI", 8.5f, FontStyle.Regular),
+                ForeColor = Color.FromArgb(203, 213, 225),
+                BackColor = Color.FromArgb(36, 41, 54),
+                FlatStyle = FlatStyle.Flat,
+                Size = new Size(136, 28),
+                Location = new Point(w - 248, h - 42),
+                Cursor = Cursors.Hand,
+                UseMnemonic = false
             };
             _btnReplace.FlatAppearance.BorderColor = Color.FromArgb(51, 65, 85);
+            _btnReplace.MouseEnter += (s, e) => _btnReplace.BackColor = Color.FromArgb(45, 52, 68);
+            _btnReplace.MouseLeave += (s, e) => _btnReplace.BackColor = Color.FromArgb(36, 41, 54);
             _btnReplace.Click += (s, e) => ReplaceInTargetWindow();
             this.Controls.Add(_btnReplace);
 
-            // Copy button
+            // 4. Copy button
             _btnCopy = new Button
             {
-                Text = "Копировать (Enter)",
+                Text = Loc.Get("Translate_BtnCopy"),
                 Font = new Font("Segoe UI", 8.5f, FontStyle.Bold),
                 ForeColor = Color.White,
                 BackColor = Color.FromArgb(37, 99, 235),
                 FlatStyle = FlatStyle.Flat,
-                Size = new Size(130, 28),
-                Location = new Point(w - 144, h - 42),
-                Cursor = Cursors.Hand
+                Size = new Size(106, 28),
+                Location = new Point(w - 108, h - 42),
+                Cursor = Cursors.Hand,
+                UseMnemonic = false
             };
             _btnCopy.FlatAppearance.BorderSize = 0;
             _btnCopy.MouseEnter += (s, e) => _btnCopy.BackColor = Color.FromArgb(29, 78, 216);
@@ -400,6 +478,8 @@ namespace RyzenQuietPro
             _toolTip.SetToolTip(_btnQuickLang1, $"{Loc.Get("Translate_TargetLang")}: {_quickLangCode1.ToUpperInvariant()}");
             _toolTip.SetToolTip(_btnQuickLang2, $"{Loc.Get("Translate_TargetLang")}: {_quickLangCode2.ToUpperInvariant()}");
             _toolTip.SetToolTip(_lblModelPill, Loc.Get("TipPopupModel"));
+            _toolTip.SetToolTip(_btnPaste, Loc.Get("TipPopupPaste"));
+            _toolTip.SetToolTip(_btnTranslateNow, Loc.Get("TipPopupTranslate"));
             _toolTip.SetToolTip(_btnReplace, Loc.Get("TipPopupReplace"));
             _toolTip.SetToolTip(_btnCopy, Loc.Get("TipPopupCopy"));
 
@@ -426,9 +506,43 @@ namespace RyzenQuietPro
             if (_lblModelPill != null) _lblModelPill.Location = new Point(w - 334, 9);
             if (_lblSourceSnippet != null) _lblSourceSnippet.Width = Math.Max(50, w - 28);
             if (_tbResult != null) _tbResult.Size = new Size(Math.Max(50, w - 28), Math.Max(50, h - 124));
-            if (_lblLatency != null) _lblLatency.Location = new Point(14, h - 42);
-            if (_btnReplace != null) _btnReplace.Location = new Point(w - 290, h - 42);
-            if (_btnCopy != null) _btnCopy.Location = new Point(w - 144, h - 42);
+
+            int right = w - 14;
+
+            if (_btnCopy != null)
+            {
+                right -= _btnCopy.Width;
+                _btnCopy.Location = new Point(right, h - 42);
+                right -= 6;
+            }
+
+            if (_btnReplace != null)
+            {
+                right -= _btnReplace.Width;
+                _btnReplace.Location = new Point(right, h - 42);
+                right -= 6;
+            }
+
+            if (_btnTranslateNow != null)
+            {
+                right -= _btnTranslateNow.Width;
+                _btnTranslateNow.Location = new Point(right, h - 42);
+                right -= 6;
+            }
+
+            if (_btnPaste != null)
+            {
+                right -= _btnPaste.Width;
+                _btnPaste.Location = new Point(right, h - 42);
+            }
+
+            if (_lblLatency != null)
+            {
+                int maxLatencyW = Math.Max(50, right - 20);
+                _lblLatency.Location = new Point(14, h - 42);
+                _lblLatency.Size = new Size(maxLatencyW, 28);
+            }
+
             if (_lblResizeGrip != null)
             {
                 _lblResizeGrip.Location = new Point(w - 20, h - 20);
@@ -465,7 +579,7 @@ namespace RyzenQuietPro
                 _lblSourceSnippet.Text = "";
             }
 
-            StartExecution();
+            StartExecution(forceFromTextBox: false);
         }
 
         private void SelectQuickLanguage(string langCode)
@@ -584,14 +698,75 @@ namespace RyzenQuietPro
             return "ru";
         }
 
-        private async void StartExecution()
+        private void PasteClipboardToResult()
+        {
+            try
+            {
+                if (Clipboard.ContainsText())
+                {
+                    string clip = Clipboard.GetText();
+                    if (!string.IsNullOrEmpty(clip))
+                    {
+                        if (_tbResult.SelectionLength > 0)
+                        {
+                            _tbResult.SelectedText = clip;
+                        }
+                        else if (string.IsNullOrEmpty(_tbResult.Text) || _tbResult.Text.StartsWith("❌") || _tbResult.Text.StartsWith("⏳"))
+                        {
+                            _tbResult.Text = clip;
+                            _tbResult.SelectionStart = _tbResult.Text.Length;
+                        }
+                        else
+                        {
+                            _tbResult.Paste(clip);
+                        }
+                        _tbResult.Focus();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Log($"[TranslatePopup] Paste error: {ex.Message}");
+            }
+        }
+
+        private async void StartExecution(bool forceFromTextBox = false)
         {
             _cts?.Cancel();
             _cts = new CancellationTokenSource();
 
-            _tbResult.Text = "⏳ Обработка запроса...";
+            string textToTranslate;
+            if (forceFromTextBox)
+            {
+                textToTranslate = _tbResult.Text;
+            }
+            else if (_isOcr && _imageBytes != null)
+            {
+                textToTranslate = string.Empty;
+            }
+            else
+            {
+                textToTranslate = !string.IsNullOrEmpty(_originalText) ? _originalText : _tbResult.Text;
+            }
+
+            if (!_isOcr && string.IsNullOrWhiteSpace(textToTranslate))
+            {
+                _lblLatency.Text = "Готов к вводу";
+                _tbResult.Focus();
+                return;
+            }
+
+            if (!_isOcr && !forceFromTextBox && (string.IsNullOrEmpty(_tbResult.Text) || _tbResult.Text.StartsWith("⏳")))
+            {
+                _tbResult.Text = "⏳ Обработка запроса...";
+            }
+            else if (_isOcr)
+            {
+                _tbResult.Text = "⏳ Распознавание...";
+            }
+
             _lblLatency.Text = "⏳ Отправка...";
-            _btnCopy.Text = "Копировать (Enter)";
+            _btnCopy.Text = Loc.Get("Translate_BtnCopy");
 
             string targetLang = GetSelectedTargetLang();
             var service = TranslationService.Instance;
@@ -612,7 +787,7 @@ namespace RyzenQuietPro
                 else
                 {
                     (resultText, latencyMs, modelUsed) = await service.TranslateTextAsync(
-                        _originalText ?? string.Empty,
+                        textToTranslate,
                         targetLang: targetLang);
                 }
 
@@ -640,8 +815,16 @@ namespace RyzenQuietPro
             catch (Exception ex)
             {
                 if (this.IsDisposed) return;
-                _tbResult.Text = $"❌ Ошибка:\n{ex.Message}";
-                _lblLatency.Text = "Ошибка";
+                if (forceFromTextBox)
+                {
+                    _lblLatency.Text = "❌ Ошибка перевода";
+                    _toolTip?.SetToolTip(_lblLatency, ex.Message);
+                }
+                else
+                {
+                    _tbResult.Text = $"❌ Ошибка:\n{ex.Message}";
+                    _lblLatency.Text = "Ошибка";
+                }
             }
         }
 
@@ -682,20 +865,41 @@ namespace RyzenQuietPro
             }
             catch { }
 
+            IntPtr target = _targetWindow;
             this.Close();
 
-            if (_targetWindow != IntPtr.Zero)
+            if (target != IntPtr.Zero)
             {
                 Task.Run(() =>
                 {
-                    Thread.Sleep(60);
-                    SetForegroundWindow(_targetWindow);
-                    Thread.Sleep(60);
+                    Thread.Sleep(80);
+                    uint currentThreadId = GetCurrentThreadId();
+                    uint targetThreadId = GetWindowThreadProcessId(target, IntPtr.Zero);
+                    bool attached = false;
+                    try
+                    {
+                        if (currentThreadId != targetThreadId && targetThreadId != 0)
+                        {
+                            attached = AttachThreadInput(currentThreadId, targetThreadId, true);
+                        }
+                        BringWindowToTop(target);
+                        SetForegroundWindow(target);
+                    }
+                    catch { }
+                    finally
+                    {
+                        if (attached)
+                        {
+                            try { AttachThreadInput(currentThreadId, targetThreadId, false); } catch { }
+                        }
+                    }
+
+                    Thread.Sleep(50);
 
                     // Simulate Ctrl+V
                     keybd_event(VK_CONTROL, 0, 0, UIntPtr.Zero);
                     keybd_event(VK_V, 0, 0, UIntPtr.Zero);
-                    Thread.Sleep(20);
+                    Thread.Sleep(30);
                     keybd_event(VK_V, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
                     keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
                 });

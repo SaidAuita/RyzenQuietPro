@@ -308,10 +308,7 @@ namespace RyzenQuietPro
                     grabbedText = GetClipboardText();
                 }
 
-                if (!string.IsNullOrWhiteSpace(grabbedText))
-                {
-                    ShowTranslationPopup(grabbedText, null, isOcr: false, andTranslate: false, targetHwnd);
-                }
+                ShowTranslationPopup(grabbedText, null, isOcr: false, andTranslate: false, targetHwnd);
             }
             catch (Exception ex)
             {
