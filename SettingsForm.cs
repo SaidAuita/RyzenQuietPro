@@ -245,8 +245,9 @@ namespace RyzenQuietPro
             var screen = Screen.FromPoint(Cursor.Position);
             int availH = screen.WorkingArea.Height - 30;
             int defaultW = 560;
-            int formW = Math.Clamp(_settings.SettingsWidth >= 520 ? _settings.SettingsWidth : defaultW, 520, 1100);
-            int formH = (_settings.SettingsHeight >= 380 && _settings.SettingsHeight <= availH)
+            int minFormW = 320;
+            int formW = Math.Clamp(_settings.SettingsWidth >= minFormW ? _settings.SettingsWidth : defaultW, minFormW, 1100);
+            int formH = (_settings.SettingsHeight >= 320 && _settings.SettingsHeight <= availH)
                 ? _settings.SettingsHeight
                 : Math.Min(650, availH);
 
@@ -255,7 +256,7 @@ namespace RyzenQuietPro
             this.StartPosition = FormStartPosition.Manual;
             this.ShowInTaskbar = false;
             this.ClientSize = new Size(formW, formH);
-            this.MinimumSize = new Size(520, 360);
+            this.MinimumSize = new Size(minFormW, 300);
             this.BackColor = Color.FromArgb(24, 24, 32);
             this.ForeColor = Color.White;
             this.DoubleBuffered = true;
@@ -347,7 +348,7 @@ namespace RyzenQuietPro
             int w = this.ClientSize.Width;
             int cardMargin = 14;
             int scrollbarAllowance = 22;
-            int cardW = Math.Max(380, w - (cardMargin * 2) - scrollbarAllowance);
+            int cardW = Math.Max(260, w - (cardMargin * 2) - scrollbarAllowance);
             int cardX = cardMargin;
             bool multiGpu = _hardware.Gpu.GpuCount > 1;
 
@@ -408,6 +409,9 @@ namespace RyzenQuietPro
                 BackColor = Color.FromArgb(18, 18, 24)
             };
 
+            int fBtnW = 36;
+            int fBtnGap = 6;
+
             _btnSpecs = new Button
             {
                 Text = "ℹ",
@@ -415,7 +419,7 @@ namespace RyzenQuietPro
                 ForeColor = Color.FromArgb(200, 200, 215),
                 BackColor = Color.FromArgb(32, 32, 40),
                 FlatStyle = FlatStyle.Flat,
-                Size = new Size(42, 32),
+                Size = new Size(fBtnW, 32),
                 Location = new Point(cardX, 6),
                 TextAlign = ContentAlignment.MiddleCenter,
                 Padding = Padding.Empty,
@@ -433,8 +437,8 @@ namespace RyzenQuietPro
                 ForeColor = Color.FromArgb(160, 160, 180),
                 BackColor = Color.FromArgb(32, 32, 40),
                 FlatStyle = FlatStyle.Flat,
-                Size = new Size(42, 32),
-                Location = new Point(cardX + 48, 6),
+                Size = new Size(fBtnW, 32),
+                Location = new Point(cardX + (fBtnW + fBtnGap), 6),
                 TextAlign = ContentAlignment.MiddleCenter,
                 Padding = Padding.Empty,
                 Cursor = Cursors.Hand
@@ -446,13 +450,13 @@ namespace RyzenQuietPro
 
             _btnExpandAll = new Button
             {
-                Text = Loc.Get("Settings_ExpandAll"),
-                Font = new Font("Segoe UI", 8.5f),
+                Text = "▼",
+                Font = new Font("Segoe UI", 9.5f, FontStyle.Bold),
                 ForeColor = Color.FromArgb(200, 200, 215),
                 BackColor = Color.FromArgb(32, 32, 40),
                 FlatStyle = FlatStyle.Flat,
-                Size = new Size(130, 32),
-                Location = new Point(cardX + 96, 6),
+                Size = new Size(fBtnW, 32),
+                Location = new Point(cardX + (fBtnW + fBtnGap) * 2, 6),
                 TextAlign = ContentAlignment.MiddleCenter,
                 Padding = Padding.Empty,
                 Cursor = Cursors.Hand
@@ -464,13 +468,13 @@ namespace RyzenQuietPro
 
             _btnCollapseAll = new Button
             {
-                Text = Loc.Get("Settings_CollapseAll"),
-                Font = new Font("Segoe UI", 8.5f),
+                Text = "▲",
+                Font = new Font("Segoe UI", 9.5f, FontStyle.Bold),
                 ForeColor = Color.FromArgb(200, 200, 215),
                 BackColor = Color.FromArgb(32, 32, 40),
                 FlatStyle = FlatStyle.Flat,
-                Size = new Size(125, 32),
-                Location = new Point(cardX + 232, 6),
+                Size = new Size(fBtnW, 32),
+                Location = new Point(cardX + (fBtnW + fBtnGap) * 3, 6),
                 TextAlign = ContentAlignment.MiddleCenter,
                 Padding = Padding.Empty,
                 Cursor = Cursors.Hand
@@ -480,7 +484,7 @@ namespace RyzenQuietPro
             _btnCollapseAll.Click += (s, e) => SetAllSectionsCollapsed(true);
             pnlFooter.Controls.Add(_btnCollapseAll);
 
-            int closeW = 100;
+            int closeW = 90;
             _btnClose = new Button
             {
                 Text = Loc.Get("InfoClose"),
@@ -3193,13 +3197,27 @@ namespace RyzenQuietPro
             int w = this.ClientSize.Width;
             int cardMargin = 14;
             int scrollbarAllowance = 22;
-            int cardW = Math.Max(380, w - (cardMargin * 2) - scrollbarAllowance);
+            int cardW = Math.Max(260, w - (cardMargin * 2) - scrollbarAllowance);
 
             // Resize each card panel
             foreach (var card in _allCards)
             {
                 card.Width = cardW;
                 card.Invalidate();
+            }
+
+            // Language Card elements
+            if (_langButtons.Count > 0)
+            {
+                int langGap = 3;
+                int btnLangW = Math.Max(24, (cardW - 26 - (_langButtons.Count - 1) * langGap) / _langButtons.Count);
+                int btnLangX = 13;
+                for (int i = 0; i < _langButtons.Count; i++)
+                {
+                    _langButtons[i].Width = btnLangW;
+                    _langButtons[i].Left = btnLangX;
+                    btnLangX += btnLangW + langGap;
+                }
             }
 
             // GPU Card elements
@@ -3425,29 +3443,31 @@ namespace RyzenQuietPro
 
             // Footer buttons layout
             int footerBtnX = cardMargin;
+            int fBtnW = 36;
+            int fBtnGap = 6;
             if (_btnSpecs != null)
             {
-                _btnSpecs.Size = new Size(42, 32);
+                _btnSpecs.Size = new Size(fBtnW, 32);
                 _btnSpecs.Location = new Point(footerBtnX, 6);
             }
             if (_btnTools != null)
             {
-                _btnTools.Size = new Size(42, 32);
-                _btnTools.Location = new Point(footerBtnX + 48, 6);
+                _btnTools.Size = new Size(fBtnW, 32);
+                _btnTools.Location = new Point(footerBtnX + (fBtnW + fBtnGap), 6);
             }
             if (_btnExpandAll != null)
             {
-                _btnExpandAll.Size = new Size(130, 32);
-                _btnExpandAll.Location = new Point(footerBtnX + 96, 6);
+                _btnExpandAll.Size = new Size(fBtnW, 32);
+                _btnExpandAll.Location = new Point(footerBtnX + (fBtnW + fBtnGap) * 2, 6);
             }
             if (_btnCollapseAll != null)
             {
-                _btnCollapseAll.Size = new Size(125, 32);
-                _btnCollapseAll.Location = new Point(footerBtnX + 232, 6);
+                _btnCollapseAll.Size = new Size(fBtnW, 32);
+                _btnCollapseAll.Location = new Point(footerBtnX + (fBtnW + fBtnGap) * 3, 6);
             }
             if (_btnClose != null)
             {
-                int closeW = 100;
+                int closeW = 90;
                 _btnClose.Size = new Size(closeW, 32);
                 _btnClose.Location = new Point(footerBtnX + cardW - closeW, 6);
             }
@@ -3611,12 +3631,12 @@ namespace RyzenQuietPro
             if (_btnTools != null) _toolTip?.SetToolTip(_btnTools, "https://ph-cu-s.com/tools");
             if (_btnExpandAll != null)
             {
-                _btnExpandAll.Text = Loc.Get("Settings_ExpandAll");
+                _btnExpandAll.Text = "▼";
                 _toolTip?.SetToolTip(_btnExpandAll, Loc.Get("TipSettingsExpandAll"));
             }
             if (_btnCollapseAll != null)
             {
-                _btnCollapseAll.Text = Loc.Get("Settings_CollapseAll");
+                _btnCollapseAll.Text = "▲";
                 _toolTip?.SetToolTip(_btnCollapseAll, Loc.Get("TipSettingsCollapseAll"));
             }
             if (_btnClose != null) _btnClose.Text = Loc.Get("InfoClose");
