@@ -584,12 +584,26 @@ namespace RyzenQuietPro
 
         private void SelectQuickLanguage(string langCode)
         {
+            int targetIdx = -1;
             for (int i = 0; i < TranslationService.SupportedLanguages.Length; i++)
             {
                 if (TranslationService.SupportedLanguages[i].Code.Equals(langCode, StringComparison.OrdinalIgnoreCase))
                 {
-                    _cbTargetLang.SelectedIndex = i + 1;
-                    return;
+                    targetIdx = i + 1;
+                    break;
+                }
+            }
+
+            if (targetIdx >= 0)
+            {
+                if (_cbTargetLang.SelectedIndex != targetIdx)
+                {
+                    _cbTargetLang.SelectedIndex = targetIdx;
+                }
+                else
+                {
+                    // Already selected! Translate current text in editor to this language now
+                    StartExecution(forceFromTextBox: true);
                 }
             }
         }
@@ -735,34 +749,40 @@ namespace RyzenQuietPro
             _cts?.Cancel();
             _cts = new CancellationTokenSource();
 
-            string textToTranslate;
-            if (forceFromTextBox)
+            bool isOcrJob = _isOcr && _imageBytes != null;
+
+            string textToTranslate = string.Empty;
+            if (!isOcrJob)
             {
-                textToTranslate = _tbResult.Text;
-            }
-            else if (_isOcr && _imageBytes != null)
-            {
-                textToTranslate = string.Empty;
+                string editorText = _tbResult.Text;
+                bool hasEditorText = !string.IsNullOrWhiteSpace(editorText)
+                                     && !editorText.StartsWith("⏳")
+                                     && !editorText.StartsWith("❌");
+
+                if (forceFromTextBox || hasEditorText)
+                {
+                    textToTranslate = editorText;
+                }
+                else
+                {
+                    textToTranslate = !string.IsNullOrWhiteSpace(_originalText) ? _originalText : editorText;
+                }
+
+                if (string.IsNullOrWhiteSpace(textToTranslate))
+                {
+                    _lblLatency.Text = "Готов к вводу";
+                    _tbResult.Focus();
+                    return;
+                }
+
+                if (!hasEditorText)
+                {
+                    _tbResult.Text = "⏳ Обработка запроса...";
+                }
             }
             else
             {
-                textToTranslate = !string.IsNullOrEmpty(_originalText) ? _originalText : _tbResult.Text;
-            }
-
-            if (!_isOcr && string.IsNullOrWhiteSpace(textToTranslate))
-            {
-                _lblLatency.Text = "Готов к вводу";
-                _tbResult.Focus();
-                return;
-            }
-
-            if (!_isOcr && !forceFromTextBox && (string.IsNullOrEmpty(_tbResult.Text) || _tbResult.Text.StartsWith("⏳")))
-            {
-                _tbResult.Text = "⏳ Обработка запроса...";
-            }
-            else if (_isOcr)
-            {
-                _tbResult.Text = "⏳ Распознавание...";
+                _tbResult.Text = _andTranslate ? "⏳ Распознавание и перевод..." : "⏳ Распознавание текста...";
             }
 
             _lblLatency.Text = "⏳ Отправка...";
@@ -777,12 +797,26 @@ namespace RyzenQuietPro
                 double latencyMs;
                 string modelUsed;
 
-                if (_isOcr && _imageBytes != null)
+                if (isOcrJob && _imageBytes != null)
                 {
                     (resultText, latencyMs, modelUsed) = await service.RecognizeImageAsync(
                         _imageBytes,
                         andTranslate: _andTranslate,
                         targetLang: targetLang);
+
+                    // Once OCR completes, clear image and OCR flag so all future actions (re-translate, language switch)
+                    // operate directly on the recognized/edited text.
+                    _isOcr = false;
+                    _imageBytes = null;
+                    _originalText = resultText;
+
+                    if (_lblTitle != null) _lblTitle.Text = "🌐 Быстрый перевод";
+                    if (_lblSourceSnippet != null && !_andTranslate)
+                    {
+                        string snip = resultText.Replace("\r", " ").Replace("\n", " ").Trim();
+                        if (snip.Length > 80) snip = snip.Substring(0, 80) + "...";
+                        _lblSourceSnippet.Text = $"Распознано: {snip}";
+                    }
                 }
                 else
                 {
@@ -815,7 +849,7 @@ namespace RyzenQuietPro
             catch (Exception ex)
             {
                 if (this.IsDisposed) return;
-                if (forceFromTextBox)
+                if (!isOcrJob && !string.IsNullOrWhiteSpace(_tbResult.Text) && !_tbResult.Text.StartsWith("⏳"))
                 {
                     _lblLatency.Text = "❌ Ошибка перевода";
                     _toolTip?.SetToolTip(_lblLatency, ex.Message);
