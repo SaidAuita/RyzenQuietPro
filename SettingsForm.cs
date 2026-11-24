@@ -152,6 +152,7 @@ namespace RyzenQuietPro
         private CheckBox _chkGpuTemp = null!;
         private CheckBox _chkGpuFan = null!;
         private CheckBox _chkVramGraph = null!;
+        private CheckBox _chkTopVramProcesses = null!;
         private CheckBox _chkDiskGraph = null!;
         private CheckBox _chkEnhancedDiskMode = null!;
         private CheckBox _chkFanGraph = null!;
@@ -646,14 +647,24 @@ namespace RyzenQuietPro
             _chkGpuGraph = CreateCheckbox(Loc.Get("GpuGraph"), chkX, chkY + (chkGap * 5) + baseOff, _settings.ShowGpuGraph, v => _settings.ShowGpuGraph = v);
             _chkGpuTemp = CreateCheckbox(Loc.Get("GpuTemp"), chkX, chkY + (chkGap * 6) + baseOff, _settings.ShowGpuTempLine, v => _settings.ShowGpuTempLine = v);
             _chkGpuFan = CreateCheckbox(Loc.Get("GpuFan"), chkX, chkY + (chkGap * 7) + baseOff, _settings.ShowGpuFanSpeed, v => _settings.ShowGpuFanSpeed = v);
-            _chkVramGraph = CreateCheckbox(Loc.Get("VramGraph"), chkX, chkY + (chkGap * 8) + baseOff, _settings.ShowVramGraph, v => _settings.ShowVramGraph = v);
-            _chkDiskGraph = CreateCheckbox(Loc.Get("DiskGraph"), chkX, chkY + (chkGap * 9) + baseOff, _settings.ShowDiskGraph, v => {
+            _chkVramGraph = CreateCheckbox(Loc.Get("VramGraph"), chkX, chkY + (chkGap * 8) + baseOff, _settings.ShowVramGraph, v => {
+                _settings.ShowVramGraph = v;
+                _settings.Save();
+                _onSettingsUpdated?.Invoke();
+            });
+            _chkTopVramProcesses = CreateCheckbox(Loc.Get("VramProcesses"), chkX + 16, chkY + (chkGap * 9) + baseOff, _settings.ShowTopVramProcesses, v => {
+                _settings.ShowTopVramProcesses = v;
+                _hardware.Processes.IsVramMonitoringEnabled = v;
+                _settings.Save();
+                _onSettingsUpdated?.Invoke();
+            });
+            _chkDiskGraph = CreateCheckbox(Loc.Get("DiskGraph"), chkX, chkY + (chkGap * 10) + baseOff, _settings.ShowDiskGraph, v => {
                 _settings.ShowDiskGraph = v;
                 _chkEnhancedDiskMode.Enabled = v;
                 _settings.Save();
                 _onSettingsUpdated?.Invoke();
             });
-            _chkEnhancedDiskMode = CreateCheckbox(Loc.Get("EnhancedDiskMode"), chkX + 16, chkY + (chkGap * 10) + baseOff, _settings.EnhancedDiskMode, v => {
+            _chkEnhancedDiskMode = CreateCheckbox(Loc.Get("EnhancedDiskMode"), chkX + 16, chkY + (chkGap * 11) + baseOff, _settings.EnhancedDiskMode, v => {
                 _settings.EnhancedDiskMode = v;
                 _settings.Save();
                 _onSettingsUpdated?.Invoke();
@@ -661,7 +672,7 @@ namespace RyzenQuietPro
             _chkEnhancedDiskMode.Enabled = _settings.ShowDiskGraph;
 
             // Tier 1: Checkbox on left + Active/Start status button on right + Folder button
-            int fanY = chkY + (chkGap * 11) + baseOff;
+            int fanY = chkY + (chkGap * 12) + baseOff;
             _chkFanGraph = CreateCheckbox(Loc.Get("FanGraph"), chkX, fanY + 3, _settings.ShowFanGraph, v => {
                 _settings.ShowFanGraph = v;
                 _settings.Save();
@@ -855,7 +866,7 @@ namespace RyzenQuietPro
             cardGraphs.Controls.AddRange(new Control[] {
                 _chkCpuGraph, _chkCpuCores, _chkTopProcesses,
                 _chkRamGraph, _chkGpuGraph, _chkGpuTemp, _chkGpuFan,
-                _chkVramGraph, _chkDiskGraph, _chkEnhancedDiskMode, _chkFanGraph,
+                _chkVramGraph, _chkTopVramProcesses, _chkDiskGraph, _chkEnhancedDiskMode, _chkFanGraph,
                 _lblFanStatus, _btnFanToggle, _btnFanFolder,
                 _btnFanModeGraph, _btnFanModeIcons, _btnFanModeGrid,
                 _btnFanSelect, _chkFanDemo,
@@ -3406,6 +3417,7 @@ namespace RyzenQuietPro
             _chkGpuTemp.Text = Loc.Get("GpuTemp");
             _chkGpuFan.Text = Loc.Get("GpuFan");
             _chkVramGraph.Text = Loc.Get("VramGraph");
+            if (_chkTopVramProcesses != null) _chkTopVramProcesses.Text = Loc.Get("VramProcesses");
             _chkDiskGraph.Text = Loc.Get("DiskGraph");
             _chkEnhancedDiskMode.Text = Loc.Get("EnhancedDiskMode");
             _chkFanGraph.Text = Loc.Get("FanGraph");
@@ -3897,6 +3909,14 @@ namespace RyzenQuietPro
             if (_chkTopProcesses != null && _chkTopProcesses.Checked != _settings.ShowTopProcesses)
             {
                 _chkTopProcesses.Checked = _settings.ShowTopProcesses;
+            }
+        }
+
+        public void UpdateTopVramProcessesCheckbox()
+        {
+            if (_chkTopVramProcesses != null && _chkTopVramProcesses.Checked != _settings.ShowTopVramProcesses)
+            {
+                _chkTopVramProcesses.Checked = _settings.ShowTopVramProcesses;
             }
         }
         private void SaveServerSyncConfig()

@@ -12,6 +12,7 @@ namespace RyzenQuietPro
         public bool AutoQuietOnIdle { get; set; } = false;
         public int IdleMinutes { get; set; } = 5;
         public bool ShowTopProcesses { get; set; } = false;
+        public bool ShowTopVramProcesses { get; set; } = false;
         public bool ShowAllGpus { get; set; } = false;
 
         // GPU Acoustic & Power Tuning

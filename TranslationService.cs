@@ -11,6 +11,16 @@ using System.Threading.Tasks;
 
 namespace RyzenQuietPro
 {
+    public enum TranslationStatusKind
+    {
+        Ready,
+        Translating,
+        OcrScanning,
+        FreeingVram,
+        VramFreed,
+        Error
+    }
+
     public class TranslationService : IDisposable
     {
         private static TranslationService? _instance;
@@ -21,7 +31,24 @@ namespace RyzenQuietPro
         private System.Threading.Timer? _vramTimer;
         private readonly object _lock = new();
 
-        public string CurrentStatus { get; private set; } = "Готов";
+        public TranslationStatusKind StatusKind { get; private set; } = TranslationStatusKind.Ready;
+        private string? _customStatusKey;
+
+        public string CurrentStatus => GetLocalizedStatus();
+
+        public string GetLocalizedStatus()
+        {
+            return StatusKind switch
+            {
+                TranslationStatusKind.Ready => Loc.Get("Translate_Ready"),
+                TranslationStatusKind.Translating => Loc.Get("Translate_Translating"),
+                TranslationStatusKind.OcrScanning => Loc.Get("Translate_OcrScanning"),
+                TranslationStatusKind.FreeingVram => Loc.Get("Translate_FreeingVram"),
+                TranslationStatusKind.VramFreed => Loc.Get("Translate_VramFreed"),
+                _ => !string.IsNullOrEmpty(_customStatusKey) ? Loc.Get(_customStatusKey) : Loc.Get("Translate_Ready")
+            };
+        }
+
         public bool IsVramLoaded { get; private set; } = false;
         public DateTime? LastRequestTime { get; private set; }
         public DateTime? AutoUnloadTime { get; private set; }
@@ -67,10 +94,11 @@ namespace RyzenQuietPro
             ResetVramTimer();
         }
 
-        private void SetStatus(string status)
+        private void SetStatus(TranslationStatusKind kind, string? customKey = null)
         {
-            CurrentStatus = status;
-            StatusChanged?.Invoke(status);
+            StatusKind = kind;
+            _customStatusKey = customKey;
+            StatusChanged?.Invoke(GetLocalizedStatus());
         }
 
         #region Connection and Model Discovery
@@ -646,7 +674,7 @@ namespace RyzenQuietPro
                 stream = false
             };
 
-            SetStatus("Перевод...");
+            SetStatus(TranslationStatusKind.Translating);
             var sw = Stopwatch.StartNew();
 
             try
@@ -673,7 +701,7 @@ namespace RyzenQuietPro
                 IsVramLoaded = true;
                 LastRequestTime = DateTime.Now;
                 ResetVramTimer();
-                SetStatus("Готов");
+                SetStatus(TranslationStatusKind.Ready);
                 VramStateChanged?.Invoke();
 
                 return (outputText, latency, returnedModel);
@@ -681,7 +709,7 @@ namespace RyzenQuietPro
             catch (Exception ex)
             {
                 sw.Stop();
-                SetStatus("Ошибка перевода");
+                SetStatus(TranslationStatusKind.Error, "Translate_Error");
                 Logger.Log($"[Translation] TranslateTextAsync error: {ex.Message}");
                 throw;
             }
@@ -743,7 +771,7 @@ namespace RyzenQuietPro
                 stream = false
             };
 
-            SetStatus(andTranslate ? "Распознавание и перевод..." : "Распознавание OCR...");
+            SetStatus(TranslationStatusKind.OcrScanning);
             var sw = Stopwatch.StartNew();
 
             try
@@ -770,7 +798,7 @@ namespace RyzenQuietPro
                 IsVramLoaded = true;
                 LastRequestTime = DateTime.Now;
                 ResetVramTimer();
-                SetStatus("Готов");
+                SetStatus(TranslationStatusKind.Ready);
                 VramStateChanged?.Invoke();
 
                 return (outputText, latency, returnedModel);
@@ -778,7 +806,7 @@ namespace RyzenQuietPro
             catch (Exception ex)
             {
                 sw.Stop();
-                SetStatus("Ошибка OCR");
+                SetStatus(TranslationStatusKind.Error, "Translate_ErrorOcr");
                 Logger.Log($"[Translation] RecognizeImageAsync error: {ex.Message}");
                 throw;
             }
@@ -814,34 +842,65 @@ namespace RyzenQuietPro
 
         public async Task<(bool success, string message)> FreeVramAsync()
         {
-            SetStatus("Освобождение VRAM...");
+            SetStatus(TranslationStatusKind.FreeingVram);
             bool unloadedAny = false;
             var details = new StringBuilder();
 
             string modelToUnload = _settings.TranslateModel ?? "";
 
-            // 1. Ollama unload via REST API: keep_alive = 0
+            // 1. Ollama: query /api/ps and unload all loaded models via keep_alive = 0
             try
             {
-                string ollamaUrl = "http://127.0.0.1:11434/api/generate";
-                var payload = new
+                using var ctsPs = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+                var psResp = await _httpClient.GetStringAsync("http://127.0.0.1:11434/api/ps", ctsPs.Token);
+                using var doc = JsonDocument.Parse(psResp);
+                if (doc.RootElement.TryGetProperty("models", out var modelsElem) && modelsElem.ValueKind == JsonValueKind.Array)
                 {
-                    model = modelToUnload,
-                    keep_alive = 0
-                };
-                string jsonPayload = JsonSerializer.Serialize(payload);
-                using var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
-                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
-                var resp = await _httpClient.PostAsync(ollamaUrl, content, cts.Token);
-                if (resp.IsSuccessStatusCode)
-                {
-                    unloadedAny = true;
-                    details.Append("Ollama: выгружено. ");
+                    foreach (var m in modelsElem.EnumerateArray())
+                    {
+                        string modelName = "";
+                        if (m.TryGetProperty("name", out var n)) modelName = n.GetString() ?? "";
+                        else if (m.TryGetProperty("model", out var mn)) modelName = mn.GetString() ?? "";
+
+                        if (!string.IsNullOrEmpty(modelName))
+                        {
+                            var payload = new { model = modelName, keep_alive = 0 };
+                            string jsonPayload = JsonSerializer.Serialize(payload);
+                            using var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+                            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+                            var resp = await _httpClient.PostAsync("http://127.0.0.1:11434/api/generate", content, cts.Token);
+                            if (resp.IsSuccessStatusCode) unloadedAny = true;
+                        }
+                    }
                 }
             }
             catch { }
 
-            // 1b. Ollama CLI stop
+            // 1b. Fallback for specific model in Ollama
+            if (!string.IsNullOrEmpty(modelToUnload))
+            {
+                try
+                {
+                    string ollamaUrl = "http://127.0.0.1:11434/api/generate";
+                    var payload = new
+                    {
+                        model = modelToUnload,
+                        keep_alive = 0
+                    };
+                    string jsonPayload = JsonSerializer.Serialize(payload);
+                    using var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+                    var resp = await _httpClient.PostAsync(ollamaUrl, content, cts.Token);
+                    if (resp.IsSuccessStatusCode)
+                    {
+                        unloadedAny = true;
+                        details.Append("Ollama: unloaded. ");
+                    }
+                }
+                catch { }
+            }
+
+            // 1c. Ollama CLI stop
             string? ollamaCli = FindOllamaCli();
             if (ollamaCli != null && !string.IsNullOrEmpty(modelToUnload))
             {
@@ -860,29 +919,42 @@ namespace RyzenQuietPro
                 catch { }
             }
 
-            // 2. LM Studio CLI: lms unload
+            // 2. LM Studio CLI: lms unload --all
             string? lmsCli = FindLmsCli();
             if (lmsCli != null)
             {
                 try
                 {
-                    string args = string.IsNullOrWhiteSpace(modelToUnload) ? "unload" : $"unload {modelToUnload}";
-                    var psi = new ProcessStartInfo(lmsCli, args)
+                    var psi = new ProcessStartInfo(lmsCli, "unload --all")
                     {
                         CreateNoWindow = true,
                         UseShellExecute = false,
                         WindowStyle = ProcessWindowStyle.Hidden
                     };
                     using var p = Process.Start(psi);
-                    p?.WaitForExit(5000);
+                    p?.WaitForExit(6000);
                     unloadedAny = true;
-                    details.Append("LM Studio: выгружено. ");
+                    details.Append("LM Studio: unloaded. ");
                 }
                 catch (Exception ex)
                 {
                     Logger.Log($"[Translation] lms unload error: {ex.Message}");
                 }
             }
+
+            // 2b. Clean up any orphaned llama-server processes if LM Studio is not active
+            try
+            {
+                var lmsProcs = Process.GetProcessesByName("LM Studio");
+                if (lmsProcs.Length == 0)
+                {
+                    foreach (var lp in Process.GetProcessesByName("llama-server"))
+                    {
+                        try { lp.Kill(); unloadedAny = true; } catch { }
+                    }
+                }
+            }
+            catch { }
 
             lock (_lock)
             {
@@ -892,12 +964,12 @@ namespace RyzenQuietPro
                 IsVramLoaded = false;
             }
 
-            SetStatus("VRAM свободен");
+            SetStatus(TranslationStatusKind.VramFreed);
             VramStateChanged?.Invoke();
 
             string msg = unloadedAny
-                ? $"Память VRAM успешно освобождена. {details}".Trim()
-                : "Команда выгрузки отправлена.";
+                ? $"{Loc.Get("Translate_VramFreed")}. {details}".Trim()
+                : Loc.Get("Translate_VramFreed");
 
             Logger.Log($"[Translation] FreeVramAsync: {msg}");
             return (true, msg);

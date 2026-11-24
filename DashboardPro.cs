@@ -125,6 +125,8 @@ namespace RyzenQuietPro
 
         private Label _lblVram = null!;
         private Label _lblVramSub = null!;
+        private Label _btnVramProcessesExpand = null!;
+        private SmoothPanel _pnlTopVramProcesses = null!;
         private SmoothPanel _pnlVramGraph = null!;
 
         private Label _lblDisk = null!;
@@ -192,6 +194,7 @@ namespace RyzenQuietPro
             _onSettingsChanged = onSettingsChanged;
 
             _hardware.Processes.IsEnabled = _settings.ShowTopProcesses || (_settings.ShowDiskGraph && _settings.EnhancedDiskMode);
+            _hardware.Processes.IsVramMonitoringEnabled = _settings.ShowTopVramProcesses;
             _hardware.Fans.DemoMode = _settings.EnableFanDemo;
             _hardware.Fans.SetEnabled(_settings.EnableFanAddon);
             _hardware.Fans.FansUpdated += () => {
@@ -387,7 +390,11 @@ namespace RyzenQuietPro
             if (_settings.ShowVramGraph)
             {
                 totalH += (int)Math.Round(28 * scale);
-                if (!_settings.SectionVramCollapsed) totalH += baseGraphH + (int)Math.Round(6 * scale);
+                if (!_settings.SectionVramCollapsed)
+                {
+                    totalH += baseGraphH + (int)Math.Round(6 * scale);
+                    if (_settings.ShowTopVramProcesses) totalH += (int)Math.Round(90 * scale) + (int)Math.Round(6 * scale);
+                }
             }
 
             if (_settings.ShowDiskGraph)
@@ -819,6 +826,30 @@ namespace RyzenQuietPro
             this.Controls.Add(_lblVram);
             this.Controls.Add(_lblVramSub);
 
+            _btnVramProcessesExpand = new Label
+            {
+                Text = _settings.ShowTopVramProcesses ? "▲" : "▼",
+                Font = new Font("Segoe UI", 7.0f, FontStyle.Bold),
+                ForeColor = Color.FromArgb(140, 140, 160),
+                BackColor = Color.Transparent,
+                Cursor = Cursors.Hand,
+                Size = new Size(18, 18),
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+            _btnVramProcessesExpand.Click += (s, e) => ToggleVramProcesses();
+            _btnVramProcessesExpand.MouseEnter += (s, e) => _btnVramProcessesExpand.ForeColor = Color.FromArgb(236, 72, 153);
+            _btnVramProcessesExpand.MouseLeave += (s, e) => _btnVramProcessesExpand.ForeColor = Color.FromArgb(140, 140, 160);
+            _toolTip.SetToolTip(_btnVramProcessesExpand, _settings.ShowTopVramProcesses ? Loc.Get("VramProcessesCollapse") : Loc.Get("VramProcessesExpand"));
+            this.Controls.Add(_btnVramProcessesExpand);
+
+            _pnlTopVramProcesses = new SmoothPanel
+            {
+                BackColor = Color.FromArgb(16, 16, 20),
+                Visible = _settings.ShowTopVramProcesses
+            };
+            _pnlTopVramProcesses.Paint += DrawTopVramProcesses;
+            this.Controls.Add(_pnlTopVramProcesses);
+
             _pnlVramGraph = CreateGraphPanel();
             _pnlVramGraph.Paint += DrawVramGraph;
             this.Controls.Add(_pnlVramGraph);
@@ -1242,7 +1273,15 @@ namespace RyzenQuietPro
             }
             if (showRam) fixedH += sepH + sepGap + headerRowH + (!_settings.SectionRamCollapsed ? (int)Math.Round(6 * scale) : 0);
             if (showGpu) fixedH += sepH + sepGap + headerRowH + (!_settings.SectionGpuCollapsed ? (int)Math.Round(6 * scale) : 0);
-            if (showVram) fixedH += sepH + sepGap + headerRowH + (!_settings.SectionVramCollapsed && (showDisk || showFans || showServerSync || showTranslate) ? (int)Math.Round(6 * scale) : 0);
+            if (showVram)
+            {
+                fixedH += sepH + sepGap + headerRowH;
+                if (!_settings.SectionVramCollapsed)
+                {
+                    if (_settings.ShowTopVramProcesses) fixedH += (int)Math.Round(90 * scale) + (int)Math.Round(6 * scale);
+                    if (showDisk || showFans || showServerSync || showTranslate) fixedH += (int)Math.Round(6 * scale);
+                }
+            }
 
             int diskLegendH = 0;
             if (showDisk && !_settings.SectionDiskCollapsed && _settings.EnhancedDiskMode && _settings.DiskLegendExpanded)
@@ -1559,6 +1598,7 @@ namespace RyzenQuietPro
             _sepVram.Visible = showVram;
             _lblVram.Visible = showVram;
             _lblVramSub.Visible = showVram;
+            _btnVramProcessesExpand.Visible = showVram;
             _pnlVramGraph.Visible = showVram && !isVramCollapsed;
 
             if (showVram)
@@ -1567,22 +1607,49 @@ namespace RyzenQuietPro
                 _sepVram.Size = new Size(w, sepH);
                 curY += sepGap;
 
+                int expandBtnW = (int)Math.Round(20 * scale);
                 _lblVram.Location = new Point(marginX, curY);
                 int vramLabelW = Math.Max((int)(65 * scale), _lblVram.PreferredWidth);
                 _lblVramSub.Location = new Point(marginX + vramLabelW + (int)Math.Round(6 * scale), curY);
-                _lblVramSub.Size = new Size(Math.Max(50, contentW - vramLabelW - (int)Math.Round(6 * scale)), headerRowH);
+                _lblVramSub.Size = new Size(Math.Max(50, contentW - vramLabelW - expandBtnW - (int)Math.Round(8 * scale)), headerRowH);
+
+                _btnVramProcessesExpand.Location = new Point(marginX + contentW - expandBtnW, curY + 1);
+                _btnVramProcessesExpand.Size = new Size(expandBtnW, (int)Math.Round(18 * scale));
+                _btnVramProcessesExpand.Text = _settings.ShowTopVramProcesses ? "▲" : "▼";
+                _toolTip.SetToolTip(_btnVramProcessesExpand, _settings.ShowTopVramProcesses ? Loc.Get("VramProcessesCollapse") : Loc.Get("VramProcessesExpand"));
+
                 curY += headerRowH;
 
                 if (!isVramCollapsed)
                 {
                     _pnlVramGraph.Location = new Point(marginX, curY);
                     _pnlVramGraph.Size = new Size(contentW, graphH);
-                    curY += graphH + (showDisk || showFans ? (int)Math.Round(6 * scale) : 0);
+                    curY += graphH + (int)Math.Round(4 * scale);
+
+                    if (_settings.ShowTopVramProcesses)
+                    {
+                        int topVramH = (int)Math.Round(90 * scale);
+                        _pnlTopVramProcesses.Visible = true;
+                        _pnlTopVramProcesses.Location = new Point(marginX, curY);
+                        _pnlTopVramProcesses.Size = new Size(contentW, topVramH);
+                        curY += topVramH + (int)Math.Round(6 * scale);
+                    }
+                    else
+                    {
+                        _pnlTopVramProcesses.Visible = false;
+                        curY += (showDisk || showFans || showServerSync || showTranslate ? (int)Math.Round(6 * scale) : (int)Math.Round(2 * scale));
+                    }
                 }
                 else
                 {
+                    _pnlTopVramProcesses.Visible = false;
                     curY += (int)Math.Round(4 * scale);
                 }
+            }
+            else
+            {
+                _btnVramProcessesExpand.Visible = false;
+                _pnlTopVramProcesses.Visible = false;
             }
 
             // --- DISK ---
@@ -3036,6 +3103,7 @@ namespace RyzenQuietPro
         public void SyncTopProcessesSetting()
         {
             _hardware.Processes.IsEnabled = _settings.ShowTopProcesses || (_settings.ShowDiskGraph && _settings.EnhancedDiskMode);
+            _hardware.Processes.IsVramMonitoringEnabled = _settings.ShowTopVramProcesses;
             LayoutComponents();
             this.Invalidate();
         }
@@ -3488,6 +3556,7 @@ namespace RyzenQuietPro
             if (_pnlRamGraph.Visible) _pnlRamGraph.Invalidate();
             if (_pnlGpuGraph.Visible) _pnlGpuGraph.Invalidate();
             if (_pnlVramGraph.Visible) _pnlVramGraph.Invalidate();
+            if (_pnlTopVramProcesses.Visible) _pnlTopVramProcesses.Invalidate();
             if (_pnlDiskGraph.Visible) _pnlDiskGraph.Invalidate();
             if (_pnlDiskLegend.Visible) _pnlDiskLegend.Invalidate();
             if (_pnlFansGraph.Visible) _pnlFansGraph.Invalidate();
@@ -4801,6 +4870,7 @@ namespace RyzenQuietPro
             _toolTip.SetToolTip(_btnCpuProcessesExpand, _settings.ShowTopProcesses ? Loc.Get("ProcessesCollapse") : Loc.Get("ProcessesExpand"));
 
             _hardware.Processes.IsEnabled = _settings.ShowTopProcesses || (_settings.ShowDiskGraph && _settings.EnhancedDiskMode);
+            _hardware.Processes.IsVramMonitoringEnabled = _settings.ShowTopVramProcesses;
 
             int diffH = (int)Math.Round(94 * _currentUiScale);
             int minH = (int)Math.Round(350 * _currentUiScale);
@@ -4829,6 +4899,63 @@ namespace RyzenQuietPro
             _settings.Save();
             _settingsForm?.UpdateTopProcessesCheckbox();
             SnapBottomToDockOrTaskbar();
+            LayoutComponents();
+            this.Invalidate();
+        }
+
+        public void ToggleVramProcesses()
+        {
+            _settings.ShowTopVramProcesses = !_settings.ShowTopVramProcesses;
+            _btnVramProcessesExpand.Text = _settings.ShowTopVramProcesses ? "▲" : "▼";
+            _toolTip.SetToolTip(_btnVramProcessesExpand, _settings.ShowTopVramProcesses ? Loc.Get("VramProcessesCollapse") : Loc.Get("VramProcessesExpand"));
+
+            _hardware.Processes.IsVramMonitoringEnabled = _settings.ShowTopVramProcesses;
+            _hardware.Processes.Sample();
+
+            int diffH = (int)Math.Round(94 * _currentUiScale);
+            int minH = (int)Math.Round(350 * _currentUiScale);
+            if (_settings.ShowTopVramProcesses)
+            {
+                var screen = Screen.FromControl(this);
+                if (this.Bottom + diffH > screen.WorkingArea.Bottom)
+                {
+                    int shiftUp = (this.Bottom + diffH) - screen.WorkingArea.Bottom;
+                    this.Top = Math.Max(screen.WorkingArea.Top, this.Top - shiftUp);
+                }
+                this.Height += diffH;
+            }
+            else
+            {
+                if (this.Height - diffH >= minH)
+                {
+                    this.Height -= diffH;
+                }
+                else
+                {
+                    this.Height = minH;
+                }
+            }
+
+            _settings.Save();
+            _settingsForm?.UpdateTopVramProcessesCheckbox();
+            SnapBottomToDockOrTaskbar();
+            LayoutComponents();
+            this.Invalidate();
+        }
+
+        public void SyncTopVramProcessesSetting()
+        {
+            if (_btnVramProcessesExpand != null)
+            {
+                _btnVramProcessesExpand.Text = _settings.ShowTopVramProcesses ? "▲" : "▼";
+                _toolTip.SetToolTip(_btnVramProcessesExpand, _settings.ShowTopVramProcesses ? Loc.Get("VramProcessesCollapse") : Loc.Get("VramProcessesExpand"));
+            }
+            if (_pnlTopVramProcesses != null)
+            {
+                _pnlTopVramProcesses.Visible = _settings.ShowTopVramProcesses;
+            }
+            _hardware.Processes.IsVramMonitoringEnabled = _settings.ShowTopVramProcesses;
+            _hardware.Processes.Sample();
             LayoutComponents();
             this.Invalidate();
         }
@@ -5228,6 +5355,116 @@ namespace RyzenQuietPro
             }
         }
 
+        private void DrawTopVramProcesses(object? sender, PaintEventArgs e)
+        {
+            try
+            {
+                var g = e.Graphics;
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
+
+                int w = _pnlTopVramProcesses.Width;
+                int h = _pnlTopVramProcesses.Height;
+                if (w <= 10 || h <= 10) return;
+
+                // Border
+                using (var borderPen = new Pen(Color.FromArgb(32, 32, 38), 1f))
+                {
+                    g.DrawRectangle(borderPen, 0, 0, w - 1, h - 1);
+                }
+
+                var list = _hardware.Processes.TopVramProcesses;
+                if (list.Count == 0)
+                {
+                    using var brush = new SolidBrush(Color.FromArgb(140, 140, 150));
+                    using var font = new Font("Segoe UI", (float)Math.Max(4.8, Math.Round(8.25f * _currentUiScale, 1)), FontStyle.Italic);
+                    g.DrawString(Loc.Get("VramMonitoring"), font, brush, 8, (h - 16) / 2);
+                    return;
+                }
+
+                int rowH = (int)Math.Round(18 * _currentUiScale);
+                Color vramCol = Color.FromArgb(236, 72, 153); // VRAM Pink
+                float fontSize = (float)Math.Max(4.8, Math.Round(8.25f * _currentUiScale, 1));
+                using var fontName = new Font("Segoe UI", fontSize);
+                using var fontPct = new Font("Segoe UI", fontSize, FontStyle.Bold);
+                using var fontMem = new Font("Segoe UI", fontSize);
+
+                using var brushName = new SolidBrush(Color.FromArgb(220, 220, 230));
+                using var brushPct = new SolidBrush(vramCol);
+                using var brushMem = new SolidBrush(Color.FromArgb(240, 240, 250));
+                using var rowDividerPen = new Pen(Color.FromArgb(26, 26, 32), 1f);
+
+                int iconSize = Math.Max(9, (int)Math.Round(16 * _currentUiScale));
+                int iconYOffset = (rowH - iconSize) / 2;
+
+                ulong totalVram = _hardware.Gpu.VramTotalBytes;
+                int count = Math.Min(5, list.Count);
+                for (int i = 0; i < count; i++)
+                {
+                    var proc = list[i];
+                    int y = i * rowH;
+
+                    double pct = totalVram > 0 ? (proc.VramBytes * 100.0 / totalVram) : 0.0;
+
+                    // Subtle VRAM load bar in background
+                    if (pct > 0.1)
+                    {
+                        float barW = (float)(Math.Min(100.0, pct) / 100.0) * (w - 2);
+                        using var barBrush = new SolidBrush(Color.FromArgb(32, vramCol.R, vramCol.G, vramCol.B));
+                        g.FillRectangle(barBrush, 1, y, barW, rowH - 1);
+                    }
+
+                    // Icon
+                    if (proc.Icon != null)
+                    {
+                        g.DrawImage(proc.Icon, 4, y + iconYOffset, iconSize, iconSize);
+                    }
+                    else
+                    {
+                        using var dotBrush = new SolidBrush(Color.FromArgb(90, 70, 85));
+                        int dotSize = Math.Max(3, (int)Math.Round(5 * _currentUiScale));
+                        g.FillEllipse(dotBrush, 9, y + (rowH - dotSize) / 2, dotSize, dotSize);
+                    }
+
+                    // VRAM formatted (e.g. 8.5 GB) right-aligned
+                    int memW = (int)Math.Round(62 * _currentUiScale);
+                    int memX = w - memW - (int)Math.Round(6 * _currentUiScale);
+                    var memRect = new Rectangle(memX, y, memW, rowH);
+                    var memFormat = new StringFormat { Alignment = StringAlignment.Far, LineAlignment = StringAlignment.Center };
+                    g.DrawString(proc.VramFormatted, fontMem, brushMem, memRect, memFormat);
+
+                    // VRAM % right-aligned before memory amount
+                    int pctW = (int)Math.Round(52 * _currentUiScale);
+                    int pctX = memX - pctW - (int)Math.Round(4 * _currentUiScale);
+                    var pctRect = new Rectangle(pctX, y, pctW, rowH);
+                    var pctFormat = new StringFormat { Alignment = StringAlignment.Far, LineAlignment = StringAlignment.Center };
+                    g.DrawString($"{pct:F1}%", fontPct, brushPct, pctRect, pctFormat);
+
+                    // Process name
+                    int nameX = iconSize + (int)Math.Round(8 * _currentUiScale);
+                    int nameW = Math.Max(30, pctX - nameX - (int)Math.Round(4 * _currentUiScale));
+                    var nameRect = new RectangleF(nameX, y, nameW, rowH);
+                    var nameFormat = new StringFormat
+                    {
+                        Alignment = StringAlignment.Near,
+                        LineAlignment = StringAlignment.Center,
+                        Trimming = StringTrimming.EllipsisCharacter,
+                        FormatFlags = StringFormatFlags.NoWrap
+                    };
+                    g.DrawString(proc.FriendlyName, fontName, brushName, nameRect, nameFormat);
+
+                    if (i < count - 1)
+                    {
+                        g.DrawLine(rowDividerPen, 4, y + rowH - 1, w - 4, y + rowH - 1);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Log($"DrawTopVramProcesses error: {ex.Message}");
+            }
+        }
+
         private void UpdateServerSyncUI()
         {
             if (!_settings.ServerSyncEnabled || _lblServerSync == null) return;
@@ -5411,17 +5648,19 @@ namespace RyzenQuietPro
                 if (tr.AutoUnloadTime != null && tr.AutoUnloadTime > DateTime.Now)
                 {
                     var left = tr.AutoUnloadTime.Value - DateTime.Now;
-                    _lblTranslateSub.Text = $"{model} (VRAM {left.Minutes}m {left.Seconds:D2}s)";
+                    string minStr = Loc.Get("Translate_Min");
+                    string secStr = Loc.Get("Translate_Sec");
+                    _lblTranslateSub.Text = $"{model} (VRAM {left.Minutes}{minStr} {left.Seconds:D2}{secStr})";
                 }
                 else
                 {
-                    _lblTranslateSub.Text = $"{model} (VRAM loaded)";
+                    _lblTranslateSub.Text = $"{model} ({Loc.Get("Translate_VramLoaded")})";
                 }
                 _lblTranslateSub.ForeColor = Color.FromArgb(250, 204, 21); // Amber
             }
             else
             {
-                _lblTranslateSub.Text = tr.CurrentStatus ?? Loc.Get("Translate_Ready");
+                _lblTranslateSub.Text = tr.GetLocalizedStatus();
                 _lblTranslateSub.ForeColor = Color.FromArgb(52, 211, 153); // Emerald
             }
 
@@ -5462,7 +5701,7 @@ namespace RyzenQuietPro
                 ? (tr.AutoUnloadTime != null && tr.AutoUnloadTime > DateTime.Now
                     ? $"VRAM: {Loc.Get("Translate_VramLoaded")} ({Loc.Get("Translate_UnloadIn")} {(int)(tr.AutoUnloadTime.Value - DateTime.Now).TotalMinutes}:{((int)(tr.AutoUnloadTime.Value - DateTime.Now).TotalSeconds % 60):D2})"
                     : $"VRAM: {Loc.Get("Translate_VramLoaded")}")
-                : $"VRAM: {Loc.Get("Translate_VramFreed")}";
+                : Loc.Get("Translate_VramFreed");
 
             string lineText = $"{model} • {vramInfo}";
             Color textColor = tr.IsVramLoaded ? Color.FromArgb(250, 204, 21) : Color.FromArgb(148, 163, 184);

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
@@ -23,6 +24,20 @@ namespace RyzenQuietPro
         public double TotalDiskMbPerSec => ReadMbPerSec + WriteMbPerSec;
         public string ExePath { get; set; } = "";
         public Image? Icon { get; set; }
+    }
+
+    public class VramProcessMetric
+    {
+        public int Pid { get; set; }
+        public string ExeName { get; set; } = "";
+        public string FriendlyName { get; set; } = "";
+        public long VramBytes { get; set; }
+        public double VramMb => VramBytes / (1024.0 * 1024.0);
+        public double VramGb => VramBytes / (1024.0 * 1024.0 * 1024.0);
+        public double VramPercent { get; set; }
+        public string VramFormatted { get; set; } = "";
+        public Image? Icon { get; set; }
+        public string ExePath { get; set; } = "";
     }
 
     public class ProcessAppGroup
@@ -85,7 +100,10 @@ namespace RyzenQuietPro
 
         public bool IsEnabled { get; set; } = false;
         public bool HasActiveAppTriggers { get; set; } = false;
+        public bool IsVramMonitoringEnabled { get; set; } = false;
 
+        private List<VramProcessMetric> _topVramProcesses = new();
+        private PerformanceCounterCategory? _gpuMemoryCategory;
 
         public IReadOnlyList<ProcessMetric> TopProcesses
         {
@@ -94,6 +112,17 @@ namespace RyzenQuietPro
                 lock (_lock)
                 {
                     return _topProcesses.ToArray();
+                }
+            }
+        }
+
+        public IReadOnlyList<VramProcessMetric> TopVramProcesses
+        {
+            get
+            {
+                lock (_lock)
+                {
+                    return _topVramProcesses.ToArray();
                 }
             }
         }
@@ -116,6 +145,18 @@ namespace RyzenQuietPro
 
         public void Sample()
         {
+            if (IsVramMonitoringEnabled)
+            {
+                SampleVram();
+            }
+            else
+            {
+                lock (_lock)
+                {
+                    if (_topVramProcesses.Count > 0) _topVramProcesses.Clear();
+                }
+            }
+
             if (!IsEnabled && !HasActiveAppTriggers)
             {
                 lock (_lock)
@@ -570,8 +611,97 @@ namespace RyzenQuietPro
             return $"{mb:F0} MB";
         }
 
+        private void SampleVram()
+        {
+            try
+            {
+                _gpuMemoryCategory ??= new PerformanceCounterCategory("GPU Process Memory");
+                var instData = _gpuMemoryCategory.ReadCategory();
+                if (instData.Contains("Dedicated Usage"))
+                {
+                    var dedicated = instData["Dedicated Usage"];
+                    var pidMap = new Dictionary<int, long>();
+                    foreach (string inst in dedicated.Keys)
+                    {
+                        long bytes = dedicated[inst].RawValue;
+                        if (bytes <= 0) continue;
+                        int pidIdx = inst.IndexOf("pid_", StringComparison.OrdinalIgnoreCase);
+                        if (pidIdx >= 0)
+                        {
+                            int start = pidIdx + 4;
+                            int end = inst.IndexOf('_', start);
+                            if (end > start && int.TryParse(inst.Substring(start, end - start), out int pid))
+                            {
+                                if (pid > 0)
+                                {
+                                    if (pidMap.TryGetValue(pid, out long cur))
+                                        pidMap[pid] = cur + bytes;
+                                    else
+                                        pidMap[pid] = bytes;
+                                }
+                            }
+                        }
+                    }
+
+                    var list = new List<VramProcessMetric>();
+                    foreach (var kvp in pidMap.OrderByDescending(x => x.Value).Take(12))
+                    {
+                        if (kvp.Value < 10L * 1024 * 1024) continue; // Skip < 10 MB
+                        int pid = kvp.Key;
+                        string exeName = "";
+                        try
+                        {
+                            using var p = Process.GetProcessById(pid);
+                            exeName = p.ProcessName + ".exe";
+                        }
+                        catch { }
+
+                        var details = ResolveProcessDetails(pid, exeName);
+                        string friendly = details.Name;
+                        if (string.Equals(exeName, "python.exe", StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(exeName, "pythonw.exe", StringComparison.OrdinalIgnoreCase))
+                        {
+                            if (details.Path.Contains("ComfyUI", StringComparison.OrdinalIgnoreCase) ||
+                                details.Path.Contains("comfy", StringComparison.OrdinalIgnoreCase))
+                            {
+                                friendly = "ComfyUI (Python)";
+                            }
+                        }
+                        else if (exeName.Contains("llama-server", StringComparison.OrdinalIgnoreCase))
+                        {
+                            friendly = "llama-server (LLM)";
+                        }
+
+                        list.Add(new VramProcessMetric
+                        {
+                            Pid = pid,
+                            ExeName = exeName,
+                            FriendlyName = friendly,
+                            VramBytes = kvp.Value,
+                            VramFormatted = FormatRam(kvp.Value),
+                            ExePath = details.Path,
+                            Icon = details.Icon
+                        });
+
+                        if (list.Count >= 5) break;
+                    }
+
+                    lock (_lock)
+                    {
+                        _topVramProcesses = list;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _gpuMemoryCategory = null;
+                Logger.Log($"SampleVram error: {ex.Message}");
+            }
+        }
+
         public void Dispose()
         {
+            _gpuMemoryCategory = null;
             foreach (var item in _detailsCache.Values)
             {
                 item.Icon?.Dispose();

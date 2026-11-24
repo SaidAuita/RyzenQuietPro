@@ -39,6 +39,7 @@ namespace RyzenQuietPro
         private ToolStripMenuItem _startupMenuItem = null!;
         private ToolStripMenuItem _startMinimizedMenuItem = null!;
         private ToolStripMenuItem _topProcessesMenuItem = null!;
+        private ToolStripMenuItem _topVramProcessesMenuItem = null!;
         private ToolStripMenuItem? _showAllGpusMenuItem;
         private ToolStripMenuItem _metricMenu = null!;
         private ToolStripMenuItem _metricCpuItem = null!;
@@ -285,6 +286,19 @@ namespace RyzenQuietPro
             };
             _contextMenu.Items.Add(_topProcessesMenuItem);
 
+            _topVramProcessesMenuItem = new ToolStripMenuItem(Loc.Get("VramProcesses"))
+            {
+                Checked = _settings.ShowTopVramProcesses
+            };
+            _topVramProcessesMenuItem.Click += (s, e) => {
+                _settings.ShowTopVramProcesses = !_settings.ShowTopVramProcesses;
+                _hardware.Processes.IsVramMonitoringEnabled = _settings.ShowTopVramProcesses;
+                _settings.Save();
+                _dashboard?.SyncTopVramProcessesSetting();
+                UpdateContextMenuState();
+            };
+            _contextMenu.Items.Add(_topVramProcessesMenuItem);
+
             if (_hardware.Gpu.GpuCount > 1)
             {
                 _showAllGpusMenuItem = new ToolStripMenuItem(Loc.Get("ShowAllGpus"))
@@ -409,6 +423,7 @@ namespace RyzenQuietPro
             if (_startupMenuItem != null) _startupMenuItem.Text = Loc.Get("Startup");
             if (_startMinimizedMenuItem != null) _startMinimizedMenuItem.Text = Loc.Get("StartMinimized");
             if (_topProcessesMenuItem != null) _topProcessesMenuItem.Text = Loc.Get("TopProcesses");
+            if (_topVramProcessesMenuItem != null) _topVramProcessesMenuItem.Text = Loc.Get("VramProcesses");
             if (_showAllGpusMenuItem != null) _showAllGpusMenuItem.Text = Loc.Get("ShowAllGpus");
             if (_layoutSwitchRunItem != null) _layoutSwitchRunItem.Text = Loc.Get("LayoutSwitch_RunNow");
             if (_layoutSwitchToggleItem != null)
@@ -466,6 +481,7 @@ namespace RyzenQuietPro
             _metricNoneItem.Checked = !_settings.LiveTrayIcon;
 
             _topProcessesMenuItem.Checked = _settings.ShowTopProcesses;
+            if (_topVramProcessesMenuItem != null) _topVramProcessesMenuItem.Checked = _settings.ShowTopVramProcesses;
             if (_showAllGpusMenuItem != null)
             {
                 _showAllGpusMenuItem.Checked = _settings.ShowAllGpus;
