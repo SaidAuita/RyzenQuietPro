@@ -98,7 +98,35 @@ namespace RyzenQuietPro
         private Button _btnHddSleepNow = null!;
         private Label _lblHddWakeStatus = null!;
 
+        private class CardSection
+        {
+            public string Key = "";
+            public Panel Card = null!;
+            public Label Header = null!;
+            public Func<string> TitleGetter = null!;
+            public int FullHeight;
+            public bool IsCollapsed = true;
+        }
+
+        private readonly List<CardSection> _cardSections = new();
         private readonly List<Panel> _allCards = new();
+
+        // Translate & LLM Controls
+        private CheckBox _chkTranslateModule = null!;
+        private Label _lblSecTranslate = null!;
+        private CheckBox _chkTranslateEnable = null!;
+        private Panel _pnlTranslateControls = null!;
+        private TextBox _tbTranslateUrl = null!;
+        private Button _btnPresetLms = null!;
+        private Button _btnPresetOllama = null!;
+        private Button _btnTranslateCheck = null!;
+        private Label _lblTranslateCheckStatus = null!;
+        private ComboBox _cbTranslateModel = null!;
+        private ComboBox _cbTranslateTargetLang = null!;
+        private Button _btnFreeVramNow = null!;
+        private Label _lblVramStatus = null!;
+        private ComboBox _cbTranslateVramTimeout = null!;
+        private CheckBox _chkTranslateAutoCopy = null!;
 
         private readonly List<Panel> _cardDividers = new();
         private readonly List<Button> _opacityPresetButtons = new();
@@ -462,6 +490,7 @@ namespace RyzenQuietPro
 
             _lblSecLang = CreateSectionHeader(Loc.Get("Language"), 12, 8);
             cardLang.Controls.Add(_lblSecLang);
+            RegisterCardSection("lang", cardLang, _lblSecLang, () => Loc.Get("Language"), 70);
 
             int btnLangX = 13;
             int btnLangW = 42;
@@ -495,12 +524,13 @@ namespace RyzenQuietPro
             // ================= 2. GRAPHS & MODULES CARD =================
             // Single vertical column (1 row per item) - spacious and slender
             int baseOff = 34;
-            int cardGraphsH = multiGpu ? 552 + baseOff : 522 + baseOff;
+            int cardGraphsH = multiGpu ? 552 + baseOff + 26 : 522 + baseOff + 26;
             var cardGraphs = CreateCard(cardX, curY, cardW, cardGraphsH);
             _pnlBody.Controls.Add(cardGraphs);
 
             _lblSecGraphs = CreateSectionHeader(Loc.Get("MenuGraphs"), 12, 8);
             cardGraphs.Controls.Add(_lblSecGraphs);
+            RegisterCardSection("graphs", cardGraphs, _lblSecGraphs, () => Loc.Get("MenuGraphs"), cardGraphsH);
 
             int chkX = 14;
             int chkY = 32;
@@ -808,6 +838,15 @@ namespace RyzenQuietPro
                 nextY += chkGap;
             }
 
+            _chkTranslateModule = CreateCheckbox(Loc.Get("Translate_Module"), chkX, nextY, _settings.ShowTranslateModule, v => {
+                _settings.ShowTranslateModule = v;
+                if (_chkTranslateEnable != null) _chkTranslateEnable.Checked = v;
+                _settings.Save();
+                _onSettingsUpdated?.Invoke();
+            });
+            cardGraphs.Controls.Add(_chkTranslateModule);
+            nextY += chkGap;
+
             // Reset/All button
             _btnResetGraphs = new Button
             {
@@ -834,6 +873,7 @@ namespace RyzenQuietPro
                 _chkGpuFan.Checked = true;
                 _chkVramGraph.Checked = true;
                 _chkFanGraph.Checked = true;
+                _chkTranslateModule.Checked = true;
                 if (_chkShowAllGpus != null) _chkShowAllGpus.Checked = true;
                 _settings.ShowCpuGraph = true;
                 _settings.ShowCpuCores = true;
@@ -846,6 +886,7 @@ namespace RyzenQuietPro
                 _settings.ShowGpuFanSpeed = true;
                 _settings.ShowVramGraph = true;
                 _settings.ShowFanGraph = true;
+                _settings.ShowTranslateModule = true;
                 _settings.EnableFanAddon = true;
                 _settings.FanVisualMode = 0;
                 _settings.FanScalePercent = 100;
@@ -870,6 +911,7 @@ namespace RyzenQuietPro
 
             _lblSecStopwatch = CreateSectionHeader("⏱ " + Loc.Get("StopwatchSettings"), 12, 8);
             cardSw.Controls.Add(_lblSecStopwatch);
+            RegisterCardSection("sw", cardSw, _lblSecStopwatch, () => "⏱ " + Loc.Get("StopwatchSettings"), cardSwH);
 
             int swY = 32;
             _chkStopwatchAuto = CreateCheckbox(Loc.Get("StopwatchAutoStartEnable"), 14, swY, _settings.StopwatchAutoStartEnabled, v => {
@@ -1105,6 +1147,7 @@ namespace RyzenQuietPro
 
             _lblSecGpuTuning = CreateSectionHeader("⚡ " + Loc.Get("GpuTuningTitle"), 12, 8);
             cardGpu.Controls.Add(_lblSecGpuTuning);
+            RegisterCardSection("gpu", cardGpu, _lblSecGpuTuning, () => "⚡ " + Loc.Get("GpuTuningTitle"), cardGpuH);
 
             string gpuModel = _hardware.Gpu.GpuName;
             if (!string.IsNullOrEmpty(gpuModel))
@@ -1355,6 +1398,7 @@ namespace RyzenQuietPro
 
             _lblSecHdd = CreateSectionHeader(Loc.Get("HddScheduleModule"), 12, 8);
             cardHdd.Controls.Add(_lblSecHdd);
+            RegisterCardSection("hdd", cardHdd, _lblSecHdd, () => Loc.Get("HddScheduleModule"), cardHddH);
 
             _chkHddSchedule = CreateCheckbox(Loc.Get("HddScheduleEnable"), 14, 30, _settings.HddScheduleEnabled, v => {
                 _settings.HddScheduleEnabled = v;
@@ -1617,6 +1661,7 @@ namespace RyzenQuietPro
 
             _lblSecServerSync = CreateSectionHeader(Loc.Get("ServerSync_Module"), 12, 8);
             cardServerSync.Controls.Add(_lblSecServerSync);
+            RegisterCardSection("serversync", cardServerSync, _lblSecServerSync, () => Loc.Get("ServerSync_Module"), cardServerSyncH);
 
             _chkServerSync = CreateCheckbox(Loc.Get("ServerSync_Enable"), 14, 30, _settings.ServerSyncEnabled, v => {
                 _settings.ServerSyncEnabled = v;
@@ -1733,6 +1778,7 @@ namespace RyzenQuietPro
 
             _lblSecLayout = CreateSectionHeader(Loc.Get("SecLayoutSwitcher"), 12, 8);
             cardLayout.Controls.Add(_lblSecLayout);
+            RegisterCardSection("layout", cardLayout, _lblSecLayout, () => Loc.Get("SecLayoutSwitcher"), cardLayoutH);
 
             _chkLayoutSwitch = new CheckBox
             {
@@ -1943,6 +1989,7 @@ namespace RyzenQuietPro
 
             _lblSecDesktopIcons = CreateSectionHeader("🖥 " + Loc.Get("DesktopIcons_SecTitle"), 12, 8);
             cardDesktopIcons.Controls.Add(_lblSecDesktopIcons);
+            RegisterCardSection("desktopicons", cardDesktopIcons, _lblSecDesktopIcons, () => "🖥 " + Loc.Get("DesktopIcons_SecTitle"), cardDesktopIconsH);
 
             _pnlDesktopIconsControls = new Panel
             {
@@ -2049,12 +2096,412 @@ namespace RyzenQuietPro
 
             curY += cardDesktopIconsH + 8;
 
+            // ================= TRANSLATE & LLM CARD =================
+            int cardTranslateH = 480;
+            var cardTranslate = CreateCard(cardX, curY, cardW, cardTranslateH);
+            _pnlBody.Controls.Add(cardTranslate);
+
+            _lblSecTranslate = CreateSectionHeader(Loc.Get("Translate_Module"), 12, 8);
+            cardTranslate.Controls.Add(_lblSecTranslate);
+            RegisterCardSection("translate", cardTranslate, _lblSecTranslate, () => Loc.Get("Translate_Module"), cardTranslateH);
+
+            _chkTranslateEnable = new CheckBox
+            {
+                Text = Loc.Get("Translate_Enable"),
+                Font = new Font("Segoe UI", 8.5f),
+                ForeColor = Color.FromArgb(220, 220, 235),
+                Location = new Point(14, 30),
+                Size = new Size(cardW - 28, 22),
+                Checked = _settings.ShowTranslateModule,
+                Cursor = Cursors.Hand,
+                UseMnemonic = false
+            };
+            _chkTranslateEnable.CheckedChanged += (s, e) => {
+                _settings.ShowTranslateModule = _chkTranslateEnable.Checked;
+                if (_chkTranslateModule != null) _chkTranslateModule.Checked = _chkTranslateEnable.Checked;
+                _pnlTranslateControls.Enabled = _chkTranslateEnable.Checked;
+                _settings.Save();
+                _onSettingsUpdated?.Invoke();
+            };
+            cardTranslate.Controls.Add(_chkTranslateEnable);
+
+            _pnlTranslateControls = new Panel
+            {
+                Location = new Point(14, 56),
+                Size = new Size(cardW - 28, cardTranslateH - 62),
+                BackColor = Color.Transparent,
+                Enabled = _settings.ShowTranslateModule
+            };
+            cardTranslate.Controls.Add(_pnlTranslateControls);
+
+            // Row 0: API Server URL label + Presets
+            var lblApiUrl = new Label
+            {
+                Text = Loc.Get("Translate_ApiUrl"),
+                Font = new Font("Segoe UI", 8.25f),
+                ForeColor = Color.FromArgb(170, 170, 185),
+                Location = new Point(0, 4),
+                Size = new Size(cardW - 28 - 188, 20),
+                AutoEllipsis = true,
+                UseMnemonic = false
+            };
+            _pnlTranslateControls.Controls.Add(lblApiUrl);
+
+            _btnPresetLms = new Button
+            {
+                Text = "LM Studio",
+                Font = new Font("Segoe UI", 8f, FontStyle.Bold),
+                Location = new Point(cardW - 28 - 180, 0),
+                Size = new Size(88, 25),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.FromArgb(32, 36, 48),
+                ForeColor = Color.FromArgb(56, 189, 248),
+                Padding = Padding.Empty,
+                TextAlign = ContentAlignment.MiddleCenter,
+                UseMnemonic = false,
+                Cursor = Cursors.Hand
+            };
+            _btnPresetLms.FlatAppearance.BorderSize = 1;
+            _btnPresetLms.FlatAppearance.BorderColor = Color.FromArgb(56, 189, 248, 80);
+            _btnPresetLms.Click += (s, e) => {
+                _tbTranslateUrl.Text = "http://127.0.0.1:1234/v1";
+                _settings.TranslateApiUrl = _tbTranslateUrl.Text;
+                _settings.Save();
+                _hardware.Translation.UpdateSettings(_settings);
+                UpdateBackendButtonsHighlight();
+                RunCheckConnection();
+            };
+            _pnlTranslateControls.Controls.Add(_btnPresetLms);
+
+            _btnPresetOllama = new Button
+            {
+                Text = "Ollama",
+                Font = new Font("Segoe UI", 8f, FontStyle.Bold),
+                Location = new Point(cardW - 28 - 88, 0),
+                Size = new Size(88, 25),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.FromArgb(32, 36, 48),
+                ForeColor = Color.FromArgb(56, 189, 248),
+                Padding = Padding.Empty,
+                TextAlign = ContentAlignment.MiddleCenter,
+                UseMnemonic = false,
+                Cursor = Cursors.Hand
+            };
+            _btnPresetOllama.FlatAppearance.BorderSize = 1;
+            _btnPresetOllama.FlatAppearance.BorderColor = Color.FromArgb(56, 189, 248, 80);
+            _btnPresetOllama.Click += (s, e) => {
+                _tbTranslateUrl.Text = "http://127.0.0.1:11434/v1";
+                _settings.TranslateApiUrl = _tbTranslateUrl.Text;
+                _settings.Save();
+                _hardware.Translation.UpdateSettings(_settings);
+                UpdateBackendButtonsHighlight();
+                RunCheckConnection();
+            };
+            _pnlTranslateControls.Controls.Add(_btnPresetOllama);
+
+            // Row 1: URL input & Test button
+            int testBtnW = 85;
+            _tbTranslateUrl = new TextBox
+            {
+                Text = _settings.TranslateApiUrl,
+                Font = new Font("Segoe UI", 8.5f),
+                BackColor = Color.FromArgb(24, 24, 32),
+                ForeColor = Color.FromArgb(220, 220, 235),
+                BorderStyle = BorderStyle.FixedSingle,
+                Location = new Point(0, 28),
+                Size = new Size(cardW - 28 - testBtnW - 8, 25)
+            };
+            _tbTranslateUrl.TextChanged += (s, e) => {
+                _settings.TranslateApiUrl = _tbTranslateUrl.Text.Trim();
+                _settings.Save();
+                _hardware.Translation.UpdateSettings(_settings);
+                UpdateBackendButtonsHighlight();
+            };
+            _pnlTranslateControls.Controls.Add(_tbTranslateUrl);
+
+            _btnTranslateCheck = new Button
+            {
+                Text = Loc.Get("Translate_CheckBtn"),
+                Font = new Font("Segoe UI", 8.25f, FontStyle.Bold),
+                Location = new Point(cardW - 28 - testBtnW, 28),
+                Size = new Size(testBtnW, 25),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.FromArgb(32, 36, 48),
+                ForeColor = Color.FromArgb(45, 212, 191),
+                Padding = Padding.Empty,
+                TextAlign = ContentAlignment.MiddleCenter,
+                UseMnemonic = false,
+                Cursor = Cursors.Hand
+            };
+            _btnTranslateCheck.FlatAppearance.BorderSize = 1;
+            _btnTranslateCheck.FlatAppearance.BorderColor = Color.FromArgb(45, 212, 191, 100);
+            _btnTranslateCheck.Click += (s, e) => RunCheckConnection();
+            _pnlTranslateControls.Controls.Add(_btnTranslateCheck);
+
+            _lblTranslateCheckStatus = new Label
+            {
+                Text = "",
+                Font = new Font("Segoe UI", 7.5f),
+                ForeColor = Color.FromArgb(140, 185, 215),
+                Location = new Point(0, 56),
+                Size = new Size(cardW - 28, 18),
+                AutoEllipsis = true
+            };
+            _pnlTranslateControls.Controls.Add(_lblTranslateCheckStatus);
+
+            // Row 2: Model & Target Language
+            int modelW = (int)((cardW - 28 - 12) * 0.55);
+            int langW = cardW - 28 - 12 - modelW;
+
+            var lblModel = new Label
+            {
+                Text = Loc.Get("Translate_Model"),
+                Font = new Font("Segoe UI", 8.25f),
+                ForeColor = Color.FromArgb(170, 170, 185),
+                Location = new Point(0, 78),
+                Size = new Size(modelW, 20),
+                UseMnemonic = false
+            };
+            _pnlTranslateControls.Controls.Add(lblModel);
+
+            var lblLang = new Label
+            {
+                Text = Loc.Get("Translate_TargetLang"),
+                Font = new Font("Segoe UI", 8.25f),
+                ForeColor = Color.FromArgb(170, 170, 185),
+                Location = new Point(modelW + 12, 78),
+                Size = new Size(langW, 20),
+                UseMnemonic = false
+            };
+            _pnlTranslateControls.Controls.Add(lblLang);
+
+            _cbTranslateModel = new ComboBox
+            {
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                BackColor = Color.FromArgb(24, 24, 32),
+                ForeColor = Color.FromArgb(45, 212, 191),
+                Font = new Font("Segoe UI", 8.5f),
+                Location = new Point(0, 100),
+                Size = new Size(modelW, 26)
+            };
+            if (!string.IsNullOrEmpty(_settings.TranslateModel))
+            {
+                _cbTranslateModel.Items.Add(_settings.TranslateModel);
+                _cbTranslateModel.SelectedIndex = 0;
+            }
+            _cbTranslateModel.SelectedIndexChanged += (s, e) => {
+                if (_cbTranslateModel.SelectedItem != null)
+                {
+                    _settings.TranslateModel = _cbTranslateModel.SelectedItem.ToString() ?? "";
+                    _settings.Save();
+                    _hardware.Translation.UpdateSettings(_settings);
+                    _onSettingsUpdated?.Invoke();
+                }
+            };
+            _pnlTranslateControls.Controls.Add(_cbTranslateModel);
+
+            _cbTranslateTargetLang = new ComboBox
+            {
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                BackColor = Color.FromArgb(24, 24, 32),
+                ForeColor = Color.FromArgb(220, 220, 235),
+                Font = new Font("Segoe UI", 8.5f),
+                Location = new Point(modelW + 12, 100),
+                Size = new Size(langW, 26)
+            };
+            foreach (var lang in TranslationService.SupportedLanguages)
+            {
+                _cbTranslateTargetLang.Items.Add(new KeyValuePair<string, string>(lang.Code, $"{lang.LocalName} ({lang.Code})"));
+            }
+            _cbTranslateTargetLang.DisplayMember = "Value";
+            _cbTranslateTargetLang.ValueMember = "Key";
+            for (int i = 0; i < _cbTranslateTargetLang.Items.Count; i++)
+            {
+                if (_cbTranslateTargetLang.Items[i] is KeyValuePair<string, string> kv && kv.Key == _settings.TranslateTargetLang)
+                {
+                    _cbTranslateTargetLang.SelectedIndex = i;
+                    break;
+                }
+            }
+            _cbTranslateTargetLang.SelectedIndexChanged += (s, e) => {
+                if (_cbTranslateTargetLang.SelectedItem is KeyValuePair<string, string> kv)
+                {
+                    _settings.TranslateTargetLang = kv.Key;
+                    _settings.Save();
+                    _hardware.Translation.UpdateSettings(_settings);
+                    _onSettingsUpdated?.Invoke();
+                }
+            };
+            _pnlTranslateControls.Controls.Add(_cbTranslateTargetLang);
+
+            // Row 3: VRAM release button & auto-unload timeout
+            int vramBtnW = 155;
+            _btnFreeVramNow = new Button
+            {
+                Text = "🧹 " + Loc.Get("Translate_FreeVramBtn"),
+                Font = new Font("Segoe UI", 8.25f, FontStyle.Bold),
+                Location = new Point(0, 136),
+                Size = new Size(vramBtnW, 28),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.FromArgb(32, 36, 48),
+                ForeColor = Color.FromArgb(251, 146, 60),
+                Padding = Padding.Empty,
+                TextAlign = ContentAlignment.MiddleCenter,
+                UseMnemonic = false,
+                Cursor = Cursors.Hand
+            };
+            _btnFreeVramNow.FlatAppearance.BorderSize = 1;
+            _btnFreeVramNow.FlatAppearance.BorderColor = Color.FromArgb(251, 146, 60, 100);
+            _btnFreeVramNow.Click += (s, e) => {
+                _btnFreeVramNow.Enabled = false;
+                _lblVramStatus.Text = "...";
+                Task.Run(async () => {
+                    var res = await _hardware.Translation.FreeVramAsync();
+                    this.BeginInvoke((Action)(() => {
+                        _btnFreeVramNow.Enabled = true;
+                        _lblVramStatus.Text = res.success ? Loc.Get("Translate_VramFreed") : "Error";
+                        _lblVramStatus.ForeColor = res.success ? Color.FromArgb(45, 212, 191) : Color.FromArgb(248, 113, 113);
+                    }));
+                });
+            };
+            _pnlTranslateControls.Controls.Add(_btnFreeVramNow);
+
+            _lblVramStatus = new Label
+            {
+                Text = "",
+                Font = new Font("Segoe UI", 7.5f),
+                ForeColor = Color.FromArgb(45, 212, 191),
+                Location = new Point(vramBtnW + 8, 141),
+                Size = new Size(80, 20),
+                AutoEllipsis = true
+            };
+            _pnlTranslateControls.Controls.Add(_lblVramStatus);
+
+            int timeoutW = 85;
+            int timeoutLblW = 75;
+            var lblVramTimeout = new Label
+            {
+                Text = Loc.Get("Translate_VramTimeoutShort"),
+                Font = new Font("Segoe UI", 8.25f),
+                ForeColor = Color.FromArgb(170, 170, 185),
+                Location = new Point(cardW - 28 - timeoutW - timeoutLblW - 4, 140),
+                Size = new Size(timeoutLblW, 20),
+                TextAlign = ContentAlignment.MiddleRight,
+                UseMnemonic = false
+            };
+            _toolTip?.SetToolTip(lblVramTimeout, Loc.Get("Translate_VramTimeout"));
+            _pnlTranslateControls.Controls.Add(lblVramTimeout);
+
+            _cbTranslateVramTimeout = new ComboBox
+            {
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                BackColor = Color.FromArgb(24, 24, 32),
+                ForeColor = Color.FromArgb(220, 220, 235),
+                Font = new Font("Segoe UI", 8.5f),
+                Location = new Point(cardW - 28 - timeoutW, 136),
+                Size = new Size(timeoutW, 26)
+            };
+            int[] timeoutOptions = new[] { 0, 1, 2, 5, 10, 15, 30 };
+            foreach (int to in timeoutOptions)
+            {
+                string label = to == 0 ? "Off" : $"{to} min";
+                _cbTranslateVramTimeout.Items.Add(new KeyValuePair<int, string>(to, label));
+            }
+            _cbTranslateVramTimeout.DisplayMember = "Value";
+            _cbTranslateVramTimeout.ValueMember = "Key";
+            for (int i = 0; i < _cbTranslateVramTimeout.Items.Count; i++)
+            {
+                if (_cbTranslateVramTimeout.Items[i] is KeyValuePair<int, string> kv && kv.Key == _settings.TranslateVramTimeoutMinutes)
+                {
+                    _cbTranslateVramTimeout.SelectedIndex = i;
+                    break;
+                }
+            }
+            _cbTranslateVramTimeout.SelectedIndexChanged += (s, e) => {
+                if (_cbTranslateVramTimeout.SelectedItem is KeyValuePair<int, string> kv)
+                {
+                    _settings.TranslateVramTimeoutMinutes = kv.Key;
+                    _settings.Save();
+                    _hardware.Translation.UpdateSettings(_settings);
+                }
+            };
+            _pnlTranslateControls.Controls.Add(_cbTranslateVramTimeout);
+
+            // Row 4: Auto-copy Checkbox
+            _chkTranslateAutoCopy = new CheckBox
+            {
+                Text = Loc.Get("Translate_AutoCopy"),
+                Font = new Font("Segoe UI", 8.25f),
+                ForeColor = Color.FromArgb(220, 220, 235),
+                Location = new Point(0, 174),
+                Size = new Size(cardW - 28, 22),
+                Checked = _settings.TranslateAutoCopy,
+                Cursor = Cursors.Hand,
+                UseMnemonic = false
+            };
+            _chkTranslateAutoCopy.CheckedChanged += (s, e) => {
+                _settings.TranslateAutoCopy = _chkTranslateAutoCopy.Checked;
+                _settings.Save();
+            };
+            _pnlTranslateControls.Controls.Add(_chkTranslateAutoCopy);
+
+            // Row 5: Separator
+            var sepTransHotkeys = new Panel
+            {
+                Location = new Point(0, 204),
+                Size = new Size(cardW - 28, 1),
+                BackColor = Color.FromArgb(40, 40, 52)
+            };
+            _pnlTranslateControls.Controls.Add(sepTransHotkeys);
+
+            // Rows 6, 7, 8: Hotkeys (2-line layout per hotkey for 100% clean display without clipping)
+            var rowHk1 = CreateHotkeyRow(
+                Loc.Get("Translate_HotkeyText"),
+                _settings.HotkeyTranslateEnabled, v => { _settings.HotkeyTranslateEnabled = v; _settings.Save(); },
+                _settings.HotkeyTranslateCtrl, v => { _settings.HotkeyTranslateCtrl = v; _settings.Save(); },
+                _settings.HotkeyTranslateAlt, v => { _settings.HotkeyTranslateAlt = v; _settings.Save(); },
+                _settings.HotkeyTranslateShift, v => { _settings.HotkeyTranslateShift = v; _settings.Save(); },
+                _settings.HotkeyTranslateWin, v => { _settings.HotkeyTranslateWin = v; _settings.Save(); },
+                _settings.HotkeyTranslateKey, v => { _settings.HotkeyTranslateKey = v; _settings.Save(); },
+                214, cardW - 28
+            );
+            _pnlTranslateControls.Controls.Add(rowHk1);
+
+            var rowHk2 = CreateHotkeyRow(
+                Loc.Get("Translate_HotkeyOcr"),
+                _settings.HotkeyOcrEnabled, v => { _settings.HotkeyOcrEnabled = v; _settings.Save(); },
+                _settings.HotkeyOcrCtrl, v => { _settings.HotkeyOcrCtrl = v; _settings.Save(); },
+                _settings.HotkeyOcrAlt, v => { _settings.HotkeyOcrAlt = v; _settings.Save(); },
+                _settings.HotkeyOcrShift, v => { _settings.HotkeyOcrShift = v; _settings.Save(); },
+                _settings.HotkeyOcrWin, v => { _settings.HotkeyOcrWin = v; _settings.Save(); },
+                _settings.HotkeyOcrKey, v => { _settings.HotkeyOcrKey = v; _settings.Save(); },
+                272, cardW - 28
+            );
+            _pnlTranslateControls.Controls.Add(rowHk2);
+
+            var rowHk3 = CreateHotkeyRow(
+                Loc.Get("Translate_HotkeyOcrTrans"),
+                _settings.HotkeyOcrTranslateEnabled, v => { _settings.HotkeyOcrTranslateEnabled = v; _settings.Save(); },
+                _settings.HotkeyOcrTranslateCtrl, v => { _settings.HotkeyOcrTranslateCtrl = v; _settings.Save(); },
+                _settings.HotkeyOcrTranslateAlt, v => { _settings.HotkeyOcrTranslateAlt = v; _settings.Save(); },
+                _settings.HotkeyOcrTranslateShift, v => { _settings.HotkeyOcrTranslateShift = v; _settings.Save(); },
+                _settings.HotkeyOcrTranslateWin, v => { _settings.HotkeyOcrTranslateWin = v; _settings.Save(); },
+                _settings.HotkeyOcrTranslateKey, v => { _settings.HotkeyOcrTranslateKey = v; _settings.Save(); },
+                330, cardW - 28
+            );
+            _pnlTranslateControls.Controls.Add(rowHk3);
+
+            UpdateBackendButtonsHighlight();
+
+            curY += cardTranslateH + 8;
+
             // ================= 3. TRAY ICON CARD =================
             var cardTray = CreateCard(cardX, curY, cardW, 70);
             _pnlBody.Controls.Add(cardTray);
 
             _lblSecTray = CreateSectionHeader(Loc.Get("TrayIconMenu"), 12, 8);
             cardTray.Controls.Add(_lblSecTray);
+            RegisterCardSection("tray", cardTray, _lblSecTray, () => Loc.Get("TrayIconMenu"), 70);
 
             int trayBtnX = 12;
             int trayBtnW = (cardW - 24 - 15) / 4;
@@ -2083,7 +2530,7 @@ namespace RyzenQuietPro
                     Tag = opt
                 };
                 btn.FlatAppearance.BorderSize = 0;
-                _toolTip.SetToolTip(btn, Loc.Get(opt.tipKey));
+                _toolTip?.SetToolTip(btn, Loc.Get(opt.tipKey));
                 btn.Click += (s, e) => {
                     if (opt.isLive)
                     {
@@ -2114,6 +2561,7 @@ namespace RyzenQuietPro
 
             _lblSecUiScale = CreateSectionHeader(Loc.Get("UiScale"), 12, 8);
             cardUiScale.Controls.Add(_lblSecUiScale);
+            RegisterCardSection("uiscale", cardUiScale, _lblSecUiScale, () => Loc.Get("UiScale"), cardUiScaleH);
 
             _lblUiScaleVal = new Label
             {
@@ -2205,6 +2653,7 @@ namespace RyzenQuietPro
 
             _lblSecSystem = CreateSectionHeader(Loc.Get("Opacity"), 12, 8);
             cardSys.Controls.Add(_lblSecSystem);
+            RegisterCardSection("sys", cardSys, _lblSecSystem, () => Loc.Get("Opacity"), 220);
 
             _lblOpacityVal = new Label
             {
@@ -2308,6 +2757,9 @@ namespace RyzenQuietPro
 
             curY += 228;
 
+            // Apply initial collapse state: all cards collapsed by default
+            ApplyInitialCollapseState();
+
             // Bottom spacer for scrollable body
             _pnlBody.Controls.Add(new Panel
             {
@@ -2341,7 +2793,8 @@ namespace RyzenQuietPro
                 Font = new Font("Segoe UI", 8.5f, FontStyle.Bold),
                 ForeColor = Color.FromArgb(56, 189, 248),
                 Location = new Point(x, y),
-                AutoSize = true
+                AutoSize = true,
+                UseMnemonic = false
             };
         }
 
@@ -2844,11 +3297,40 @@ namespace RyzenQuietPro
                 if (_lblDesktopIconsHint != null) _lblDesktopIconsHint.Width = cardW - 28;
             }
 
+            // Translate & LLM Card elements
+            if (_pnlTranslateControls != null)
+            {
+                _pnlTranslateControls.Width = cardW - 28;
+                int testBtnW = 85;
+                if (_btnTranslateCheck != null)
+                {
+                    _btnTranslateCheck.Left = cardW - 28 - testBtnW;
+                }
+                if (_tbTranslateUrl != null)
+                {
+                    _tbTranslateUrl.Width = cardW - 28 - testBtnW - 8;
+                }
+                if (_lblTranslateCheckStatus != null)
+                {
+                    _lblTranslateCheckStatus.Width = cardW - 28;
+                }
+                int modelW = (int)((cardW - 28 - 10) * 0.60);
+                int langW = cardW - 28 - 10 - modelW;
+                if (_cbTranslateModel != null) _cbTranslateModel.Width = modelW;
+                if (_cbTranslateTargetLang != null)
+                {
+                    _cbTranslateTargetLang.Left = modelW + 10;
+                    _cbTranslateTargetLang.Width = langW;
+                }
+            }
+
             // Footer close button
             if (_btnClose != null)
             {
                 _btnClose.Width = Math.Max(120, cardW - 202);
             }
+
+            ReflowAllCardSections();
 
             _pnlBody.HorizontalScroll.Maximum = 0;
             _pnlBody.HorizontalScroll.Visible = false;
@@ -3030,6 +3512,17 @@ namespace RyzenQuietPro
             if (_chkDesktopIconsAutoRestore != null) _chkDesktopIconsAutoRestore.Text = Loc.Get("DesktopIcons_AutoRestore");
             if (_lblDesktopIconsHint != null) _lblDesktopIconsHint.Text = Loc.Get("DesktopIcons_Hint");
             UpdateDesktopIconsUI();
+
+            if (_lblSecTranslate != null) _lblSecTranslate.Text = "🌐 " + Loc.Get("Translate_Module").TrimEnd(':');
+            if (_chkTranslateEnable != null) _chkTranslateEnable.Text = Loc.Get("Translate_Enable");
+            if (_btnTranslateCheck != null) _btnTranslateCheck.Text = Loc.Get("Translate_CheckBtn");
+            if (_btnFreeVramNow != null) _btnFreeVramNow.Text = "🧹 " + Loc.Get("Translate_FreeVramBtn");
+            if (_chkTranslateAutoCopy != null) _chkTranslateAutoCopy.Text = Loc.Get("Translate_AutoCopy");
+
+            foreach (var sec in _cardSections)
+            {
+                ApplySectionState(sec);
+            }
             if (_lblServerSyncHost != null && _txtServerSyncHost != null && _lblServerSyncPort != null && _txtServerSyncPort != null)
             {
                 int hostX = Math.Max(68, _lblServerSyncHost.Right + 8);
@@ -3479,6 +3972,325 @@ namespace RyzenQuietPro
             {
                 _chkDesktopIconsAutoRestore.Checked = _settings.AutoRestoreDesktopIcons;
             }
+        }
+
+        private void RegisterCardSection(string key, Panel card, Label header, Func<string> titleGetter, int fullHeight)
+        {
+            bool isCollapsed = true;
+            if (_settings.SettingsCardsCollapsed != null && _settings.SettingsCardsCollapsed.TryGetValue(key, out bool savedCollapsed))
+            {
+                isCollapsed = savedCollapsed;
+            }
+
+            var sec = new CardSection
+            {
+                Key = key,
+                Card = card,
+                Header = header,
+                TitleGetter = titleGetter,
+                FullHeight = fullHeight,
+                IsCollapsed = isCollapsed
+            };
+            _cardSections.Add(sec);
+
+            header.Cursor = Cursors.Hand;
+            header.Click += (s, e) => ToggleCardSection(sec);
+            card.Click += (s, e) => {
+                if (e is MouseEventArgs me && me.Y <= 32)
+                {
+                    ToggleCardSection(sec);
+                }
+            };
+        }
+
+        private void ToggleCardSection(CardSection sec)
+        {
+            sec.IsCollapsed = !sec.IsCollapsed;
+            if (_settings.SettingsCardsCollapsed == null)
+            {
+                _settings.SettingsCardsCollapsed = new();
+            }
+            _settings.SettingsCardsCollapsed[sec.Key] = sec.IsCollapsed;
+            _settings.Save();
+            ApplySectionState(sec);
+            ReflowAllCardSections();
+        }
+
+        private void ApplySectionState(CardSection sec)
+        {
+            string title = sec.TitleGetter();
+            sec.Header.Text = (sec.IsCollapsed ? "▶ " : "▼ ") + title;
+            sec.Header.UseMnemonic = false;
+            sec.Card.Height = sec.IsCollapsed ? 32 : sec.FullHeight;
+            foreach (Control c in sec.Card.Controls)
+            {
+                if (c != sec.Header)
+                {
+                    c.Visible = !sec.IsCollapsed;
+                }
+            }
+        }
+
+        private void ApplyInitialCollapseState()
+        {
+            foreach (var sec in _cardSections)
+            {
+                if (_settings.SettingsCardsCollapsed != null && _settings.SettingsCardsCollapsed.TryGetValue(sec.Key, out bool savedCollapsed))
+                {
+                    sec.IsCollapsed = savedCollapsed;
+                }
+                ApplySectionState(sec);
+            }
+            ReflowAllCardSections();
+        }
+
+        private void ReflowAllCardSections()
+        {
+            if (_pnlBody == null) return;
+            int curY = 12;
+            foreach (var sec in _cardSections)
+            {
+                sec.Card.Top = curY;
+                curY += sec.Card.Height + 8;
+            }
+            if (_pnlBody.Controls.Count > 0)
+            {
+                var lastCtrl = _pnlBody.Controls[_pnlBody.Controls.Count - 1];
+                if (lastCtrl != null && !_cardSections.Any(s => s.Card == lastCtrl))
+                {
+                    lastCtrl.Top = curY;
+                }
+            }
+        }
+
+        private void UpdateBackendButtonsHighlight()
+        {
+            if (_btnPresetLms == null || _btnPresetOllama == null) return;
+            string url = _tbTranslateUrl != null ? _tbTranslateUrl.Text : (_settings.TranslateApiUrl ?? "");
+            bool isLms = url.Contains(":1234");
+            bool isOllama = url.Contains(":11434");
+
+            // LM Studio button
+            _btnPresetLms.BackColor = isLms ? Color.FromArgb(14, 165, 233) : Color.FromArgb(28, 30, 40);
+            _btnPresetLms.ForeColor = isLms ? Color.White : Color.FromArgb(150, 155, 175);
+            _btnPresetLms.Font = new Font("Segoe UI", 8f, isLms ? FontStyle.Bold : FontStyle.Regular);
+            _btnPresetLms.FlatAppearance.BorderColor = isLms ? Color.FromArgb(56, 189, 248) : Color.FromArgb(55, 60, 75);
+
+            // Ollama button
+            _btnPresetOllama.BackColor = isOllama ? Color.FromArgb(14, 165, 233) : Color.FromArgb(28, 30, 40);
+            _btnPresetOllama.ForeColor = isOllama ? Color.White : Color.FromArgb(150, 155, 175);
+            _btnPresetOllama.Font = new Font("Segoe UI", 8f, isOllama ? FontStyle.Bold : FontStyle.Regular);
+            _btnPresetOllama.FlatAppearance.BorderColor = isOllama ? Color.FromArgb(56, 189, 248) : Color.FromArgb(55, 60, 75);
+        }
+
+        private Panel CreateHotkeyRow(
+            string title,
+            bool initialEnabled, Action<bool> onEnabled,
+            bool initialCtrl, Action<bool> onCtrl,
+            bool initialAlt, Action<bool> onAlt,
+            bool initialShift, Action<bool> onShift,
+            bool initialWin, Action<bool> onWin,
+            int initialKey, Action<int> onKey,
+            int y, int width)
+        {
+            var pnl = new Panel
+            {
+                Location = new Point(0, y),
+                Size = new Size(width, 52),
+                BackColor = Color.Transparent
+            };
+
+            // Line 1: Full action title in bold with checkbox
+            var chkEnable = new CheckBox
+            {
+                Text = title,
+                Font = new Font("Segoe UI", 8.25f, FontStyle.Bold),
+                ForeColor = Color.FromArgb(220, 220, 235),
+                Location = new Point(0, 0),
+                Size = new Size(width, 22),
+                Checked = initialEnabled,
+                AutoEllipsis = true,
+                Cursor = Cursors.Hand,
+                UseMnemonic = false
+            };
+
+            // Line 2: Indented modifiers and key dropdown
+            var chkCtrl = new CheckBox
+            {
+                Text = "Ctrl",
+                Font = new Font("Segoe UI", 8.25f),
+                ForeColor = Color.FromArgb(200, 200, 215),
+                Location = new Point(18, 24),
+                Size = new Size(52, 22),
+                Checked = initialCtrl,
+                Enabled = initialEnabled,
+                Cursor = Cursors.Hand
+            };
+
+            var chkAlt = new CheckBox
+            {
+                Text = "Alt",
+                Font = new Font("Segoe UI", 8.25f),
+                ForeColor = Color.FromArgb(200, 200, 215),
+                Location = new Point(72, 24),
+                Size = new Size(48, 22),
+                Checked = initialAlt,
+                Enabled = initialEnabled,
+                Cursor = Cursors.Hand
+            };
+
+            var chkShift = new CheckBox
+            {
+                Text = "Shift",
+                Font = new Font("Segoe UI", 8.25f),
+                ForeColor = Color.FromArgb(200, 200, 215),
+                Location = new Point(122, 24),
+                Size = new Size(56, 22),
+                Checked = initialShift,
+                Enabled = initialEnabled,
+                Cursor = Cursors.Hand
+            };
+
+            var chkWin = new CheckBox
+            {
+                Text = "Win",
+                Font = new Font("Segoe UI", 8.25f),
+                ForeColor = Color.FromArgb(200, 200, 215),
+                Location = new Point(180, 24),
+                Size = new Size(52, 22),
+                Checked = initialWin,
+                Enabled = initialEnabled,
+                Cursor = Cursors.Hand
+            };
+
+            var lblKey = new Label
+            {
+                Text = Loc.Get("LayoutSwitch_Key"),
+                Font = new Font("Segoe UI", 8.25f),
+                ForeColor = Color.FromArgb(170, 170, 185),
+                Location = new Point(236, 27),
+                Size = new Size(35, 18),
+                UseMnemonic = false
+            };
+
+            var cbKey = new ComboBox
+            {
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                BackColor = Color.FromArgb(24, 24, 32),
+                ForeColor = Color.FromArgb(45, 212, 191),
+                Font = new Font("Segoe UI", 8.25f),
+                Location = new Point(275, 23),
+                Size = new Size(75, 24),
+                Enabled = initialEnabled
+            };
+
+            var keyList = GetKeyOptionList();
+            foreach (var k in keyList)
+            {
+                cbKey.Items.Add(k);
+            }
+            for (int i = 0; i < cbKey.Items.Count; i++)
+            {
+                if (cbKey.Items[i] is KeyOptionItem item && (int)item.Key == initialKey)
+                {
+                    cbKey.SelectedIndex = i;
+                    break;
+                }
+            }
+            if (cbKey.SelectedIndex < 0 && cbKey.Items.Count > 0)
+                cbKey.SelectedIndex = 0;
+
+            chkEnable.CheckedChanged += (s, e) => {
+                bool en = chkEnable.Checked;
+                chkCtrl.Enabled = en;
+                chkAlt.Enabled = en;
+                chkShift.Enabled = en;
+                chkWin.Enabled = en;
+                lblKey.Enabled = en;
+                cbKey.Enabled = en;
+                onEnabled(en);
+                _onSettingsUpdated?.Invoke();
+            };
+
+            chkCtrl.CheckedChanged += (s, e) => { onCtrl(chkCtrl.Checked); _onSettingsUpdated?.Invoke(); };
+            chkAlt.CheckedChanged += (s, e) => { onAlt(chkAlt.Checked); _onSettingsUpdated?.Invoke(); };
+            chkShift.CheckedChanged += (s, e) => { onShift(chkShift.Checked); _onSettingsUpdated?.Invoke(); };
+            chkWin.CheckedChanged += (s, e) => { onWin(chkWin.Checked); _onSettingsUpdated?.Invoke(); };
+
+            cbKey.SelectedIndexChanged += (s, e) => {
+                if (cbKey.SelectedItem is KeyOptionItem ki)
+                {
+                    onKey((int)ki.Key);
+                    _onSettingsUpdated?.Invoke();
+                }
+            };
+
+            pnl.Controls.AddRange(new Control[] { chkEnable, chkCtrl, chkAlt, chkShift, chkWin, lblKey, cbKey });
+            return pnl;
+        }
+
+        private static List<KeyOptionItem> GetKeyOptionList()
+        {
+            var list = new List<KeyOptionItem>();
+            var keys = new[]
+            {
+                Keys.T, Keys.P, Keys.O, Keys.Q, Keys.R, Keys.Y, Keys.U, Keys.I, Keys.A, Keys.S, Keys.D, Keys.F,
+                Keys.G, Keys.H, Keys.J, Keys.K, Keys.L, Keys.Z, Keys.X, Keys.C, Keys.V, Keys.B, Keys.N, Keys.M,
+                Keys.F1, Keys.F2, Keys.F3, Keys.F4, Keys.F5, Keys.F6, Keys.F7, Keys.F8, Keys.F9, Keys.F10, Keys.F11, Keys.F12,
+                Keys.Pause, Keys.Scroll, Keys.Insert, Keys.Space, Keys.Oemtilde
+            };
+            foreach (var k in keys)
+            {
+                string name = k switch
+                {
+                    Keys.Oemtilde => "~ (Tilde)",
+                    Keys.Scroll => "ScrollLock",
+                    _ => k.ToString()
+                };
+                list.Add(new KeyOptionItem { Name = name, Key = k });
+            }
+            return list;
+        }
+
+        private void RunCheckConnection()
+        {
+            if (_btnTranslateCheck == null || _lblTranslateCheckStatus == null) return;
+            _btnTranslateCheck.Enabled = false;
+            _lblTranslateCheckStatus.Text = Loc.Get("Translate_Checking");
+            _lblTranslateCheckStatus.ForeColor = Color.FromArgb(56, 189, 248);
+
+            Task.Run(async () =>
+            {
+                var (isOnline, models, activeModel, statusMessage) = await _hardware.Translation.CheckConnectionAndGetModelsAsync();
+                this.BeginInvoke((Action)(() =>
+                {
+                    _btnTranslateCheck.Enabled = true;
+                    _lblTranslateCheckStatus.Text = statusMessage;
+
+                    if (isOnline)
+                    {
+                        _lblTranslateCheckStatus.ForeColor = Color.FromArgb(45, 212, 191);
+
+                        _cbTranslateModel.Items.Clear();
+                        foreach (var m in models)
+                        {
+                            _cbTranslateModel.Items.Add(m);
+                        }
+                        if (!string.IsNullOrEmpty(activeModel) && models.Contains(activeModel))
+                        {
+                            _cbTranslateModel.SelectedItem = activeModel;
+                        }
+                        else if (_cbTranslateModel.Items.Count > 0)
+                        {
+                            _cbTranslateModel.SelectedIndex = 0;
+                        }
+                    }
+                    else
+                    {
+                        _lblTranslateCheckStatus.ForeColor = Color.FromArgb(248, 113, 113);
+                    }
+                }));
+            });
         }
 
         protected override void Dispose(bool disposing)

@@ -132,7 +132,12 @@ namespace RyzenQuietPro
         public static void StartHook(AppSettings settings)
         {
             StopHook();
-            if (!settings.LayoutSwitchEnabled) return;
+            bool isAnyHookActive = settings.LayoutSwitchEnabled ||
+                                   settings.HotkeyTranslateEnabled ||
+                                   settings.HotkeyOcrEnabled ||
+                                   settings.HotkeyOcrTranslateEnabled;
+
+            if (!isAnyHookActive) return;
 
             _settingsRef = settings;
             _hookProc = HookCallback;
@@ -146,7 +151,7 @@ namespace RyzenQuietPro
 
                 if (_hookId != IntPtr.Zero)
                 {
-                    Logger.Log($"[LayoutHook] Low-level keyboard hook active for key {(Keys)settings.LayoutSwitchVirtualKey}.");
+                    Logger.Log($"[LayoutHook] Low-level keyboard hook active (Layout={settings.LayoutSwitchEnabled}, Translate={settings.HotkeyTranslateEnabled}, OCR={settings.HotkeyOcrEnabled}, OCR+Trans={settings.HotkeyOcrTranslateEnabled}).");
                 }
                 else
                 {
@@ -178,41 +183,99 @@ namespace RyzenQuietPro
         {
             if (nCode >= 0 && (wParam == (IntPtr)WM_KEYDOWN || wParam == (IntPtr)WM_SYSKEYDOWN))
             {
-                if (_settingsRef != null && _settingsRef.LayoutSwitchEnabled)
+                if (_settingsRef != null)
                 {
                     try
                     {
                         var kbd = Marshal.PtrToStructure<KBDLLHOOKSTRUCT>(lParam);
-                        uint targetVk = (uint)_settingsRef.LayoutSwitchVirtualKey;
-                        if (targetVk == 0) targetVk = (uint)Keys.Pause;
 
-                        bool keyMatch = (kbd.vkCode == targetVk);
-                        // Windows translates Ctrl+Pause/Break into VK_CANCEL (0x03) or VK_PAUSE (0x13)
-                        if (!keyMatch && targetVk == (uint)Keys.Pause)
+                        bool ctrlDown = (GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0;
+                        bool altDown = (GetAsyncKeyState(VK_MENU) & 0x8000) != 0;
+                        bool shiftDown = (GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0;
+                        bool winDown = ((GetAsyncKeyState(VK_LWIN) & 0x8000) != 0) || ((GetAsyncKeyState(VK_RWIN) & 0x8000) != 0);
+
+                        // Note: if kbd.vkCode == VK_CANCEL, Ctrl is physically pressed (Ctrl+Pause/Break)
+                        if (kbd.vkCode == VK_CANCEL) ctrlDown = true;
+
+                        // 1. In-place Keyboard Layout Switcher
+                        if (_settingsRef.LayoutSwitchEnabled)
                         {
-                            keyMatch = (kbd.vkCode == VK_PAUSE || kbd.vkCode == VK_CANCEL);
+                            uint targetVk = (uint)_settingsRef.LayoutSwitchVirtualKey;
+                            if (targetVk == 0) targetVk = (uint)Keys.Pause;
+
+                            bool keyMatch = (kbd.vkCode == targetVk);
+                            if (!keyMatch && targetVk == (uint)Keys.Pause)
+                            {
+                                keyMatch = (kbd.vkCode == VK_PAUSE || kbd.vkCode == VK_CANCEL);
+                            }
+
+                            if (keyMatch)
+                            {
+                                bool reqCtrl = _settingsRef.LayoutSwitchModifiersCtrl;
+                                bool reqAlt = _settingsRef.LayoutSwitchModifiersAlt;
+                                bool reqShift = _settingsRef.LayoutSwitchModifiersShift;
+                                bool reqWin = _settingsRef.LayoutSwitchModifiersWin;
+
+                                if (ctrlDown == reqCtrl && altDown == reqAlt && shiftDown == reqShift && winDown == reqWin)
+                                {
+                                    Logger.Log($"[LayoutHook] Hotkey triggered! vk=0x{kbd.vkCode:X}, Ctrl={ctrlDown}, Alt={altDown}, Shift={shiftDown}, Win={winDown}");
+                                    Task.Run(() => SwitchSelectedTextLayout(IntPtr.Zero));
+                                    return (IntPtr)1; // Consume key event
+                                }
+                            }
                         }
 
-                        if (keyMatch)
+                        // 2. Hotkey 1: Translate Selected Text
+                        if (_settingsRef.HotkeyTranslateEnabled && _settingsRef.HotkeyTranslateKey != 0)
                         {
-                            bool ctrlDown = (GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0;
-                            bool altDown = (GetAsyncKeyState(VK_MENU) & 0x8000) != 0;
-                            bool shiftDown = (GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0;
-                            bool winDown = ((GetAsyncKeyState(VK_LWIN) & 0x8000) != 0) || ((GetAsyncKeyState(VK_RWIN) & 0x8000) != 0);
-
-                            // Note: if kbd.vkCode == VK_CANCEL, Ctrl is physically pressed
-                            if (kbd.vkCode == VK_CANCEL) ctrlDown = true;
-
-                            bool reqCtrl = _settingsRef.LayoutSwitchModifiersCtrl;
-                            bool reqAlt = _settingsRef.LayoutSwitchModifiersAlt;
-                            bool reqShift = _settingsRef.LayoutSwitchModifiersShift;
-                            bool reqWin = _settingsRef.LayoutSwitchModifiersWin;
-
-                            if (ctrlDown == reqCtrl && altDown == reqAlt && shiftDown == reqShift && winDown == reqWin)
+                            if (kbd.vkCode == (uint)_settingsRef.HotkeyTranslateKey)
                             {
-                                Logger.Log($"[LayoutHook] Hotkey triggered! vk=0x{kbd.vkCode:X}, Ctrl={ctrlDown}, Alt={altDown}, Shift={shiftDown}, Win={winDown}");
-                                Task.Run(() => SwitchSelectedTextLayout(IntPtr.Zero));
-                                return (IntPtr)1; // Consume key event
+                                if (ctrlDown == _settingsRef.HotkeyTranslateCtrl &&
+                                    altDown == _settingsRef.HotkeyTranslateAlt &&
+                                    shiftDown == _settingsRef.HotkeyTranslateShift &&
+                                    winDown == _settingsRef.HotkeyTranslateWin)
+                                {
+                                    IntPtr fg = GetForegroundWindow();
+                                    Logger.Log($"[LayoutHook] HotkeyTranslate triggered!");
+                                    Task.Run(() => TriggerTranslateSelectedText(fg));
+                                    return (IntPtr)1;
+                                }
+                            }
+                        }
+
+                        // 3. Hotkey 2: Screen OCR Only
+                        if (_settingsRef.HotkeyOcrEnabled && _settingsRef.HotkeyOcrKey != 0)
+                        {
+                            if (kbd.vkCode == (uint)_settingsRef.HotkeyOcrKey)
+                            {
+                                if (ctrlDown == _settingsRef.HotkeyOcrCtrl &&
+                                    altDown == _settingsRef.HotkeyOcrAlt &&
+                                    shiftDown == _settingsRef.HotkeyOcrShift &&
+                                    winDown == _settingsRef.HotkeyOcrWin)
+                                {
+                                    IntPtr fg = GetForegroundWindow();
+                                    Logger.Log($"[LayoutHook] HotkeyOcr triggered!");
+                                    Task.Run(() => TriggerScreenSnipper(fg, andTranslate: false));
+                                    return (IntPtr)1;
+                                }
+                            }
+                        }
+
+                        // 4. Hotkey 3: Screen OCR + Translate
+                        if (_settingsRef.HotkeyOcrTranslateEnabled && _settingsRef.HotkeyOcrTranslateKey != 0)
+                        {
+                            if (kbd.vkCode == (uint)_settingsRef.HotkeyOcrTranslateKey)
+                            {
+                                if (ctrlDown == _settingsRef.HotkeyOcrTranslateCtrl &&
+                                    altDown == _settingsRef.HotkeyOcrTranslateAlt &&
+                                    shiftDown == _settingsRef.HotkeyOcrTranslateShift &&
+                                    winDown == _settingsRef.HotkeyOcrTranslateWin)
+                                {
+                                    IntPtr fg = GetForegroundWindow();
+                                    Logger.Log($"[LayoutHook] HotkeyOcrTranslate triggered!");
+                                    Task.Run(() => TriggerScreenSnipper(fg, andTranslate: true));
+                                    return (IntPtr)1;
+                                }
                             }
                         }
                     }
@@ -223,6 +286,68 @@ namespace RyzenQuietPro
                 }
             }
             return CallNextHookEx(_hookId, nCode, wParam, lParam);
+        }
+
+        public static void TriggerTranslateSelectedText(IntPtr targetHwnd)
+        {
+            try
+            {
+                ClearClipboard();
+                SimulateCopy();
+
+                string grabbedText = string.Empty;
+                for (int i = 0; i < 8; i++)
+                {
+                    Thread.Sleep(25);
+                    grabbedText = GetClipboardText();
+                    if (!string.IsNullOrEmpty(grabbedText)) break;
+                }
+
+                if (string.IsNullOrWhiteSpace(grabbedText))
+                {
+                    grabbedText = GetClipboardText();
+                }
+
+                if (!string.IsNullOrWhiteSpace(grabbedText))
+                {
+                    ShowTranslationPopup(grabbedText, null, isOcr: false, andTranslate: false, targetHwnd);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Log($"[LayoutHook] TriggerTranslateSelectedText error: {ex.Message}");
+            }
+        }
+
+        public static void TriggerScreenSnipper(IntPtr targetHwnd, bool andTranslate)
+        {
+            if (Application.OpenForms.Count > 0 && Application.OpenForms[0] is Form mainForm && mainForm.IsHandleCreated)
+            {
+                mainForm.BeginInvoke(new Action(() =>
+                {
+                    var snipper = new ScreenSnipperForm(
+                        onCaptured: pngBytes =>
+                        {
+                            ShowTranslationPopup(null, pngBytes, isOcr: true, andTranslate: andTranslate, targetHwnd);
+                        },
+                        onCancelled: () => { }
+                    );
+                    snipper.Show();
+                }));
+            }
+        }
+
+        public static void ShowTranslationPopup(string? text, byte[]? pngBytes, bool isOcr, bool andTranslate, IntPtr targetHwnd)
+        {
+            if (Application.OpenForms.Count > 0 && Application.OpenForms[0] is Form mainForm && mainForm.IsHandleCreated)
+            {
+                mainForm.BeginInvoke(new Action(() =>
+                {
+                    var popup = new TranslationPopupForm(text, pngBytes, isOcr, andTranslate, targetHwnd);
+                    popup.Show();
+                    popup.Activate();
+                }));
+            }
         }
 
         #endregion

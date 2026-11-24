@@ -50,6 +50,44 @@ namespace RyzenQuietPro
         public bool SectionDiskCollapsed { get; set; } = false;
         public bool SectionFansCollapsed { get; set; } = false;
         public bool SectionServerSyncCollapsed { get; set; } = false;
+        public bool SectionTranslateCollapsed { get; set; } = false;
+
+        // Collapsible Settings Cards (remembers collapsed/expanded state)
+        public System.Collections.Generic.Dictionary<string, bool> SettingsCardsCollapsed { get; set; } = new();
+
+        // Translation & LLM Integration Module
+        public bool ShowTranslateModule { get; set; } = true;
+        public string TranslateApiUrl { get; set; } = "http://127.0.0.1:1234/v1";
+        public string TranslateModel { get; set; } = "";
+        public string TranslateTargetLang { get; set; } = "ru";
+        public int TranslateVramTimeoutMinutes { get; set; } = 5; // 0 = disabled, 1, 2, 5, 10, 15, 30 min
+        public bool TranslateAutoCopy { get; set; } = false;
+        public int TranslatePopupWidth { get; set; } = 480;
+        public int TranslatePopupHeight { get; set; } = 330;
+
+        // Hotkey 1: Translate Selected Text (default: Ctrl + Alt + T)
+        public bool HotkeyTranslateEnabled { get; set; } = true;
+        public bool HotkeyTranslateCtrl { get; set; } = true;
+        public bool HotkeyTranslateAlt { get; set; } = true;
+        public bool HotkeyTranslateShift { get; set; } = false;
+        public bool HotkeyTranslateWin { get; set; } = false;
+        public int HotkeyTranslateKey { get; set; } = (int)Keys.T;
+
+        // Hotkey 2: Screen Selection OCR (default: Ctrl + Alt + O)
+        public bool HotkeyOcrEnabled { get; set; } = true;
+        public bool HotkeyOcrCtrl { get; set; } = true;
+        public bool HotkeyOcrAlt { get; set; } = true;
+        public bool HotkeyOcrShift { get; set; } = false;
+        public bool HotkeyOcrWin { get; set; } = false;
+        public int HotkeyOcrKey { get; set; } = (int)Keys.O;
+
+        // Hotkey 3: Screen Selection OCR + Translate (default: Ctrl + Alt + P)
+        public bool HotkeyOcrTranslateEnabled { get; set; } = true;
+        public bool HotkeyOcrTranslateCtrl { get; set; } = true;
+        public bool HotkeyOcrTranslateAlt { get; set; } = true;
+        public bool HotkeyOcrTranslateShift { get; set; } = false;
+        public bool HotkeyOcrTranslateWin { get; set; } = false;
+        public int HotkeyOcrTranslateKey { get; set; } = (int)Keys.P;
 
         // ServerSync Integration Module (Exchange server sync telemetry)
         public bool ServerSyncEnabled { get; set; } = false;

@@ -52,6 +52,11 @@ namespace RyzenQuietPro
         private ToolStripMenuItem _desktopIconsSaveItem = null!;
         private ToolStripMenuItem _desktopIconsRestoreItem = null!;
         private ToolStripMenuItem _desktopIconsAutoRestoreItem = null!;
+        private ToolStripMenuItem _translateMenu = null!;
+        private ToolStripMenuItem _translateRunItem = null!;
+        private ToolStripMenuItem _translateOcrItem = null!;
+        private ToolStripMenuItem _translateOcrTransItem = null!;
+        private ToolStripMenuItem _translateFreeVramItem = null!;
         private IntPtr _lastForegroundWindow;
 
         private Bitmap _quietBitmap = null!;
@@ -347,6 +352,43 @@ namespace RyzenQuietPro
 
             _contextMenu.Items.Add(new ToolStripSeparator());
 
+            // Translate & LLM Submenu
+            _translateMenu = new ToolStripMenuItem(Loc.Get("Translate_Module"));
+
+            _translateRunItem = new ToolStripMenuItem(Loc.Get("Translate_HotkeyText"));
+            _translateRunItem.Click += (s, e) => {
+                IntPtr target = _lastForegroundWindow;
+                Task.Run(() => KeyboardLayoutService.TriggerTranslateSelectedText(target));
+            };
+            _translateMenu.DropDownItems.Add(_translateRunItem);
+
+            _translateOcrItem = new ToolStripMenuItem(Loc.Get("Translate_ScreenOcr"));
+            _translateOcrItem.Click += (s, e) => {
+                IntPtr target = _lastForegroundWindow;
+                KeyboardLayoutService.TriggerScreenSnipper(target, andTranslate: false);
+            };
+            _translateMenu.DropDownItems.Add(_translateOcrItem);
+
+            _translateOcrTransItem = new ToolStripMenuItem(Loc.Get("Translate_ScreenOcrTrans"));
+            _translateOcrTransItem.Click += (s, e) => {
+                IntPtr target = _lastForegroundWindow;
+                KeyboardLayoutService.TriggerScreenSnipper(target, andTranslate: true);
+            };
+            _translateMenu.DropDownItems.Add(_translateOcrTransItem);
+
+            _translateMenu.DropDownItems.Add(new ToolStripSeparator());
+
+            _translateFreeVramItem = new ToolStripMenuItem(Loc.Get("Translate_FreeVramBtn"));
+            _translateFreeVramItem.Click += async (s, e) => {
+                var res = await _hardware.Translation.FreeVramAsync();
+                _notifyIcon.ShowBalloonTip(2000, "RyzenQuiet PRO", res.message, ToolTipIcon.Info);
+            };
+            _translateMenu.DropDownItems.Add(_translateFreeVramItem);
+
+            _contextMenu.Items.Add(_translateMenu);
+
+            _contextMenu.Items.Add(new ToolStripSeparator());
+
             _exitMenuItem = new ToolStripMenuItem(Loc.Get("Exit"));
             _exitMenuItem.Click += (s, e) => Application.Exit();
             _contextMenu.Items.Add(_exitMenuItem);
@@ -388,6 +430,11 @@ namespace RyzenQuietPro
                 _desktopIconsAutoRestoreItem.Text = Loc.Get("DesktopIcons_AutoRestore");
                 _desktopIconsAutoRestoreItem.Checked = _settings.AutoRestoreDesktopIcons;
             }
+            if (_translateMenu != null) _translateMenu.Text = Loc.Get("Translate_Module");
+            if (_translateRunItem != null) _translateRunItem.Text = Loc.Get("Translate_HotkeyText");
+            if (_translateOcrItem != null) _translateOcrItem.Text = Loc.Get("Translate_ScreenOcr");
+            if (_translateOcrTransItem != null) _translateOcrTransItem.Text = Loc.Get("Translate_ScreenOcrTrans");
+            if (_translateFreeVramItem != null) _translateFreeVramItem.Text = Loc.Get("Translate_FreeVramBtn");
             if (_exitMenuItem != null) _exitMenuItem.Text = Loc.Get("Exit");
         }
 

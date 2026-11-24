@@ -86,6 +86,7 @@ namespace RyzenQuietPro
         private ModuleSeparator _sepDisk = null!;
         private ModuleSeparator _sepFans = null!;
         private ModuleSeparator _sepServerSync = null!;
+        private ModuleSeparator _sepTranslate = null!;
 
         // Metrics Headers & Graphs
         private Label _lblCpu = null!;
@@ -140,6 +141,13 @@ namespace RyzenQuietPro
         private Label _lblServerSync = null!;
         private Label _lblServerSyncSub = null!;
         private SmoothPanel _pnlServerSync = null!;
+
+        private Label _lblTranslate = null!;
+        private Label _lblTranslateSub = null!;
+        private SmoothPanel _pnlTranslate = null!;
+        private Button _btnTranslateOcr = null!;
+        private Button _btnTranslateTrans = null!;
+        private Button _btnTranslateFreeVram = null!;
 
         // Fan Visual Mode & Animation
         private readonly Dictionary<string, float> _fanAngles = new();
@@ -262,6 +270,19 @@ namespace RyzenQuietPro
                 if (this.IsHandleCreated && !this.IsDisposed)
                 {
                     try { this.BeginInvoke((Action)UpdateServerSyncUI); } catch { }
+                }
+            };
+
+            _hardware.Translation.StatusChanged += _ => {
+                if (this.IsHandleCreated && !this.IsDisposed)
+                {
+                    try { this.BeginInvoke((Action)UpdateTranslateUI); } catch { }
+                }
+            };
+            _hardware.Translation.VramStateChanged += () => {
+                if (this.IsHandleCreated && !this.IsDisposed)
+                {
+                    try { this.BeginInvoke((Action)UpdateTranslateUI); } catch { }
                 }
             };
         }
@@ -413,10 +434,25 @@ namespace RyzenQuietPro
 
             if (_settings.ServerSyncEnabled)
             {
-                totalH += (int)Math.Round(28 * scale);
                 if (!_settings.SectionServerSyncCollapsed)
                 {
-                    totalH += (int)Math.Round(72 * scale);
+                    totalH += (int)Math.Round(28 * scale) + (int)Math.Round(72 * scale);
+                }
+                else
+                {
+                    totalH += (int)Math.Round(24 * scale);
+                }
+            }
+
+            if (_settings.ShowTranslateModule)
+            {
+                if (!_settings.SectionTranslateCollapsed)
+                {
+                    totalH += (int)Math.Round(28 * scale) + (int)Math.Round(74 * scale);
+                }
+                else
+                {
+                    totalH += (int)Math.Round(24 * scale);
                 }
             }
 
@@ -488,6 +524,12 @@ namespace RyzenQuietPro
 
             if (_lblServerSync != null) _lblServerSync.Font = new Font("Segoe UI", (float)Math.Max(5.5, Math.Round(9.5f * scale, 1)), FontStyle.Bold);
             if (_lblServerSyncSub != null) _lblServerSyncSub.Font = new Font("Segoe UI", (float)Math.Max(4.8, Math.Round(8.0f * scale, 1)));
+
+            if (_lblTranslate != null) _lblTranslate.Font = new Font("Segoe UI", (float)Math.Max(5.5, Math.Round(9.5f * scale, 1)), FontStyle.Bold);
+            if (_lblTranslateSub != null) _lblTranslateSub.Font = new Font("Segoe UI", (float)Math.Max(4.8, Math.Round(8.0f * scale, 1)));
+            if (_btnTranslateOcr != null) _btnTranslateOcr.Font = new Font("Segoe UI", (float)Math.Max(5.0, Math.Round(7.8f * scale, 1)), FontStyle.Bold);
+            if (_btnTranslateTrans != null) _btnTranslateTrans.Font = new Font("Segoe UI", (float)Math.Max(5.0, Math.Round(7.8f * scale, 1)), FontStyle.Bold);
+            if (_btnTranslateFreeVram != null) _btnTranslateFreeVram.Font = new Font("Segoe UI", (float)Math.Max(5.0, Math.Round(7.8f * scale, 1)), FontStyle.Bold);
 
             if (_btnSilent != null) _btnSilent.Font = new Font("Segoe UI", (float)Math.Max(5.2, Math.Round(8.5f * scale, 1)), FontStyle.Bold);
             if (_btnBoost != null) _btnBoost.Font = new Font("Segoe UI", (float)Math.Max(5.2, Math.Round(8.5f * scale, 1)), FontStyle.Bold);
@@ -875,6 +917,77 @@ namespace RyzenQuietPro
             _pnlServerSync.Paint += DrawServerSyncPanel;
             this.Controls.Add(_pnlServerSync);
 
+            // Translate & LLM Module
+            _sepTranslate = new ModuleSeparator(Color.FromArgb(56, 189, 248));
+            _sepTranslate.Click += (s, e) => ToggleSectionTranslate();
+            this.Controls.Add(_sepTranslate);
+
+            _lblTranslate = CreateMetricHeader(Loc.Get("SectionTranslate"), Color.FromArgb(56, 189, 248));
+            _lblTranslate.Click += (s, e) => ToggleSectionTranslate();
+            _lblTranslateSub = CreateMetricSubHeader(Loc.Get("Translate_Ready"));
+            this.Controls.Add(_lblTranslate);
+            this.Controls.Add(_lblTranslateSub);
+
+            _pnlTranslate = new SmoothPanel
+            {
+                BackColor = Color.FromArgb(16, 16, 20)
+            };
+            _pnlTranslate.Paint += DrawTranslatePanel;
+
+            _btnTranslateOcr = new Button
+            {
+                Text = "📷 OCR",
+                Font = new Font("Segoe UI", (float)Math.Max(5.0, Math.Round(7.8f * _currentUiScale, 1)), FontStyle.Bold),
+                ForeColor = Color.FromArgb(226, 232, 240),
+                BackColor = Color.FromArgb(30, 41, 59),
+                FlatStyle = FlatStyle.Flat,
+                Cursor = Cursors.Hand,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Padding = Padding.Empty,
+                UseMnemonic = false
+            };
+            _btnTranslateOcr.FlatAppearance.BorderColor = Color.FromArgb(51, 65, 85);
+            _btnTranslateOcr.Click += (s, e) => KeyboardLayoutService.TriggerScreenSnipper(IntPtr.Zero, andTranslate: false);
+            _pnlTranslate.Controls.Add(_btnTranslateOcr);
+
+            _btnTranslateTrans = new Button
+            {
+                Text = "🌐 " + Loc.Get("Translate_BtnShort"),
+                Font = new Font("Segoe UI", (float)Math.Max(5.0, Math.Round(7.8f * _currentUiScale, 1)), FontStyle.Bold),
+                ForeColor = Color.FromArgb(226, 232, 240),
+                BackColor = Color.FromArgb(30, 41, 59),
+                FlatStyle = FlatStyle.Flat,
+                Cursor = Cursors.Hand,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Padding = Padding.Empty,
+                UseMnemonic = false
+            };
+            _btnTranslateTrans.FlatAppearance.BorderColor = Color.FromArgb(51, 65, 85);
+            _btnTranslateTrans.Click += (s, e) => KeyboardLayoutService.TriggerScreenSnipper(IntPtr.Zero, andTranslate: true);
+            _pnlTranslate.Controls.Add(_btnTranslateTrans);
+
+            _btnTranslateFreeVram = new Button
+            {
+                Text = "🧹 VRAM",
+                Font = new Font("Segoe UI", (float)Math.Max(5.0, Math.Round(7.8f * _currentUiScale, 1)), FontStyle.Bold),
+                ForeColor = Color.FromArgb(248, 113, 113),
+                BackColor = Color.FromArgb(40, 24, 30),
+                FlatStyle = FlatStyle.Flat,
+                Cursor = Cursors.Hand,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Padding = Padding.Empty,
+                UseMnemonic = false
+            };
+            _btnTranslateFreeVram.FlatAppearance.BorderColor = Color.FromArgb(127, 29, 29);
+            _btnTranslateFreeVram.Click += async (s, e) =>
+            {
+                await _hardware.Translation.FreeVramAsync();
+                UpdateTranslateUI();
+            };
+            _pnlTranslate.Controls.Add(_btnTranslateFreeVram);
+
+            this.Controls.Add(_pnlTranslate);
+
             // 3. Footer Panel (Fixed height at bottom: Mode switch + Checkboxes)
             // 3. Footer Panel (Slim row: Silent, Boost, Gear)
             _footerPanel = new Panel
@@ -1086,6 +1199,7 @@ namespace RyzenQuietPro
             bool showDisk = _settings.ShowDiskGraph;
             bool showFans = _settings.ShowFanGraph;
             bool showServerSync = _settings.ServerSyncEnabled;
+            bool showTranslate = _settings.ShowTranslateModule;
 
             int activeGraphCount = 0;
             if (_settings.ShowCpuGraph && !_settings.SectionCpuCollapsed) activeGraphCount++;
@@ -1128,7 +1242,7 @@ namespace RyzenQuietPro
             }
             if (showRam) fixedH += sepH + sepGap + headerRowH + (!_settings.SectionRamCollapsed ? (int)Math.Round(6 * scale) : 0);
             if (showGpu) fixedH += sepH + sepGap + headerRowH + (!_settings.SectionGpuCollapsed ? (int)Math.Round(6 * scale) : 0);
-            if (showVram) fixedH += sepH + sepGap + headerRowH + (!_settings.SectionVramCollapsed && (showDisk || showFans || showServerSync) ? (int)Math.Round(6 * scale) : 0);
+            if (showVram) fixedH += sepH + sepGap + headerRowH + (!_settings.SectionVramCollapsed && (showDisk || showFans || showServerSync || showTranslate) ? (int)Math.Round(6 * scale) : 0);
 
             int diskLegendH = 0;
             if (showDisk && !_settings.SectionDiskCollapsed && _settings.EnhancedDiskMode && _settings.DiskLegendExpanded)
@@ -1138,9 +1252,22 @@ namespace RyzenQuietPro
                 diskLegendH = (int)Math.Round((driveCount * 22 + 4 + extraH) * scale);
                 fixedH += diskLegendH + (int)Math.Round(4 * scale);
             }
-            if (showDisk) fixedH += sepH + sepGap + headerRowH + (!_settings.SectionDiskCollapsed && (showFans || showServerSync) ? (int)Math.Round(6 * scale) : 0);
-            if (showFans) fixedH += sepH + (int)Math.Round(6 * scale) + (int)Math.Round(24 * scale);
-            if (showServerSync) fixedH += sepH + sepGap + headerRowH + (!_settings.SectionServerSyncCollapsed ? (int)Math.Round(66 * scale) + (int)Math.Round(6 * scale) : (int)Math.Round(4 * scale));
+            if (showDisk) fixedH += sepH + sepGap + headerRowH + (!_settings.SectionDiskCollapsed && (showFans || showServerSync || showTranslate) ? (int)Math.Round(6 * scale) : 0);
+            if (showFans) fixedH += sepH + (int)Math.Round(6 * scale) + (int)Math.Round(24 * scale) + (!_settings.SectionFansCollapsed && (showServerSync || showTranslate) ? (int)Math.Round(6 * scale) : 0);
+            if (showServerSync)
+            {
+                if (!_settings.SectionServerSyncCollapsed)
+                    fixedH += sepH + sepGap + headerRowH + (int)Math.Round(66 * scale) + (int)Math.Round(6 * scale);
+                else
+                    fixedH += headerRowH + (int)Math.Round(4 * scale);
+            }
+            if (showTranslate)
+            {
+                if (!_settings.SectionTranslateCollapsed)
+                    fixedH += sepH + sepGap + headerRowH + (int)Math.Round(68 * scale) + (int)Math.Round(6 * scale);
+                else
+                    fixedH += headerRowH + (int)Math.Round(4 * scale);
+            }
 
             int fanH;
             int graphH;
@@ -1547,7 +1674,7 @@ namespace RyzenQuietPro
                 {
                     _pnlFansGraph.Location = new Point(marginX, curY);
                     _pnlFansGraph.Size = new Size(contentW, fanH);
-                    curY += fanH + (showServerSync ? (int)Math.Round(6 * scale) : 0);
+                    curY += fanH + ((showServerSync || showTranslate) ? (int)Math.Round(6 * scale) : 0);
                 }
                 else
                 {
@@ -1557,16 +1684,20 @@ namespace RyzenQuietPro
 
             // --- SERVERSYNC ---
             bool isServerSyncCollapsed = _settings.SectionServerSyncCollapsed;
-            _sepServerSync.Visible = showServerSync;
+            bool showServerSyncSep = showServerSync && !isServerSyncCollapsed;
+            _sepServerSync.Visible = showServerSyncSep;
             _lblServerSync.Visible = showServerSync;
             _lblServerSyncSub.Visible = showServerSync;
             _pnlServerSync.Visible = showServerSync && !isServerSyncCollapsed;
 
             if (showServerSync)
             {
-                _sepServerSync.Location = new Point(0, curY);
-                _sepServerSync.Size = new Size(w, sepH);
-                curY += sepGap;
+                if (showServerSyncSep)
+                {
+                    _sepServerSync.Location = new Point(0, curY);
+                    _sepServerSync.Size = new Size(w, sepH);
+                    curY += sepGap;
+                }
 
                 _lblServerSync.Location = new Point(marginX, curY);
                 int ssLabelW = Math.Max((int)(70 * scale), _lblServerSync.PreferredWidth);
@@ -1580,6 +1711,58 @@ namespace RyzenQuietPro
                     _pnlServerSync.Location = new Point(marginX, curY);
                     _pnlServerSync.Size = new Size(contentW, ssPanelH);
                     curY += ssPanelH + (int)Math.Round(6 * scale);
+                }
+                else
+                {
+                    curY += (int)Math.Round(4 * scale);
+                }
+            }
+
+            // --- TRANSLATE & LLM ---
+            bool isTranslateCollapsed = _settings.SectionTranslateCollapsed;
+            bool showTranslateSep = showTranslate && !isTranslateCollapsed;
+
+            _sepTranslate.Visible = showTranslateSep;
+            _lblTranslate.Visible = showTranslate;
+            _lblTranslateSub.Visible = showTranslate;
+            _pnlTranslate.Visible = showTranslate && !isTranslateCollapsed;
+
+            if (showTranslate)
+            {
+                if (showTranslateSep)
+                {
+                    _sepTranslate.Location = new Point(0, curY);
+                    _sepTranslate.Size = new Size(w, sepH);
+                    curY += sepGap;
+                }
+
+                _lblTranslate.Location = new Point(marginX, curY);
+                int trLabelW = Math.Max((int)(70 * scale), _lblTranslate.PreferredWidth);
+                _lblTranslateSub.Location = new Point(marginX + trLabelW + (int)Math.Round(6 * scale), curY);
+                _lblTranslateSub.Size = new Size(Math.Max(50, contentW - trLabelW - (int)Math.Round(6 * scale)), headerRowH);
+                curY += headerRowH;
+
+                if (!isTranslateCollapsed)
+                {
+                    int trPanelH = (int)Math.Round(68 * scale);
+                    _pnlTranslate.Location = new Point(marginX, curY);
+                    _pnlTranslate.Size = new Size(contentW, trPanelH);
+
+                    int trBtnGap = (int)Math.Round(6 * scale);
+                    int trBtnW = (contentW - (trBtnGap * 2)) / 3;
+                    int trBtnH = (int)Math.Round(30 * scale);
+                    int trBtnY = (int)Math.Round(6 * scale);
+
+                    _btnTranslateOcr.Location = new Point(0, trBtnY);
+                    _btnTranslateOcr.Size = new Size(trBtnW, trBtnH);
+
+                    _btnTranslateTrans.Location = new Point(trBtnW + trBtnGap, trBtnY);
+                    _btnTranslateTrans.Size = new Size(trBtnW, trBtnH);
+
+                    _btnTranslateFreeVram.Location = new Point((trBtnW + trBtnGap) * 2, trBtnY);
+                    _btnTranslateFreeVram.Size = new Size(contentW - ((trBtnW + trBtnGap) * 2), trBtnH);
+
+                    curY += trPanelH + (int)Math.Round(6 * scale);
                 }
                 else
                 {
@@ -1753,7 +1936,8 @@ namespace RyzenQuietPro
                 Font = new Font("Segoe UI", (float)Math.Max(5.5, Math.Round(9.5f * _currentUiScale, 1)), FontStyle.Bold),
                 ForeColor = color,
                 AutoSize = true,
-                Cursor = Cursors.Hand
+                Cursor = Cursors.Hand,
+                UseMnemonic = false
             };
         }
 
@@ -1765,7 +1949,8 @@ namespace RyzenQuietPro
                 Font = new Font("Segoe UI", (float)Math.Max(4.8, Math.Round(8.0f * _currentUiScale, 1))),
                 ForeColor = Color.FromArgb(165, 165, 180),
                 TextAlign = ContentAlignment.MiddleRight,
-                AutoEllipsis = true
+                AutoEllipsis = true,
+                UseMnemonic = false
             };
         }
 
@@ -2962,6 +3147,13 @@ namespace RyzenQuietPro
             if (_sepDisk != null) _toolTip.SetToolTip(_sepDisk, sectionTip);
             if (_lblFans != null) _toolTip.SetToolTip(_lblFans, sectionTip);
             if (_sepFans != null) _toolTip.SetToolTip(_sepFans, sectionTip);
+            if (_lblServerSync != null) _toolTip.SetToolTip(_lblServerSync, sectionTip);
+            if (_sepServerSync != null) _toolTip.SetToolTip(_sepServerSync, sectionTip);
+            if (_lblTranslate != null) _toolTip.SetToolTip(_lblTranslate, sectionTip);
+            if (_sepTranslate != null) _toolTip.SetToolTip(_sepTranslate, sectionTip);
+            if (_btnTranslateOcr != null) _toolTip.SetToolTip(_btnTranslateOcr, Loc.Get("Translate_ScreenOcr"));
+            if (_btnTranslateTrans != null) _toolTip.SetToolTip(_btnTranslateTrans, Loc.Get("Translate_ScreenOcrTrans"));
+            if (_btnTranslateFreeVram != null) _toolTip.SetToolTip(_btnTranslateFreeVram, Loc.Get("Translate_FreeVramBtn"));
         }
 
         private void OnLanguageChanged()
@@ -2985,6 +3177,8 @@ namespace RyzenQuietPro
             }
             UpdateStopwatchUI();
             UpdateStopwatchSubHeader();
+            if (_btnTranslateTrans != null) _btnTranslateTrans.Text = "🌐 " + Loc.Get("Translate_BtnShort");
+            UpdateTranslateUI();
             UpdateMetricsUI();
             LayoutComponents();
         }
@@ -3283,6 +3477,11 @@ namespace RyzenQuietPro
                 UpdateServerSyncUI();
             }
 
+            if (_settings.ShowTranslateModule)
+            {
+                UpdateTranslateUI();
+            }
+
             if (_pnlCpuGraph.Visible) _pnlCpuGraph.Invalidate();
             if (_pnlCoresMatrix.Visible) _pnlCoresMatrix.Invalidate();
             if (_pnlTopProcesses.Visible) _pnlTopProcesses.Invalidate();
@@ -3293,6 +3492,7 @@ namespace RyzenQuietPro
             if (_pnlDiskLegend.Visible) _pnlDiskLegend.Invalidate();
             if (_pnlFansGraph.Visible) _pnlFansGraph.Invalidate();
             if (_pnlServerSync.Visible) _pnlServerSync.Invalidate();
+            if (_pnlTranslate.Visible) _pnlTranslate.Invalidate();
         }
 
         private void DrawGraphInternal(Graphics g, Panel pnl, IReadOnlyList<float> history, Color strokeColor, Color topFill, float maxPercent = 100f)
@@ -4686,6 +4886,7 @@ namespace RyzenQuietPro
         private void ToggleSectionDisk() => ToggleSectionCollapse(() => _settings.SectionDiskCollapsed = !_settings.SectionDiskCollapsed);
         private void ToggleSectionFans() => ToggleSectionCollapse(() => _settings.SectionFansCollapsed = !_settings.SectionFansCollapsed);
         private void ToggleSectionServerSync() => ToggleSectionCollapse(() => _settings.SectionServerSyncCollapsed = !_settings.SectionServerSyncCollapsed);
+        private void ToggleSectionTranslate() => ToggleSectionCollapse(() => _settings.SectionTranslateCollapsed = !_settings.SectionTranslateCollapsed);
 
         private void ToggleSectionCollapse(Action toggleState)
         {
@@ -5194,6 +5395,80 @@ namespace RyzenQuietPro
                 using var fillBrush2 = new SolidBrush(Color.FromArgb(129, 140, 248));
                 g.FillRectangle(fillBrush2, padX, bar2Y, fillW2, barH);
             }
+        }
+
+        private void UpdateTranslateUI()
+        {
+            if (!_settings.ShowTranslateModule || _lblTranslate == null) return;
+
+            var tr = _hardware.Translation;
+            string transArrow = _settings.SectionTranslateCollapsed ? "▸ " : "▾ ";
+            _lblTranslate.Text = $"{transArrow}{Loc.Get("SectionTranslate")}";
+
+            if (tr.IsVramLoaded)
+            {
+                string model = !string.IsNullOrEmpty(_settings.TranslateModel) ? _settings.TranslateModel : "LLM";
+                if (tr.AutoUnloadTime != null && tr.AutoUnloadTime > DateTime.Now)
+                {
+                    var left = tr.AutoUnloadTime.Value - DateTime.Now;
+                    _lblTranslateSub.Text = $"{model} (VRAM {left.Minutes}m {left.Seconds:D2}s)";
+                }
+                else
+                {
+                    _lblTranslateSub.Text = $"{model} (VRAM loaded)";
+                }
+                _lblTranslateSub.ForeColor = Color.FromArgb(250, 204, 21); // Amber
+            }
+            else
+            {
+                _lblTranslateSub.Text = tr.CurrentStatus ?? Loc.Get("Translate_Ready");
+                _lblTranslateSub.ForeColor = Color.FromArgb(52, 211, 153); // Emerald
+            }
+
+            if (_pnlTranslate != null && _pnlTranslate.Visible)
+            {
+                _pnlTranslate.Invalidate();
+            }
+        }
+
+        private void DrawTranslatePanel(object? sender, PaintEventArgs e)
+        {
+            var g = e.Graphics;
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
+
+            int w = _pnlTranslate.Width;
+            int h = _pnlTranslate.Height;
+            if (w <= 10 || h <= 10) return;
+
+            float scale = _currentUiScale;
+            var tr = _hardware.Translation;
+
+            // Background card
+            using (var bgBrush = new SolidBrush(Color.FromArgb(20, 20, 26)))
+            using (var borderPen = new Pen(Color.FromArgb(40, 42, 52), 1f))
+            {
+                g.FillRectangle(bgBrush, 0, 0, w - 1, h - 1);
+                g.DrawRectangle(borderPen, 0, 0, w - 1, h - 1);
+            }
+
+            // Draw status line below buttons
+            using var fontSub = new Font("Segoe UI", (float)Math.Max(5.0, Math.Round(7.2f * scale, 1)), FontStyle.Regular);
+            int infoY = (int)Math.Round(40 * scale);
+            int infoH = (int)Math.Round(22 * scale);
+
+            string model = !string.IsNullOrEmpty(_settings.TranslateModel) ? _settings.TranslateModel : "local-model";
+            string vramInfo = tr.IsVramLoaded
+                ? (tr.AutoUnloadTime != null && tr.AutoUnloadTime > DateTime.Now
+                    ? $"VRAM: {Loc.Get("Translate_VramLoaded")} ({Loc.Get("Translate_UnloadIn")} {(int)(tr.AutoUnloadTime.Value - DateTime.Now).TotalMinutes}:{((int)(tr.AutoUnloadTime.Value - DateTime.Now).TotalSeconds % 60):D2})"
+                    : $"VRAM: {Loc.Get("Translate_VramLoaded")}")
+                : $"VRAM: {Loc.Get("Translate_VramFreed")}";
+
+            string lineText = $"{model} • {vramInfo}";
+            Color textColor = tr.IsVramLoaded ? Color.FromArgb(250, 204, 21) : Color.FromArgb(148, 163, 184);
+
+            TextRenderer.DrawText(g, lineText, fontSub, new Rectangle(2, infoY, w - 4, infoH),
+                textColor, TextFormatFlags.VerticalCenter | TextFormatFlags.HorizontalCenter | TextFormatFlags.EndEllipsis);
         }
 
         private static string FormatBytes(long bytes)
