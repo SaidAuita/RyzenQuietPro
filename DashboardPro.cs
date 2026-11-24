@@ -2081,6 +2081,137 @@ namespace RyzenQuietPro
             g.FillPath(brush, path);
         }
 
+        private static void DrawStopwatchPlayIcon(Graphics g, Rectangle bounds, Color color, float scale)
+        {
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            float cx = bounds.X + bounds.Width / 2f;
+            float cy = bounds.Y + bounds.Height / 2f;
+            float halfH = Math.Max(4.5f, (float)Math.Round(5.5f * scale));
+            float halfW = Math.Max(4.0f, (float)Math.Round(4.8f * scale));
+
+            PointF[] pts = new[]
+            {
+                new PointF(cx - halfW * 0.7f, cy - halfH),
+                new PointF(cx + halfW * 1.1f, cy),
+                new PointF(cx - halfW * 0.7f, cy + halfH)
+            };
+            using var brush = new SolidBrush(color);
+            g.FillPolygon(brush, pts);
+        }
+
+        private static void DrawStopwatchAutoIcon(Graphics g, Rectangle bounds, Color color, float scale)
+        {
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            float cx = bounds.X + bounds.Width / 2f;
+            float cy = bounds.Y + bounds.Height / 2f;
+            float boltW = Math.Max(3.5f, (float)Math.Round(4.2f * scale));
+            float boltH = Math.Max(5.0f, (float)Math.Round(6.0f * scale));
+
+            PointF[] pts = new[]
+            {
+                new PointF(cx + boltW * 0.1f, cy - boltH),
+                new PointF(cx + boltW * 0.9f, cy - boltH),
+                new PointF(cx - boltW * 0.1f, cy - boltH * 0.05f),
+                new PointF(cx + boltW * 0.7f, cy - boltH * 0.05f),
+                new PointF(cx - boltW * 0.9f, cy + boltH),
+                new PointF(cx - boltW * 0.1f, cy + boltH * 0.15f),
+                new PointF(cx - boltW * 0.7f, cy + boltH * 0.15f)
+            };
+            using var brush = new SolidBrush(color);
+            g.FillPolygon(brush, pts);
+        }
+
+        private static void DrawStopwatchStopIcon(Graphics g, Rectangle bounds, Color color, float scale)
+        {
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            float cx = bounds.X + bounds.Width / 2f;
+            float cy = bounds.Y + bounds.Height / 2f;
+            float barW = Math.Max(2.5f, (float)Math.Round(3.0f * scale));
+            float barH = Math.Max(8.0f, (float)Math.Round(10.0f * scale));
+            float gap = Math.Max(2.5f, (float)Math.Round(3.0f * scale));
+
+            using var brush = new SolidBrush(color);
+            g.FillRectangle(brush, cx - gap / 2f - barW, cy - barH / 2f, barW, barH);
+            g.FillRectangle(brush, cx + gap / 2f, cy - barH / 2f, barW, barH);
+        }
+
+        private static void DrawStopwatchResetIcon(Graphics g, Rectangle bounds, Color color, float scale)
+        {
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            float cx = bounds.X + bounds.Width / 2f;
+            float cy = bounds.Y + bounds.Height / 2f;
+            float r = Math.Max(4.0f, (float)Math.Round(5.0f * scale));
+
+            using var pen = new Pen(color, Math.Max(1.4f, (float)Math.Round(1.6f * scale)));
+            pen.StartCap = LineCap.Round;
+            pen.EndCap = LineCap.Round;
+            g.DrawArc(pen, cx - r, cy - r, r * 2, r * 2, -140, 275);
+
+            float arrowAngle = (float)(-140 * Math.PI / 180.0);
+            float ax = cx + r * (float)Math.Cos(arrowAngle);
+            float ay = cy + r * (float)Math.Sin(arrowAngle);
+            float tipS = r * 0.65f;
+
+            PointF[] arrowPts = new[]
+            {
+                new PointF(ax - tipS * 0.3f, ay - tipS * 0.8f),
+                new PointF(ax + tipS * 0.8f, ay + tipS * 0.1f),
+                new PointF(ax - tipS * 0.7f, ay + tipS * 0.5f)
+            };
+            using var brush = new SolidBrush(color);
+            g.FillPolygon(brush, arrowPts);
+        }
+
+        private static void DrawStopwatchScaleButton(Graphics g, Rectangle bounds, Color color, string scaleText, float scale)
+        {
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
+
+            float left = bounds.X + 4f * scale;
+            float cy = bounds.Y + bounds.Height / 2f;
+            float chartW = 9f * scale;
+            float chartH = 8f * scale;
+            float top = cy - chartH / 2f;
+
+            PointF[] trendPts = new[]
+            {
+                new PointF(left, top + chartH),
+                new PointF(left + chartW * 0.35f, top + chartH * 0.55f),
+                new PointF(left + chartW * 0.65f, top + chartH * 0.75f),
+                new PointF(left + chartW, top)
+            };
+            using (var pen = new Pen(color, Math.Max(1.2f, 1.3f * scale)))
+            {
+                pen.StartCap = LineCap.Round;
+                pen.EndCap = LineCap.Round;
+                g.DrawLines(pen, trendPts);
+            }
+            using (var brush = new SolidBrush(color))
+            {
+                PointF[] arrow = new[]
+                {
+                    new PointF(left + chartW, top),
+                    new PointF(left + chartW - 2.5f * scale, top),
+                    new PointF(left + chartW, top + 2.5f * scale)
+                };
+                g.FillPolygon(brush, arrow);
+            }
+
+            if (!string.IsNullOrEmpty(scaleText))
+            {
+                float fontPt = (float)Math.Max(5.0, Math.Round(7.2f * scale, 1));
+                using var font = new Font("Segoe UI", fontPt, FontStyle.Bold);
+                using var textBrush = new SolidBrush(color);
+                var textRect = new RectangleF(left + chartW + 1.5f * scale, bounds.Y, bounds.Width - (chartW + 5.5f * scale), bounds.Height);
+                using var sf = new StringFormat
+                {
+                    Alignment = StringAlignment.Center,
+                    LineAlignment = StringAlignment.Center
+                };
+                g.DrawString(scaleText, font, textBrush, textRect, sf);
+            }
+        }
+
         private Label CreateMetricHeader(string text, Color color)
         {
             return new Label
@@ -2107,11 +2238,11 @@ namespace RyzenQuietPro
             };
         }
 
-        private Button CreateStopwatchButton(string text, Color foreColor)
+        private Button CreateStopwatchButton(Color foreColor)
         {
             var btn = new Button
             {
-                Text = text,
+                Text = "",
                 Font = new Font("Segoe UI", (float)Math.Max(4.8, Math.Round(7.0f * _currentUiScale, 1)), FontStyle.Bold),
                 ForeColor = foreColor,
                 BackColor = Color.FromArgb(28, 28, 36),
@@ -2138,12 +2269,30 @@ namespace RyzenQuietPro
                 var rc = new StopwatchRowControls
                 {
                     Item = curItem,
-                    BtnStart = CreateStopwatchButton(Loc.Get("StopwatchStart"), curItem.AccentColor),
-                    BtnAuto = CreateStopwatchButton(Loc.Get("StopwatchAuto"), Color.FromArgb(245, 158, 11)),
-                    BtnStop = CreateStopwatchButton(Loc.Get("StopwatchStop"), Color.FromArgb(244, 63, 94)),
-                    BtnReset = CreateStopwatchButton(Loc.Get("StopwatchReset"), Color.FromArgb(160, 160, 175)),
-                    BtnScale = CreateStopwatchButton("📈 Auto", curItem.AccentColor)
+                    BtnStart = CreateStopwatchButton(curItem.AccentColor),
+                    BtnAuto = CreateStopwatchButton(Color.FromArgb(245, 158, 11)),
+                    BtnStop = CreateStopwatchButton(Color.FromArgb(244, 63, 94)),
+                    BtnReset = CreateStopwatchButton(Color.FromArgb(160, 160, 175)),
+                    BtnScale = CreateStopwatchButton(curItem.AccentColor)
                 };
+
+                rc.BtnStart.Paint += (s, e) => DrawStopwatchPlayIcon(e.Graphics, rc.BtnStart.ClientRectangle, rc.BtnStart.ForeColor, _currentUiScale);
+                rc.BtnAuto.Paint += (s, e) => DrawStopwatchAutoIcon(e.Graphics, rc.BtnAuto.ClientRectangle, rc.BtnAuto.ForeColor, _currentUiScale);
+                rc.BtnStop.Paint += (s, e) => DrawStopwatchStopIcon(e.Graphics, rc.BtnStop.ClientRectangle, rc.BtnStop.ForeColor, _currentUiScale);
+                rc.BtnReset.Paint += (s, e) => DrawStopwatchResetIcon(e.Graphics, rc.BtnReset.ClientRectangle, rc.BtnReset.ForeColor, _currentUiScale);
+                rc.BtnScale.Paint += (s, e) => {
+                    string txt = rc.BtnScale.Tag as string ?? "";
+                    DrawStopwatchScaleButton(e.Graphics, rc.BtnScale.ClientRectangle, rc.BtnScale.ForeColor, txt, _currentUiScale);
+                };
+
+                if (_toolTip != null)
+                {
+                    _toolTip.SetToolTip(rc.BtnStart, Loc.Get("TipStopwatchStart"));
+                    _toolTip.SetToolTip(rc.BtnAuto, Loc.Get("TipStopwatchAuto"));
+                    _toolTip.SetToolTip(rc.BtnStop, Loc.Get("TipStopwatchStop"));
+                    _toolTip.SetToolTip(rc.BtnReset, Loc.Get("TipStopwatchReset"));
+                    _toolTip.SetToolTip(rc.BtnScale, Loc.Get("StopwatchScaleTip"));
+                }
 
                 rc.BtnStart.Click += (s, e) => {
                     curItem.Start();
@@ -2186,7 +2335,7 @@ namespace RyzenQuietPro
             float scale = _currentUiScale;
             int actionBtnCount = 4;
             int btnGap = (int)Math.Max(2, Math.Round(3 * scale));
-            int scaleBtnW = (int)Math.Max(26, Math.Round(44 * scale));
+            int scaleBtnW = (int)Math.Max(28, Math.Round(46 * scale));
             int actionBtnW = (int)Math.Max(18, Math.Round(30 * scale));
             int btnH = (int)Math.Max(16, Math.Round(22 * scale));
 
@@ -2258,15 +2407,16 @@ namespace RyzenQuietPro
 
                 string scaleText = scale switch
                 {
-                    0 => "📈 " + Loc.Get("StopwatchScale_Auto"),
-                    1 => "📈 1x",
-                    2 => "📈 x2",
-                    4 => "📈 x4",
-                    8 => "📈 x8",
-                    16 => "📈 x16",
-                    _ => "📈 " + Loc.Get("StopwatchScale_Off")
+                    0 => Loc.Get("StopwatchScale_Auto"),
+                    1 => "1x",
+                    2 => "x2",
+                    4 => "x4",
+                    8 => "x8",
+                    16 => "x16",
+                    _ => Loc.Get("StopwatchScale_Off")
                 };
-                rc.BtnScale.Text = scaleText;
+                rc.BtnScale.Tag = scaleText;
+                rc.BtnScale.Text = "";
 
                 if (isGraphActive)
                 {
@@ -2282,6 +2432,12 @@ namespace RyzenQuietPro
                 }
 
                 if (_toolTip != null) _toolTip.SetToolTip(rc.BtnScale, Loc.Get("StopwatchScaleTip"));
+
+                rc.BtnStart.Invalidate();
+                rc.BtnAuto.Invalidate();
+                rc.BtnStop.Invalidate();
+                rc.BtnReset.Invalidate();
+                rc.BtnScale.Invalidate();
             }
 
             UpdateStopwatchSubHeader();
@@ -2381,7 +2537,7 @@ namespace RyzenQuietPro
             using var borderPen = new Pen(Color.FromArgb(36, 36, 46), 1f);
 
             int actionBtnW = (int)Math.Max(18, Math.Round(30 * _currentUiScale));
-            int scaleBtnW = (int)Math.Max(26, Math.Round(44 * _currentUiScale));
+            int scaleBtnW = (int)Math.Max(28, Math.Round(46 * _currentUiScale));
             int btnGap = (int)Math.Max(2, Math.Round(3 * _currentUiScale));
             int totalButtonsW = (actionBtnW * 4) + (btnGap * 4) + scaleBtnW;
             int startX = Math.Max((int)Math.Round(95 * _currentUiScale), w - totalButtonsW - (int)Math.Round(4 * _currentUiScale));
@@ -3337,13 +3493,6 @@ namespace RyzenQuietPro
             if (_lblTitle != null) _lblTitle.Text = Loc.Get("AppTitle");
             if (_chkShowAllGpus != null) _chkShowAllGpus.Text = Loc.Get("ShowAllGpus");
             if (_lblStopwatch != null) _lblStopwatch.Text = (_settings.SectionStopwatchCollapsed ? "▸ " : "▾ ") + "⏱ " + Loc.Get("Stopwatch");
-            foreach (var rc in _stopwatchRowControls)
-            {
-                rc.BtnStart.Text = Loc.Get("StopwatchStart");
-                rc.BtnAuto.Text = Loc.Get("StopwatchAuto");
-                rc.BtnStop.Text = Loc.Get("StopwatchStop");
-                rc.BtnReset.Text = Loc.Get("StopwatchReset");
-            }
             UpdateStopwatchUI();
             UpdateStopwatchSubHeader();
             if (_btnTranslateTrans != null) _btnTranslateTrans.Text = "🌐 " + Loc.Get("Translate_BtnShort");

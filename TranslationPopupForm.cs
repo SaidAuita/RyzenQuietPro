@@ -1,6 +1,7 @@
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Drawing.Text;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -82,8 +83,8 @@ namespace RyzenQuietPro
             this.MinimumSize = new Size(540, 240);
             this.MaximumSize = new Size(1600, 1200);
 
-            _quickLangCode1 = !string.IsNullOrEmpty(settings.TranslateRecentLang1) ? settings.TranslateRecentLang1 : "en";
-            _quickLangCode2 = !string.IsNullOrEmpty(settings.TranslateRecentLang2) ? settings.TranslateRecentLang2 : "ru";
+            _quickLangCode1 = ValidateLanguageCode(settings.TranslateRecentLang1, "en");
+            _quickLangCode2 = ValidateLanguageCode(settings.TranslateRecentLang2, "ru");
             if (_quickLangCode1.Equals(_quickLangCode2, StringComparison.OrdinalIgnoreCase))
             {
                 _quickLangCode2 = _quickLangCode1.Equals("ru", StringComparison.OrdinalIgnoreCase) ? "en" : "ru";
@@ -168,39 +169,37 @@ namespace RyzenQuietPro
             // Quick Lang 2 button (e.g. RU)
             _btnQuickLang2 = new Button
             {
-                Text = _quickLangCode2.ToUpperInvariant(),
-                Font = new Font("Segoe UI", 8f, FontStyle.Bold),
-                Size = new Size(38, 24),
+                Text = "",
+                Size = new Size(44, 24),
                 FlatStyle = FlatStyle.Flat,
                 BackColor = Color.FromArgb(28, 32, 44),
                 ForeColor = Color.FromArgb(148, 163, 184),
                 Cursor = Cursors.Hand,
-                TextAlign = ContentAlignment.MiddleCenter,
                 Padding = Padding.Empty,
                 UseMnemonic = false
             };
             _btnQuickLang2.FlatAppearance.BorderSize = 1;
             _btnQuickLang2.FlatAppearance.BorderColor = Color.FromArgb(51, 65, 85);
             _btnQuickLang2.Click += (s, e) => SelectQuickLanguage(_quickLangCode2);
+            _btnQuickLang2.Paint += (s, e) => DrawQuickLangButton(e.Graphics, _btnQuickLang2.ClientRectangle, _quickLangCode2, _btnQuickLang2.ForeColor);
             _pnlHeader.Controls.Add(_btnQuickLang2);
 
             // Quick Lang 1 button (e.g. EN)
             _btnQuickLang1 = new Button
             {
-                Text = _quickLangCode1.ToUpperInvariant(),
-                Font = new Font("Segoe UI", 8f, FontStyle.Bold),
-                Size = new Size(38, 24),
+                Text = "",
+                Size = new Size(44, 24),
                 FlatStyle = FlatStyle.Flat,
                 BackColor = Color.FromArgb(28, 32, 44),
                 ForeColor = Color.FromArgb(148, 163, 184),
                 Cursor = Cursors.Hand,
-                TextAlign = ContentAlignment.MiddleCenter,
                 Padding = Padding.Empty,
                 UseMnemonic = false
             };
             _btnQuickLang1.FlatAppearance.BorderSize = 1;
             _btnQuickLang1.FlatAppearance.BorderColor = Color.FromArgb(51, 65, 85);
             _btnQuickLang1.Click += (s, e) => SelectQuickLanguage(_quickLangCode1);
+            _btnQuickLang1.Paint += (s, e) => DrawQuickLangButton(e.Graphics, _btnQuickLang1.ClientRectangle, _quickLangCode1, _btnQuickLang1.ForeColor);
             _pnlHeader.Controls.Add(_btnQuickLang1);
 
             // Select current setting
@@ -458,8 +457,16 @@ namespace RyzenQuietPro
             _pnlHeader.Width = w;
             if (_btnClose != null) _btnClose.Location = new Point(w - 32, 7);
             if (_cbTargetLang != null) _cbTargetLang.Location = new Point(w - 170, 8);
-            if (_btnQuickLang2 != null) _btnQuickLang2.Location = new Point(w - 214, 8);
-            if (_btnQuickLang1 != null) _btnQuickLang1.Location = new Point(w - 258, 8);
+            if (_btnQuickLang2 != null)
+            {
+                _btnQuickLang2.Location = new Point(w - 220, 8);
+                _btnQuickLang2.Size = new Size(44, 24);
+            }
+            if (_btnQuickLang1 != null)
+            {
+                _btnQuickLang1.Location = new Point(w - 270, 8);
+                _btnQuickLang1.Size = new Size(44, 24);
+            }
             if (_lblModelPill != null) _lblModelPill.Location = new Point(w - 334, 9);
             if (_lblSourceSnippet != null) _lblSourceSnippet.Width = Math.Max(50, w - 28);
             if (_tbResult != null) _tbResult.Size = new Size(Math.Max(50, w - 28), Math.Max(50, h - 124));
@@ -532,8 +539,37 @@ namespace RyzenQuietPro
             StartExecution(forceFromTextBox: false);
         }
 
+        private static string ValidateLanguageCode(string? code, string fallback)
+        {
+            if (string.IsNullOrWhiteSpace(code)) return fallback;
+            string trimmed = code.Trim();
+            foreach (var lang in TranslationService.SupportedLanguages)
+            {
+                if (lang.Code.Equals(trimmed, StringComparison.OrdinalIgnoreCase))
+                    return lang.Code;
+            }
+            return fallback;
+        }
+
+        private static void DrawQuickLangButton(Graphics g, Rectangle bounds, string langCode, Color foreColor)
+        {
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            g.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
+
+            string text = (langCode ?? string.Empty).ToUpperInvariant();
+            using var font = new Font("Segoe UI", 8.5f, FontStyle.Bold);
+            using var brush = new SolidBrush(foreColor);
+            using var sf = new StringFormat
+            {
+                Alignment = StringAlignment.Center,
+                LineAlignment = StringAlignment.Center
+            };
+            g.DrawString(text, font, brush, new RectangleF(0, 0, bounds.Width, bounds.Height), sf);
+        }
+
         private void SelectQuickLanguage(string langCode)
         {
+            langCode = ValidateLanguageCode(langCode, "en");
             int targetIdx = -1;
             for (int i = 0; i < TranslationService.SupportedLanguages.Length; i++)
             {
@@ -565,15 +601,17 @@ namespace RyzenQuietPro
             bool is1 = string.Equals(current, _quickLangCode1, StringComparison.OrdinalIgnoreCase);
             bool is2 = string.Equals(current, _quickLangCode2, StringComparison.OrdinalIgnoreCase);
 
-            _btnQuickLang1.Text = _quickLangCode1.ToUpperInvariant();
+            _btnQuickLang1.Text = "";
             _btnQuickLang1.BackColor = is1 ? Color.FromArgb(37, 99, 235) : Color.FromArgb(28, 32, 44);
             _btnQuickLang1.ForeColor = is1 ? Color.White : Color.FromArgb(148, 163, 184);
             _btnQuickLang1.FlatAppearance.BorderColor = is1 ? Color.FromArgb(96, 165, 250) : Color.FromArgb(51, 65, 85);
+            _btnQuickLang1.Invalidate();
 
-            _btnQuickLang2.Text = _quickLangCode2.ToUpperInvariant();
+            _btnQuickLang2.Text = "";
             _btnQuickLang2.BackColor = is2 ? Color.FromArgb(37, 99, 235) : Color.FromArgb(28, 32, 44);
             _btnQuickLang2.ForeColor = is2 ? Color.White : Color.FromArgb(148, 163, 184);
             _btnQuickLang2.FlatAppearance.BorderColor = is2 ? Color.FromArgb(96, 165, 250) : Color.FromArgb(51, 65, 85);
+            _btnQuickLang2.Invalidate();
 
             if (_toolTip != null)
             {
