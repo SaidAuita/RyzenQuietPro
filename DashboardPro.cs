@@ -612,7 +612,13 @@ namespace RyzenQuietPro
             _lblTitle.MouseDown += OnHeaderMouseDown;
             _headerPanel.Controls.Add(_lblTitle);
 
-            _toolTip = new ToolTip();
+            _toolTip = new ToolTip
+            {
+                InitialDelay = 350,
+                ReshowDelay = 100,
+                AutoPopDelay = 30000,
+                ShowAlways = true
+            };
 
             // Info / Hardware Support Button
             _btnInfo = new Label
@@ -3208,19 +3214,27 @@ namespace RyzenQuietPro
             _toolTip.SetToolTip(_btnDetach, _isDetached ? Loc.Get("TipDock") : Loc.Get("TipDetach"));
             _toolTip.SetToolTip(_btnClose, Loc.Get("TipClose"));
             if (_pnlCpuGraph != null) _toolTip.SetToolTip(_pnlCpuGraph, Loc.Get("CpuGraphScaleTip"));
-            if (_btnGear != null) _toolTip.SetToolTip(_btnGear, Loc.Get("MenuSettings"));
+            if (_btnGear != null) _toolTip.SetToolTip(_btnGear, Loc.Get("TipSettings"));
             if (_btnSwDashboardAdd != null) _toolTip.SetToolTip(_btnSwDashboardAdd, Loc.Get("StopwatchAdd"));
             foreach (var rc in _stopwatchRowControls)
             {
-                _toolTip.SetToolTip(rc.BtnStart, Loc.Get("StopwatchStart"));
-                _toolTip.SetToolTip(rc.BtnAuto, Loc.Get("StopwatchAutoStartEnable"));
-                _toolTip.SetToolTip(rc.BtnStop, Loc.Get("StopwatchStop"));
-                _toolTip.SetToolTip(rc.BtnReset, Loc.Get("StopwatchReset"));
+                _toolTip.SetToolTip(rc.BtnStart, Loc.Get("TipStopwatchStart"));
+                _toolTip.SetToolTip(rc.BtnAuto, Loc.Get("TipStopwatchAuto"));
+                _toolTip.SetToolTip(rc.BtnStop, Loc.Get("TipStopwatchStop"));
+                _toolTip.SetToolTip(rc.BtnReset, Loc.Get("TipStopwatchReset"));
                 _toolTip.SetToolTip(rc.BtnScale, Loc.Get("StopwatchScaleTip"));
             }
             if (_btnCpuProcessesExpand != null)
             {
                 _toolTip.SetToolTip(_btnCpuProcessesExpand, _settings.ShowTopProcesses ? Loc.Get("ProcessesCollapse") : Loc.Get("ProcessesExpand"));
+            }
+            if (_btnVramProcessesExpand != null)
+            {
+                _toolTip.SetToolTip(_btnVramProcessesExpand, _settings.ShowTopVramProcesses ? Loc.Get("VramProcessesCollapse") : Loc.Get("VramProcessesExpand"));
+            }
+            if (_btnDiskExpand != null)
+            {
+                _toolTip.SetToolTip(_btnDiskExpand, _settings.DiskLegendExpanded ? Loc.Get("DiskLegendCollapse") : Loc.Get("DiskLegendExpand"));
             }
             if (_lblHddStatus != null && _settings.HddScheduleEnabled)
             {
@@ -3246,10 +3260,15 @@ namespace RyzenQuietPro
             if (_sepServerSync != null) _toolTip.SetToolTip(_sepServerSync, sectionTip);
             if (_lblTranslate != null) _toolTip.SetToolTip(_lblTranslate, sectionTip);
             if (_sepTranslate != null) _toolTip.SetToolTip(_sepTranslate, sectionTip);
-            if (_btnTranslateOcr != null) _toolTip.SetToolTip(_btnTranslateOcr, Loc.Get("Translate_ScreenOcr"));
-            if (_btnTranslateTrans != null) _toolTip.SetToolTip(_btnTranslateTrans, Loc.Get("Translate_ScreenOcrTrans"));
-            if (_btnTranslateFreeVram != null) _toolTip.SetToolTip(_btnTranslateFreeVram, Loc.Get("Translate_FreeVramBtn"));
+            if (_btnTranslateOcr != null) _toolTip.SetToolTip(_btnTranslateOcr, Loc.Get("TipTranslateOcr"));
+            if (_btnTranslateTrans != null) _toolTip.SetToolTip(_btnTranslateTrans, Loc.Get("TipTranslateTrans"));
+            if (_btnTranslateFreeVram != null) _toolTip.SetToolTip(_btnTranslateFreeVram, Loc.Get("TipTranslateFreeVram"));
             if (_btnTranslateFreeComfy != null) _toolTip.SetToolTip(_btnTranslateFreeComfy, Loc.Get("ComfyUi_FreeTooltip"));
+
+            if (_btnSilent != null) _toolTip.SetToolTip(_btnSilent, Loc.Get("TipSilent"));
+            if (_btnBoost != null) _toolTip.SetToolTip(_btnBoost, Loc.Get("TipBoost"));
+            if (_btnGpuSilent != null) _toolTip.SetToolTip(_btnGpuSilent, Loc.Get("TipGpuSilent"));
+            if (_btnGpuBoost != null) _toolTip.SetToolTip(_btnGpuBoost, Loc.Get("TipGpuBoost"));
         }
 
         private void OnLanguageChanged()

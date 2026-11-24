@@ -38,7 +38,7 @@ namespace RyzenQuietPro
         {
             InitialDelay = 250,
             ReshowDelay = 100,
-            AutoPopDelay = 5000
+            AutoPopDelay = 30000
         };
 
         // UI Controls
@@ -2217,6 +2217,7 @@ namespace RyzenQuietPro
                 RunCheckConnection();
             };
             _pnlTranslateControls.Controls.Add(_btnPresetLms);
+            _toolTip.SetToolTip(_btnPresetLms, Loc.Get("Translate_PresetLms"));
 
             _btnPresetOllama = new Button
             {
@@ -2243,6 +2244,7 @@ namespace RyzenQuietPro
                 RunCheckConnection();
             };
             _pnlTranslateControls.Controls.Add(_btnPresetOllama);
+            _toolTip.SetToolTip(_btnPresetOllama, Loc.Get("Translate_PresetOllama"));
 
             // Row 1: URL input & Test button
             int testBtnW = 88;
@@ -2282,6 +2284,7 @@ namespace RyzenQuietPro
             _btnTranslateCheck.FlatAppearance.BorderColor = Color.FromArgb(45, 212, 191, 100);
             _btnTranslateCheck.Click += (s, e) => RunCheckConnection();
             _pnlTranslateControls.Controls.Add(_btnTranslateCheck);
+            _toolTip.SetToolTip(_btnTranslateCheck, Loc.Get("Translate_CheckBtn"));
 
             _lblTranslateCheckStatus = new Label
             {
@@ -2410,6 +2413,7 @@ namespace RyzenQuietPro
                 });
             };
             _pnlTranslateControls.Controls.Add(_btnFreeVramNow);
+            _toolTip.SetToolTip(_btnFreeVramNow, Loc.Get("TipTranslateFreeVram"));
 
             _lblVramStatus = new Label
             {

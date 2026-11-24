@@ -56,6 +56,7 @@ namespace RyzenQuietPro
         private Button _btnReplace = null!;
         private Button _btnCopy = null!;
         private Label _lblResizeGrip = null!;
+        private ToolTip _toolTip = null!;
 
         private string _translatedResult = string.Empty;
         private CancellationTokenSource? _cts;
@@ -164,16 +165,38 @@ namespace RyzenQuietPro
             // Select current setting
             string curLang = AppSettings.Load().TranslateTargetLang ?? "ru";
             int selIdx = 0;
-            for (int i = 0; i < TranslationService.SupportedLanguages.Length; i++)
+            if (string.Equals(curLang, "auto", StringComparison.OrdinalIgnoreCase))
             {
-                if (TranslationService.SupportedLanguages[i].Code.Equals(curLang, StringComparison.OrdinalIgnoreCase))
+                selIdx = 0;
+            }
+            else
+            {
+                for (int i = 0; i < TranslationService.SupportedLanguages.Length; i++)
                 {
-                    selIdx = i + 1;
-                    break;
+                    if (TranslationService.SupportedLanguages[i].Code.Equals(curLang, StringComparison.OrdinalIgnoreCase))
+                    {
+                        selIdx = i + 1;
+                        break;
+                    }
                 }
             }
             _cbTargetLang.SelectedIndex = selIdx;
-            _cbTargetLang.SelectedIndexChanged += (s, e) => StartExecution();
+            _cbTargetLang.SelectedIndexChanged += (s, e) =>
+            {
+                try
+                {
+                    string newTargetLang = GetSelectedTargetLang();
+                    var sSettings = AppSettings.Load();
+                    if (!string.Equals(sSettings.TranslateTargetLang, newTargetLang, StringComparison.OrdinalIgnoreCase))
+                    {
+                        sSettings.TranslateTargetLang = newTargetLang;
+                        sSettings.Save();
+                        TranslationService.Instance.UpdateSettings(sSettings);
+                    }
+                }
+                catch { }
+                StartExecution();
+            };
             _pnlHeader.Controls.Add(_cbTargetLang);
 
             // Model pill
@@ -303,6 +326,19 @@ namespace RyzenQuietPro
                 e.Graphics.DrawRectangle(p, 0, 0, this.Width - 1, this.Height - 1);
             };
 
+            _toolTip = new ToolTip
+            {
+                InitialDelay = 350,
+                ReshowDelay = 100,
+                AutoPopDelay = 30000,
+                ShowAlways = true
+            };
+            _toolTip.SetToolTip(_btnClose, Loc.Get("TipPopupClose"));
+            _toolTip.SetToolTip(_cbTargetLang, Loc.Get("TipPopupTargetLang"));
+            _toolTip.SetToolTip(_lblModelPill, Loc.Get("TipPopupModel"));
+            _toolTip.SetToolTip(_btnReplace, Loc.Get("TipPopupReplace"));
+            _toolTip.SetToolTip(_btnCopy, Loc.Get("TipPopupCopy"));
+
             UpdateLayout();
         }
 
@@ -343,9 +379,11 @@ namespace RyzenQuietPro
                 var s = AppSettings.Load();
                 s.TranslatePopupWidth = this.Width;
                 s.TranslatePopupHeight = this.Height;
+                s.TranslateTargetLang = GetSelectedTargetLang();
                 s.Save();
             }
             catch { }
+            try { _toolTip?.Dispose(); } catch { }
         }
 
         protected override void WndProc(ref Message m)
