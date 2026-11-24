@@ -610,7 +610,11 @@ namespace RyzenQuietPro
             if (string.IsNullOrWhiteSpace(modelKey) || modelKey == "default" || modelKey == "local-model")
                 return true;
 
-            await _modelLoadLock.WaitAsync();
+            bool acquired = await _modelLoadLock.WaitAsync(TimeSpan.FromSeconds(10));
+            if (!acquired)
+            {
+                Logger.Log("[Translation] _modelLoadLock timeout in EnsureSingleLmsModelLoadedAsync. Proceeding.");
+            }
             try
             {
                 if (!IsPortListening("127.0.0.1", 1234, 150))
@@ -636,11 +640,26 @@ namespace RyzenQuietPro
 
                 // 3. Load the single desired model
                 Logger.Log($"[Translation] Loading model '{modelKey}' into VRAM (single instance)...");
-                return await LoadLmsModelInternalAsync(modelKey);
+                bool loadSuccess = await LoadLmsModelInternalAsync(modelKey);
+
+                // 4. Auto-fallback if memory insufficient: check if ComfyUI is holding VRAM
+                if (!loadSuccess)
+                {
+                    Logger.Log($"[Translation] Model '{modelKey}' failed to load. Checking if ComfyUI is holding VRAM...");
+                    var (comfyFreed, _) = await FreeComfyUiVramAsync(forceKillIfUnresponsive: false);
+                    if (comfyFreed)
+                    {
+                        Logger.Log("[Translation] ComfyUI VRAM was freed! Retrying model load...");
+                        await Task.Delay(500);
+                        loadSuccess = await LoadLmsModelInternalAsync(modelKey);
+                    }
+                }
+
+                return loadSuccess;
             }
             finally
             {
-                _modelLoadLock.Release();
+                if (acquired) _modelLoadLock.Release();
             }
         }
 
@@ -725,7 +744,7 @@ namespace RyzenQuietPro
             if (string.IsNullOrWhiteSpace(modelKey) || modelKey == "default" || modelKey == "local-model")
                 return true;
 
-            await _modelLoadLock.WaitAsync();
+            bool acquired = await _modelLoadLock.WaitAsync(TimeSpan.FromSeconds(10));
             try
             {
                 if (!IsPortListening("127.0.0.1", 11434, 150))
@@ -775,7 +794,7 @@ namespace RyzenQuietPro
             }
             finally
             {
-                _modelLoadLock.Release();
+                if (acquired) _modelLoadLock.Release();
             }
         }
 
@@ -802,6 +821,73 @@ namespace RyzenQuietPro
             return string.Equals(loadedBaseNoOrg, requestedBase, StringComparison.OrdinalIgnoreCase);
         }
 
+        public static async Task<(bool success, string message)> FreeComfyUiVramAsync(bool forceKillIfUnresponsive = false)
+        {
+            bool freed = false;
+            var details = new StringBuilder();
+
+            // 1. Try standard ComfyUI ports: 8188 and 8189
+            int[] ports = { 8188, 8189 };
+            foreach (int port in ports)
+            {
+                if (IsPortListening("127.0.0.1", port, 80))
+                {
+                    try
+                    {
+                        var payload = new { unload_models = true, free_memory = true };
+                        string jsonPayload = JsonSerializer.Serialize(payload);
+                        using var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+                        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+                        var resp = await _queryClient.PostAsync($"http://127.0.0.1:{port}/free", content, cts.Token);
+                        if (resp.IsSuccessStatusCode)
+                        {
+                            freed = true;
+                            details.Append($"ComfyUI (:{port}): models unloaded, cache cleared. ");
+                            Logger.Log($"[Translation] ComfyUI (:{port}) /free success.");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Log($"[Translation] ComfyUI (:{port}) /free error: {ex.Message}");
+                    }
+                }
+            }
+
+            // 2. If ComfyUI was not responding via HTTP and forceKillIfUnresponsive is requested:
+            if (!freed && forceKillIfUnresponsive)
+            {
+                try
+                {
+                    var pythonProcs = Process.GetProcessesByName("python");
+                    foreach (var p in pythonProcs)
+                    {
+                        try
+                        {
+                            string path = "";
+                            try { path = p.MainModule?.FileName ?? ""; } catch { }
+                            if (path.Contains("ComfyUI", StringComparison.OrdinalIgnoreCase) ||
+                                path.Contains("comfy", StringComparison.OrdinalIgnoreCase))
+                            {
+                                p.Kill();
+                                freed = true;
+                                details.Append($"Killed orphaned ComfyUI process (PID {p.Id}). ");
+                                Logger.Log($"[Translation] Terminated orphaned ComfyUI Python process (PID {p.Id}).");
+                            }
+                        }
+                        catch { }
+                    }
+                }
+                catch { }
+            }
+
+            string resultMsg = freed
+                ? details.ToString().Trim()
+                : (IsPortListening("127.0.0.1", 8188, 50) ? "ComfyUI: unload signal sent" : "ComfyUI offline (порт 8188 не активен)");
+
+            Logger.Log($"[Translation] FreeComfyUiVram: {resultMsg}");
+            return (freed, resultMsg);
+        }
+
         private static async Task<bool> UnloadAllLmsModelsInternalAsync()
         {
             string? lms = FindLmsCli();
@@ -821,8 +907,21 @@ namespace RyzenQuietPro
                 using var proc = Process.Start(psi);
                 if (proc != null)
                 {
-                    await proc.WaitForExitAsync();
-                    return proc.ExitCode == 0;
+                    var outTask = proc.StandardOutput.ReadToEndAsync();
+                    var errTask = proc.StandardError.ReadToEndAsync();
+                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+                    try
+                    {
+                        await proc.WaitForExitAsync(cts.Token);
+                        await outTask;
+                        await errTask;
+                        return proc.ExitCode == 0;
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        try { proc.Kill(true); } catch { }
+                        return false;
+                    }
                 }
             }
             catch { }
@@ -848,11 +947,29 @@ namespace RyzenQuietPro
                 using var proc = Process.Start(psi);
                 if (proc != null)
                 {
-                    await proc.WaitForExitAsync();
-                    return proc.ExitCode == 0;
+                    var outTask = proc.StandardOutput.ReadToEndAsync();
+                    var errTask = proc.StandardError.ReadToEndAsync();
+                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(35));
+                    try
+                    {
+                        await proc.WaitForExitAsync(cts.Token);
+                        string output = await outTask;
+                        string err = await errTask;
+                        Logger.Log($"[Translation] lms load '{modelKey}' exit {proc.ExitCode}: {output.Trim()} {err.Trim()}");
+                        return proc.ExitCode == 0;
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        try { proc.Kill(true); } catch { }
+                        Logger.Log($"[Translation] lms load '{modelKey}' timed out after 35s. Process terminated.");
+                        return false;
+                    }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logger.Log($"[Translation] LoadLmsModelInternalAsync exception: {ex.Message}");
+            }
             return false;
         }
 
@@ -1074,7 +1191,7 @@ namespace RyzenQuietPro
 
         public async Task<(bool success, string message)> FreeVramAsync()
         {
-            await _modelLoadLock.WaitAsync();
+            bool acquired = await _modelLoadLock.WaitAsync(TimeSpan.FromSeconds(5));
             try
             {
                 SetStatus(TranslationStatusKind.FreeingVram);
@@ -1083,7 +1200,29 @@ namespace RyzenQuietPro
 
                 string modelToUnload = _settings.TranslateModel ?? "";
 
-            // 1. Ollama: query /api/ps and unload all loaded models via keep_alive = 0
+                // 0. Kill any hanging lms.exe CLI processes immediately
+                try
+                {
+                    foreach (var p in Process.GetProcessesByName("lms"))
+                    {
+                        try { p.Kill(); unloadedAny = true; } catch { }
+                    }
+                }
+                catch { }
+
+                // 1. ComfyUI: call /free on port 8188 / 8189
+                try
+                {
+                    var (comfyOk, comfyMsg) = await FreeComfyUiVramAsync(forceKillIfUnresponsive: false);
+                    if (comfyOk)
+                    {
+                        unloadedAny = true;
+                        details.Append(comfyMsg + " ");
+                    }
+                }
+                catch { }
+
+                // 2. Ollama: query /api/ps and unload all loaded models via keep_alive = 0
             try
             {
                 using var ctsPs = new CancellationTokenSource(TimeSpan.FromSeconds(2));
@@ -1211,7 +1350,7 @@ namespace RyzenQuietPro
             }
             finally
             {
-                _modelLoadLock.Release();
+                if (acquired) _modelLoadLock.Release();
             }
         }
 
