@@ -140,6 +140,7 @@ namespace RyzenQuietPro
         private readonly List<Button> _opacityPresetButtons = new();
         private Panel _pnlFailSafe = null!;
         private Panel _pnlBody = null!;
+        private Panel? _pnlBottomSpacer;
         private Label _lblResizeGrip = null!;
 
         private CheckBox _chkCpuGraph = null!;
@@ -601,7 +602,7 @@ namespace RyzenQuietPro
 
             // ================= 2. GRAPHS & MODULES CARD =================
             // Single vertical column (1 row per item) - spacious and slender
-            int baseOff = 34;
+            int baseOff = 56;
             int cardGraphsH = multiGpu ? 552 + baseOff + 26 : 522 + baseOff + 26;
             var cardGraphs = CreateCard(cardX, curY, cardW, cardGraphsH);
             _pnlBody.Controls.Add(cardGraphs);
@@ -628,14 +629,15 @@ namespace RyzenQuietPro
             });
             cardGraphs.Controls.Add(_chkCpuGraph);
 
-            // CPU Scale Row
+            // CPU Scale: 2 lines for compact layout
+            // Line 1: Title
             int scaleRowY = chkY + (chkGap * 1) + 24;
             _lblCpuScaleTitle = new Label
             {
                 Text = Loc.Get("CpuGraphScaleTitle"),
                 Font = new Font("Segoe UI", 8.0f, FontStyle.Bold),
                 ForeColor = Color.FromArgb(170, 170, 185),
-                Location = new Point(chkX + 16, scaleRowY + 5),
+                Location = new Point(chkX + 16, scaleRowY + 2),
                 AutoSize = true
             };
             cardGraphs.Controls.Add(_lblCpuScaleTitle);
@@ -650,16 +652,22 @@ namespace RyzenQuietPro
                 (Loc.Get("ScaleAuto"), 0)
             };
 
-            int scBtnX = chkX + 155;
-            int scBtnW = Math.Max(32, (cardW - 28 - scBtnX - (scaleOptions.Length - 1) * 4) / scaleOptions.Length);
-            foreach (var opt in scaleOptions)
+            // Line 2: Scale buttons spread evenly across available width
+            int scaleBtnsY = scaleRowY + 22;
+            int scStartX = chkX + 16;
+            int scAvailW = cardW - 28 - 16;
+            int scBtnGap = 4;
+            int scBtnW = Math.Max(24, (scAvailW - (scaleOptions.Length - 1) * scBtnGap) / scaleOptions.Length);
+            for (int i = 0; i < scaleOptions.Length; i++)
             {
+                var opt = scaleOptions[i];
+                int btnW = (i == scaleOptions.Length - 1) ? (scAvailW - i * (scBtnW + scBtnGap)) : scBtnW;
                 var btn = new Button
                 {
                     Text = opt.label,
                     Font = new Font("Segoe UI", 8.0f, FontStyle.Bold),
-                    Size = new Size(scBtnW, 26),
-                    Location = new Point(scBtnX, scaleRowY),
+                    Size = new Size(btnW, 24),
+                    Location = new Point(scStartX + i * (scBtnW + scBtnGap), scaleBtnsY),
                     FlatStyle = FlatStyle.Flat,
                     TextAlign = ContentAlignment.MiddleCenter,
                     Padding = Padding.Empty,
@@ -675,7 +683,6 @@ namespace RyzenQuietPro
                 };
                 cardGraphs.Controls.Add(btn);
                 _cpuScaleButtons.Add(btn);
-                scBtnX += scBtnW + 4;
             }
             UpdateCpuScaleButtonsHighlight();
 
@@ -2853,12 +2860,13 @@ namespace RyzenQuietPro
             ApplyInitialCollapseState();
 
             // Bottom spacer for scrollable body
-            _pnlBody.Controls.Add(new Panel
+            _pnlBottomSpacer = new Panel
             {
                 Location = new Point(cardX, curY),
                 Size = new Size(cardW, 14),
                 BackColor = Color.Transparent
-            });
+            };
+            _pnlBody.Controls.Add(_pnlBottomSpacer);
         }
 
         private Panel CreateCard(int x, int y, int w, int h)
@@ -3273,12 +3281,19 @@ namespace RyzenQuietPro
             if (_btnResetGraphs != null) _btnResetGraphs.Width = cardW - 28;
             if (_cpuScaleButtons.Count > 0)
             {
-                int scBtnX = 14 + 155;
-                int scBtnW = Math.Max(30, (cardW - 28 - scBtnX - (_cpuScaleButtons.Count - 1) * 4) / _cpuScaleButtons.Count);
+                int scStartX = 14 + 16;
+                int scAvailW = cardW - 28 - 16;
+                int scBtnGap = 4;
+                int scBtnW = Math.Max(24, (scAvailW - (_cpuScaleButtons.Count - 1) * scBtnGap) / _cpuScaleButtons.Count);
+                int scaleBtnsY = 32 + (26 * 1) + 24 + 22;
                 for (int i = 0; i < _cpuScaleButtons.Count; i++)
                 {
-                    _cpuScaleButtons[i].Width = scBtnW;
-                    _cpuScaleButtons[i].Left = scBtnX + i * (scBtnW + 4);
+                    _cpuScaleButtons[i].Width = (i == _cpuScaleButtons.Count - 1)
+                        ? (scAvailW - i * (scBtnW + scBtnGap))
+                        : scBtnW;
+                    _cpuScaleButtons[i].Left = scStartX + i * (scBtnW + scBtnGap);
+                    _cpuScaleButtons[i].Top = scaleBtnsY;
+                    _cpuScaleButtons[i].Height = 24;
                 }
             }
             if (_btnFanToggle != null) _btnFanToggle.Left = cardW - 140;
@@ -3365,8 +3380,8 @@ namespace RyzenQuietPro
             if (_sepHdd != null) _sepHdd.Width = cardW - 28;
             if (_lblHddWakeStatus != null)
             {
-                _lblHddWakeStatus.Left = 218;
-                _lblHddWakeStatus.Width = Math.Max(50, cardW - 28 - 222);
+                _lblHddWakeStatus.Left = 215;
+                _lblHddWakeStatus.Width = Math.Max(20, cardW - 28 - 215);
             }
 
             // ServerSync Card elements
@@ -3472,10 +3487,17 @@ namespace RyzenQuietPro
                 _btnClose.Location = new Point(footerBtnX + cardW - closeW, 6);
             }
 
+            if (_pnlBottomSpacer != null)
+            {
+                _pnlBottomSpacer.Left = cardMargin;
+                _pnlBottomSpacer.Width = cardW;
+            }
+
             ReflowAllCardSections();
 
-            _pnlBody.HorizontalScroll.Maximum = 0;
+            _pnlBody.HorizontalScroll.Enabled = false;
             _pnlBody.HorizontalScroll.Visible = false;
+            _pnlBody.HorizontalScroll.Maximum = 0;
         }
 
         private void RefreshLocalizedTexts()
@@ -4230,14 +4252,26 @@ namespace RyzenQuietPro
                 sec.Card.Top = curY;
                 curY += sec.Card.Height + 8;
             }
-            if (_pnlBody.Controls.Count > 0)
+            int cardW = (_allCards.Count > 0) ? _allCards[0].Width : (_pnlBody.ClientSize.Width - 28);
+            if (_pnlBottomSpacer != null)
+            {
+                _pnlBottomSpacer.Top = curY;
+                _pnlBottomSpacer.Left = 14;
+                _pnlBottomSpacer.Width = cardW;
+            }
+            else if (_pnlBody.Controls.Count > 0)
             {
                 var lastCtrl = _pnlBody.Controls[_pnlBody.Controls.Count - 1];
                 if (lastCtrl != null && !_cardSections.Any(s => s.Card == lastCtrl))
                 {
                     lastCtrl.Top = curY;
+                    lastCtrl.Left = 14;
+                    lastCtrl.Width = cardW;
                 }
             }
+            _pnlBody.HorizontalScroll.Enabled = false;
+            _pnlBody.HorizontalScroll.Visible = false;
+            _pnlBody.HorizontalScroll.Maximum = 0;
         }
 
         private void UpdateBackendButtonsHighlight()
