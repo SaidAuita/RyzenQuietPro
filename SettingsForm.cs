@@ -116,17 +116,25 @@ namespace RyzenQuietPro
         private Label _lblSecTranslate = null!;
         private CheckBox _chkTranslateEnable = null!;
         private Panel _pnlTranslateControls = null!;
+        private Label _lblTranslateApiUrl = null!;
         private TextBox _tbTranslateUrl = null!;
         private Button _btnPresetLms = null!;
         private Button _btnPresetOllama = null!;
         private Button _btnTranslateCheck = null!;
         private Label _lblTranslateCheckStatus = null!;
+        private Label _lblTranslateModel = null!;
+        private Label _lblTranslateLang = null!;
         private ComboBox _cbTranslateModel = null!;
         private ComboBox _cbTranslateTargetLang = null!;
         private Button _btnFreeVramNow = null!;
         private Label _lblVramStatus = null!;
+        private Label _lblTranslateVramTimeout = null!;
         private ComboBox _cbTranslateVramTimeout = null!;
         private CheckBox _chkTranslateAutoCopy = null!;
+        private Panel _sepTransHotkeys = null!;
+        private Panel _rowHk1 = null!;
+        private Panel _rowHk2 = null!;
+        private Panel _rowHk3 = null!;
 
         private readonly List<Panel> _cardDividers = new();
         private readonly List<Button> _opacityPresetButtons = new();
@@ -233,15 +241,18 @@ namespace RyzenQuietPro
 
             var screen = Screen.FromPoint(Cursor.Position);
             int availH = screen.WorkingArea.Height - 30;
-            int formH = Math.Min(totalFormH, availH);
-            int formW = Math.Clamp(_settings.SettingsWidth >= 480 ? _settings.SettingsWidth : 500, 480, 850);
+            int defaultW = 560;
+            int formW = Math.Clamp(_settings.SettingsWidth >= 520 ? _settings.SettingsWidth : defaultW, 520, 1100);
+            int formH = (_settings.SettingsHeight >= 380 && _settings.SettingsHeight <= availH)
+                ? _settings.SettingsHeight
+                : Math.Min(650, availH);
 
             this.AutoScaleMode = AutoScaleMode.None;
             this.FormBorderStyle = FormBorderStyle.None;
             this.StartPosition = FormStartPosition.Manual;
             this.ShowInTaskbar = false;
             this.ClientSize = new Size(formW, formH);
-            this.MinimumSize = new Size(480, 460);
+            this.MinimumSize = new Size(520, 360);
             this.BackColor = Color.FromArgb(24, 24, 32);
             this.ForeColor = Color.White;
             this.DoubleBuffered = true;
@@ -321,6 +332,7 @@ namespace RyzenQuietPro
             if (this.WindowState == FormWindowState.Normal && this.Width > 0 && this.Height > 0)
             {
                 _settings.SettingsWidth = this.Width;
+                _settings.SettingsHeight = this.Height;
                 _settings.Save();
                 RelayoutCards();
                 this.Invalidate();
@@ -446,16 +458,38 @@ namespace RyzenQuietPro
             _btnClose.Click += (s, e) => this.Close();
             pnlFooter.Controls.Add(_btnClose);
 
+            // Footer bottom edge resizing & corner grip
+            pnlFooter.MouseMove += (s, e) => {
+                if (e.Y >= pnlFooter.Height - 8)
+                {
+                    pnlFooter.Cursor = (e.X >= pnlFooter.Width - 24) ? Cursors.SizeNWSE :
+                                       (e.X <= 8) ? Cursors.SizeNESW : Cursors.SizeNS;
+                }
+                else
+                {
+                    pnlFooter.Cursor = Cursors.Default;
+                }
+            };
+            pnlFooter.MouseDown += (s, e) => {
+                if (e.Button == MouseButtons.Left && e.Y >= pnlFooter.Height - 8)
+                {
+                    int hit = (e.X >= pnlFooter.Width - 24) ? HTBOTTOMRIGHT :
+                              (e.X <= 8) ? HTBOTTOMLEFT : HTBOTTOM;
+                    ReleaseCapture();
+                    SendMessage(this.Handle, WM_NCLBUTTONDOWN, hit, 0);
+                }
+            };
+
             _lblResizeGrip = new Label
             {
-                Text = "◢",
-                Font = new Font("Segoe UI", 7.5f),
-                ForeColor = Color.FromArgb(80, 80, 95),
-                Size = new Size(16, 16),
+                Text = "⤡",
+                Font = new Font("Segoe UI", 10.5f, FontStyle.Bold),
+                ForeColor = Color.FromArgb(140, 150, 175),
+                Size = new Size(20, 20),
                 TextAlign = ContentAlignment.BottomRight,
                 Cursor = Cursors.SizeNWSE,
                 Anchor = AnchorStyles.Bottom | AnchorStyles.Right,
-                Location = new Point(w - 18, 44 - 18)
+                Location = new Point(w - 22, 44 - 22)
             };
             _lblResizeGrip.MouseDown += (s, e) => {
                 if (e.Button == MouseButtons.Left)
@@ -2135,24 +2169,24 @@ namespace RyzenQuietPro
             cardTranslate.Controls.Add(_pnlTranslateControls);
 
             // Row 0: API Server URL label + Presets
-            var lblApiUrl = new Label
+            _lblTranslateApiUrl = new Label
             {
                 Text = Loc.Get("Translate_ApiUrl"),
                 Font = new Font("Segoe UI", 8.25f),
                 ForeColor = Color.FromArgb(170, 170, 185),
                 Location = new Point(0, 4),
-                Size = new Size(cardW - 28 - 188, 20),
+                Size = new Size(Math.Max(100, cardW - 28 - 200), 20),
                 AutoEllipsis = true,
                 UseMnemonic = false
             };
-            _pnlTranslateControls.Controls.Add(lblApiUrl);
+            _pnlTranslateControls.Controls.Add(_lblTranslateApiUrl);
 
             _btnPresetLms = new Button
             {
                 Text = "LM Studio",
                 Font = new Font("Segoe UI", 8f, FontStyle.Bold),
-                Location = new Point(cardW - 28 - 180, 0),
-                Size = new Size(88, 25),
+                Location = new Point(cardW - 28 - 196, 0),
+                Size = new Size(95, 26),
                 FlatStyle = FlatStyle.Flat,
                 BackColor = Color.FromArgb(32, 36, 48),
                 ForeColor = Color.FromArgb(56, 189, 248),
@@ -2177,8 +2211,8 @@ namespace RyzenQuietPro
             {
                 Text = "Ollama",
                 Font = new Font("Segoe UI", 8f, FontStyle.Bold),
-                Location = new Point(cardW - 28 - 88, 0),
-                Size = new Size(88, 25),
+                Location = new Point(cardW - 28 - 95, 0),
+                Size = new Size(95, 26),
                 FlatStyle = FlatStyle.Flat,
                 BackColor = Color.FromArgb(32, 36, 48),
                 ForeColor = Color.FromArgb(56, 189, 248),
@@ -2200,7 +2234,7 @@ namespace RyzenQuietPro
             _pnlTranslateControls.Controls.Add(_btnPresetOllama);
 
             // Row 1: URL input & Test button
-            int testBtnW = 85;
+            int testBtnW = 88;
             _tbTranslateUrl = new TextBox
             {
                 Text = _settings.TranslateApiUrl,
@@ -2253,7 +2287,7 @@ namespace RyzenQuietPro
             int modelW = (int)((cardW - 28 - 12) * 0.55);
             int langW = cardW - 28 - 12 - modelW;
 
-            var lblModel = new Label
+            _lblTranslateModel = new Label
             {
                 Text = Loc.Get("Translate_Model"),
                 Font = new Font("Segoe UI", 8.25f),
@@ -2262,9 +2296,9 @@ namespace RyzenQuietPro
                 Size = new Size(modelW, 20),
                 UseMnemonic = false
             };
-            _pnlTranslateControls.Controls.Add(lblModel);
+            _pnlTranslateControls.Controls.Add(_lblTranslateModel);
 
-            var lblLang = new Label
+            _lblTranslateLang = new Label
             {
                 Text = Loc.Get("Translate_TargetLang"),
                 Font = new Font("Segoe UI", 8.25f),
@@ -2273,7 +2307,7 @@ namespace RyzenQuietPro
                 Size = new Size(langW, 20),
                 UseMnemonic = false
             };
-            _pnlTranslateControls.Controls.Add(lblLang);
+            _pnlTranslateControls.Controls.Add(_lblTranslateLang);
 
             _cbTranslateModel = new ComboBox
             {
@@ -2377,9 +2411,9 @@ namespace RyzenQuietPro
             };
             _pnlTranslateControls.Controls.Add(_lblVramStatus);
 
-            int timeoutW = 85;
+            int timeoutW = 90;
             int timeoutLblW = 75;
-            var lblVramTimeout = new Label
+            _lblTranslateVramTimeout = new Label
             {
                 Text = Loc.Get("Translate_VramTimeoutShort"),
                 Font = new Font("Segoe UI", 8.25f),
@@ -2389,8 +2423,8 @@ namespace RyzenQuietPro
                 TextAlign = ContentAlignment.MiddleRight,
                 UseMnemonic = false
             };
-            _toolTip?.SetToolTip(lblVramTimeout, Loc.Get("Translate_VramTimeout"));
-            _pnlTranslateControls.Controls.Add(lblVramTimeout);
+            _toolTip?.SetToolTip(_lblTranslateVramTimeout, Loc.Get("Translate_VramTimeout"));
+            _pnlTranslateControls.Controls.Add(_lblTranslateVramTimeout);
 
             _cbTranslateVramTimeout = new ComboBox
             {
@@ -2446,16 +2480,16 @@ namespace RyzenQuietPro
             _pnlTranslateControls.Controls.Add(_chkTranslateAutoCopy);
 
             // Row 5: Separator
-            var sepTransHotkeys = new Panel
+            _sepTransHotkeys = new Panel
             {
                 Location = new Point(0, 204),
                 Size = new Size(cardW - 28, 1),
                 BackColor = Color.FromArgb(40, 40, 52)
             };
-            _pnlTranslateControls.Controls.Add(sepTransHotkeys);
+            _pnlTranslateControls.Controls.Add(_sepTransHotkeys);
 
             // Rows 6, 7, 8: Hotkeys (2-line layout per hotkey for 100% clean display without clipping)
-            var rowHk1 = CreateHotkeyRow(
+            _rowHk1 = CreateHotkeyRow(
                 Loc.Get("Translate_HotkeyText"),
                 _settings.HotkeyTranslateEnabled, v => { _settings.HotkeyTranslateEnabled = v; _settings.Save(); },
                 _settings.HotkeyTranslateCtrl, v => { _settings.HotkeyTranslateCtrl = v; _settings.Save(); },
@@ -2465,9 +2499,9 @@ namespace RyzenQuietPro
                 _settings.HotkeyTranslateKey, v => { _settings.HotkeyTranslateKey = v; _settings.Save(); },
                 214, cardW - 28
             );
-            _pnlTranslateControls.Controls.Add(rowHk1);
+            _pnlTranslateControls.Controls.Add(_rowHk1);
 
-            var rowHk2 = CreateHotkeyRow(
+            _rowHk2 = CreateHotkeyRow(
                 Loc.Get("Translate_HotkeyOcr"),
                 _settings.HotkeyOcrEnabled, v => { _settings.HotkeyOcrEnabled = v; _settings.Save(); },
                 _settings.HotkeyOcrCtrl, v => { _settings.HotkeyOcrCtrl = v; _settings.Save(); },
@@ -2477,9 +2511,9 @@ namespace RyzenQuietPro
                 _settings.HotkeyOcrKey, v => { _settings.HotkeyOcrKey = v; _settings.Save(); },
                 272, cardW - 28
             );
-            _pnlTranslateControls.Controls.Add(rowHk2);
+            _pnlTranslateControls.Controls.Add(_rowHk2);
 
-            var rowHk3 = CreateHotkeyRow(
+            _rowHk3 = CreateHotkeyRow(
                 Loc.Get("Translate_HotkeyOcrTrans"),
                 _settings.HotkeyOcrTranslateEnabled, v => { _settings.HotkeyOcrTranslateEnabled = v; _settings.Save(); },
                 _settings.HotkeyOcrTranslateCtrl, v => { _settings.HotkeyOcrTranslateCtrl = v; _settings.Save(); },
@@ -2489,7 +2523,7 @@ namespace RyzenQuietPro
                 _settings.HotkeyOcrTranslateKey, v => { _settings.HotkeyOcrTranslateKey = v; _settings.Save(); },
                 330, cardW - 28
             );
-            _pnlTranslateControls.Controls.Add(rowHk3);
+            _pnlTranslateControls.Controls.Add(_rowHk3);
 
             UpdateBackendButtonsHighlight();
 
@@ -3301,27 +3335,38 @@ namespace RyzenQuietPro
             if (_pnlTranslateControls != null)
             {
                 _pnlTranslateControls.Width = cardW - 28;
-                int testBtnW = 85;
-                if (_btnTranslateCheck != null)
+                int testBtnW = 88;
+                if (_lblTranslateApiUrl != null) _lblTranslateApiUrl.Width = Math.Max(100, cardW - 28 - 200);
+                if (_btnPresetLms != null) _btnPresetLms.Left = cardW - 28 - 196;
+                if (_btnPresetOllama != null) _btnPresetOllama.Left = cardW - 28 - 95;
+                if (_btnTranslateCheck != null) _btnTranslateCheck.Left = cardW - 28 - testBtnW;
+                if (_tbTranslateUrl != null) _tbTranslateUrl.Width = cardW - 28 - testBtnW - 8;
+                if (_lblTranslateCheckStatus != null) _lblTranslateCheckStatus.Width = cardW - 28;
+
+                int modelW = (int)((cardW - 28 - 12) * 0.55);
+                int langW = cardW - 28 - 12 - modelW;
+                if (_lblTranslateModel != null) _lblTranslateModel.Width = modelW;
+                if (_lblTranslateLang != null)
                 {
-                    _btnTranslateCheck.Left = cardW - 28 - testBtnW;
+                    _lblTranslateLang.Left = modelW + 12;
+                    _lblTranslateLang.Width = langW;
                 }
-                if (_tbTranslateUrl != null)
-                {
-                    _tbTranslateUrl.Width = cardW - 28 - testBtnW - 8;
-                }
-                if (_lblTranslateCheckStatus != null)
-                {
-                    _lblTranslateCheckStatus.Width = cardW - 28;
-                }
-                int modelW = (int)((cardW - 28 - 10) * 0.60);
-                int langW = cardW - 28 - 10 - modelW;
                 if (_cbTranslateModel != null) _cbTranslateModel.Width = modelW;
                 if (_cbTranslateTargetLang != null)
                 {
-                    _cbTranslateTargetLang.Left = modelW + 10;
+                    _cbTranslateTargetLang.Left = modelW + 12;
                     _cbTranslateTargetLang.Width = langW;
                 }
+
+                int timeoutW = 90;
+                int timeoutLblW = 75;
+                if (_cbTranslateVramTimeout != null) _cbTranslateVramTimeout.Left = cardW - 28 - timeoutW;
+                if (_lblTranslateVramTimeout != null) _lblTranslateVramTimeout.Left = cardW - 28 - timeoutW - timeoutLblW - 4;
+                if (_chkTranslateAutoCopy != null) _chkTranslateAutoCopy.Width = cardW - 28;
+                if (_sepTransHotkeys != null) _sepTransHotkeys.Width = cardW - 28;
+                if (_rowHk1 != null) _rowHk1.Width = cardW - 28;
+                if (_rowHk2 != null) _rowHk2.Width = cardW - 28;
+                if (_rowHk3 != null) _rowHk3.Width = cardW - 28;
             }
 
             // Footer close button
@@ -4111,7 +4156,8 @@ namespace RyzenQuietPro
                 Checked = initialEnabled,
                 AutoEllipsis = true,
                 Cursor = Cursors.Hand,
-                UseMnemonic = false
+                UseMnemonic = false,
+                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
             };
 
             // Line 2: Indented modifiers and key dropdown
@@ -4120,8 +4166,8 @@ namespace RyzenQuietPro
                 Text = "Ctrl",
                 Font = new Font("Segoe UI", 8.25f),
                 ForeColor = Color.FromArgb(200, 200, 215),
-                Location = new Point(18, 24),
-                Size = new Size(52, 22),
+                Location = new Point(14, 24),
+                Size = new Size(54, 22),
                 Checked = initialCtrl,
                 Enabled = initialEnabled,
                 Cursor = Cursors.Hand
@@ -4132,8 +4178,8 @@ namespace RyzenQuietPro
                 Text = "Alt",
                 Font = new Font("Segoe UI", 8.25f),
                 ForeColor = Color.FromArgb(200, 200, 215),
-                Location = new Point(72, 24),
-                Size = new Size(48, 22),
+                Location = new Point(70, 24),
+                Size = new Size(50, 22),
                 Checked = initialAlt,
                 Enabled = initialEnabled,
                 Cursor = Cursors.Hand
@@ -4145,7 +4191,7 @@ namespace RyzenQuietPro
                 Font = new Font("Segoe UI", 8.25f),
                 ForeColor = Color.FromArgb(200, 200, 215),
                 Location = new Point(122, 24),
-                Size = new Size(56, 22),
+                Size = new Size(58, 22),
                 Checked = initialShift,
                 Enabled = initialEnabled,
                 Cursor = Cursors.Hand
@@ -4156,22 +4202,15 @@ namespace RyzenQuietPro
                 Text = "Win",
                 Font = new Font("Segoe UI", 8.25f),
                 ForeColor = Color.FromArgb(200, 200, 215),
-                Location = new Point(180, 24),
-                Size = new Size(52, 22),
+                Location = new Point(182, 24),
+                Size = new Size(54, 22),
                 Checked = initialWin,
                 Enabled = initialEnabled,
                 Cursor = Cursors.Hand
             };
 
-            var lblKey = new Label
-            {
-                Text = Loc.Get("LayoutSwitch_Key"),
-                Font = new Font("Segoe UI", 8.25f),
-                ForeColor = Color.FromArgb(170, 170, 185),
-                Location = new Point(236, 27),
-                Size = new Size(35, 18),
-                UseMnemonic = false
-            };
+            int cbKeyWidth = 85;
+            int lblKeyWidth = 65;
 
             var cbKey = new ComboBox
             {
@@ -4179,9 +4218,22 @@ namespace RyzenQuietPro
                 BackColor = Color.FromArgb(24, 24, 32),
                 ForeColor = Color.FromArgb(45, 212, 191),
                 Font = new Font("Segoe UI", 8.25f),
-                Location = new Point(275, 23),
-                Size = new Size(75, 24),
-                Enabled = initialEnabled
+                Location = new Point(width - cbKeyWidth, 23),
+                Size = new Size(cbKeyWidth, 24),
+                Enabled = initialEnabled,
+                Anchor = AnchorStyles.Top | AnchorStyles.Right
+            };
+
+            var lblKey = new Label
+            {
+                Text = Loc.Get("LayoutSwitch_Key"),
+                Font = new Font("Segoe UI", 8.25f),
+                ForeColor = Color.FromArgb(170, 170, 185),
+                Location = new Point(width - cbKeyWidth - lblKeyWidth - 4, 27),
+                Size = new Size(lblKeyWidth, 18),
+                TextAlign = ContentAlignment.MiddleRight,
+                UseMnemonic = false,
+                Anchor = AnchorStyles.Top | AnchorStyles.Right
             };
 
             var keyList = GetKeyOptionList();
