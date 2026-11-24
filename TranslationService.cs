@@ -574,6 +574,20 @@ namespace RyzenQuietPro
 
         public static async Task EnsureBackendReadyAsync(string baseUrl, string? model = null)
         {
+            // Auto-free ComfyUI VRAM if ComfyUI is holding models
+            try
+            {
+                if (IsPortListening("127.0.0.1", 8188, 60) || IsPortListening("127.0.0.1", 8189, 60))
+                {
+                    Logger.Log("[Translation] ComfyUI active. Proactively freeing ComfyUI VRAM before LLM inference...");
+                    await FreeComfyUiVramAsync(forceKillIfUnresponsive: false);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Log($"[Translation] Proactive ComfyUI free exception: {ex.Message}");
+            }
+
             if (baseUrl.Contains(":1234"))
             {
                 if (!IsPortListening("127.0.0.1", 1234, 150))

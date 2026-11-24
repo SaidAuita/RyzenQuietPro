@@ -337,15 +337,27 @@ namespace RyzenQuietPro
             }
         }
 
+        private static TranslationPopupForm? _activePopup;
+
         public static void ShowTranslationPopup(string? text, byte[]? pngBytes, bool isOcr, bool andTranslate, IntPtr targetHwnd)
         {
             if (Application.OpenForms.Count > 0 && Application.OpenForms[0] is Form mainForm && mainForm.IsHandleCreated)
             {
                 mainForm.BeginInvoke(new Action(() =>
                 {
-                    var popup = new TranslationPopupForm(text, pngBytes, isOcr, andTranslate, targetHwnd);
-                    popup.Show();
-                    popup.Activate();
+                    if (_activePopup != null && !_activePopup.IsDisposed && _activePopup.Visible)
+                    {
+                        _activePopup.UpdateInput(text, pngBytes, isOcr, andTranslate, targetHwnd);
+                        _activePopup.BringToFront();
+                        _activePopup.Activate();
+                    }
+                    else
+                    {
+                        _activePopup = new TranslationPopupForm(text, pngBytes, isOcr, andTranslate, targetHwnd);
+                        _activePopup.FormClosed += (s, e) => { _activePopup = null; };
+                        _activePopup.Show();
+                        _activePopup.Activate();
+                    }
                 }));
             }
         }

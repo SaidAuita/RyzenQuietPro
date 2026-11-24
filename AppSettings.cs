@@ -63,8 +63,10 @@ namespace RyzenQuietPro
         public string TranslateTargetLang { get; set; } = "ru";
         public int TranslateVramTimeoutMinutes { get; set; } = 5; // 0 = disabled, 1, 2, 5, 10, 15, 30 min
         public bool TranslateAutoCopy { get; set; } = false;
-        public int TranslatePopupWidth { get; set; } = 480;
-        public int TranslatePopupHeight { get; set; } = 330;
+        public int TranslatePopupWidth { get; set; } = 580;
+        public int TranslatePopupHeight { get; set; } = 340;
+        public string TranslateRecentLang1 { get; set; } = "en";
+        public string TranslateRecentLang2 { get; set; } = "ru";
 
         // Hotkey 1: Translate Selected Text (default: Ctrl + Alt + T)
         public bool HotkeyTranslateEnabled { get; set; } = true;

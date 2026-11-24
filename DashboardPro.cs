@@ -674,8 +674,6 @@ namespace RyzenQuietPro
             _btnClose.Click += (s, e) => this.Hide();
             _headerPanel.Controls.Add(_btnClose);
 
-            UpdateTooltips();
-
             // 2. Metric Labels & Panels (Graphs)
             Color cpuColor = _isQuietMode ? Color.FromArgb(80, 220, 140) : Color.FromArgb(250, 180, 80);
 
@@ -1156,6 +1154,7 @@ namespace RyzenQuietPro
             _isInitialized = true;
             UpdateControlFontsAndSizes(_currentUiScale);
             LayoutComponents();
+            UpdateTooltips();
         }
 
         private void LayoutComponents()

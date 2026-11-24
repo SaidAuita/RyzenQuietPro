@@ -39,16 +39,18 @@ namespace RyzenQuietPro
         private const int HTBOTTOMLEFT = 16;
         private const int HTBOTTOMRIGHT = 17;
 
-        private readonly IntPtr _targetWindow;
-        private readonly string? _originalText;
-        private readonly byte[]? _imageBytes;
-        private readonly bool _isOcr;
-        private readonly bool _andTranslate;
+        private IntPtr _targetWindow;
+        private string? _originalText;
+        private byte[]? _imageBytes;
+        private bool _isOcr;
+        private bool _andTranslate;
 
         private Panel _pnlHeader = null!;
         private Label _lblTitle = null!;
         private Label _lblModelPill = null!;
         private ComboBox _cbTargetLang = null!;
+        private Button _btnQuickLang1 = null!;
+        private Button _btnQuickLang2 = null!;
         private Button _btnClose = null!;
         private Label _lblSourceSnippet = null!;
         private TextBox _tbResult = null!;
@@ -57,6 +59,9 @@ namespace RyzenQuietPro
         private Button _btnCopy = null!;
         private Label _lblResizeGrip = null!;
         private ToolTip _toolTip = null!;
+
+        private string _quickLangCode1 = "en";
+        private string _quickLangCode2 = "ru";
 
         private string _translatedResult = string.Empty;
         private CancellationTokenSource? _cts;
@@ -80,11 +85,18 @@ namespace RyzenQuietPro
             this.DoubleBuffered = true;
 
             var settings = AppSettings.Load();
-            int initW = Math.Clamp(settings.TranslatePopupWidth, 380, 1600);
-            int initH = Math.Clamp(settings.TranslatePopupHeight, 220, 1200);
+            int initW = Math.Clamp(settings.TranslatePopupWidth, 540, 1600);
+            int initH = Math.Clamp(settings.TranslatePopupHeight, 260, 1200);
             this.Size = new Size(initW, initH);
-            this.MinimumSize = new Size(380, 220);
+            this.MinimumSize = new Size(540, 240);
             this.MaximumSize = new Size(1600, 1200);
+
+            _quickLangCode1 = !string.IsNullOrEmpty(settings.TranslateRecentLang1) ? settings.TranslateRecentLang1 : "en";
+            _quickLangCode2 = !string.IsNullOrEmpty(settings.TranslateRecentLang2) ? settings.TranslateRecentLang2 : "ru";
+            if (_quickLangCode1.Equals(_quickLangCode2, StringComparison.OrdinalIgnoreCase))
+            {
+                _quickLangCode2 = _quickLangCode1.Equals("ru", StringComparison.OrdinalIgnoreCase) ? "en" : "ru";
+            }
 
             this.BackColor = Color.FromArgb(26, 28, 35);
             this.KeyPreview = true;
@@ -162,6 +174,44 @@ namespace RyzenQuietPro
                 _cbTargetLang.Items.Add($"{lang.LocalName} ({lang.Code})");
             }
 
+            // Quick Lang 2 button (e.g. RU)
+            _btnQuickLang2 = new Button
+            {
+                Text = _quickLangCode2.ToUpperInvariant(),
+                Font = new Font("Segoe UI", 8f, FontStyle.Bold),
+                Size = new Size(38, 24),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.FromArgb(28, 32, 44),
+                ForeColor = Color.FromArgb(148, 163, 184),
+                Cursor = Cursors.Hand,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Padding = Padding.Empty,
+                UseMnemonic = false
+            };
+            _btnQuickLang2.FlatAppearance.BorderSize = 1;
+            _btnQuickLang2.FlatAppearance.BorderColor = Color.FromArgb(51, 65, 85);
+            _btnQuickLang2.Click += (s, e) => SelectQuickLanguage(_quickLangCode2);
+            _pnlHeader.Controls.Add(_btnQuickLang2);
+
+            // Quick Lang 1 button (e.g. EN)
+            _btnQuickLang1 = new Button
+            {
+                Text = _quickLangCode1.ToUpperInvariant(),
+                Font = new Font("Segoe UI", 8f, FontStyle.Bold),
+                Size = new Size(38, 24),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.FromArgb(28, 32, 44),
+                ForeColor = Color.FromArgb(148, 163, 184),
+                Cursor = Cursors.Hand,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Padding = Padding.Empty,
+                UseMnemonic = false
+            };
+            _btnQuickLang1.FlatAppearance.BorderSize = 1;
+            _btnQuickLang1.FlatAppearance.BorderColor = Color.FromArgb(51, 65, 85);
+            _btnQuickLang1.Click += (s, e) => SelectQuickLanguage(_quickLangCode1);
+            _pnlHeader.Controls.Add(_btnQuickLang1);
+
             // Select current setting
             string curLang = AppSettings.Load().TranslateTargetLang ?? "ru";
             int selIdx = 0;
@@ -186,18 +236,30 @@ namespace RyzenQuietPro
                 try
                 {
                     string newTargetLang = GetSelectedTargetLang();
-                    var sSettings = AppSettings.Load();
-                    if (!string.Equals(sSettings.TranslateTargetLang, newTargetLang, StringComparison.OrdinalIgnoreCase))
+                    if (!string.Equals(newTargetLang, "auto", StringComparison.OrdinalIgnoreCase))
                     {
-                        sSettings.TranslateTargetLang = newTargetLang;
-                        sSettings.Save();
-                        TranslationService.Instance.UpdateSettings(sSettings);
+                        if (!string.Equals(newTargetLang, _quickLangCode1, StringComparison.OrdinalIgnoreCase))
+                        {
+                            _quickLangCode2 = _quickLangCode1;
+                            _quickLangCode1 = newTargetLang;
+                        }
                     }
+
+                    var sSettings = AppSettings.Load();
+                    sSettings.TranslateTargetLang = newTargetLang;
+                    sSettings.TranslateRecentLang1 = _quickLangCode1;
+                    sSettings.TranslateRecentLang2 = _quickLangCode2;
+                    sSettings.Save();
+                    TranslationService.Instance.UpdateSettings(sSettings);
+
+                    UpdateQuickButtonsUI();
                 }
                 catch { }
                 StartExecution();
             };
             _pnlHeader.Controls.Add(_cbTargetLang);
+
+            UpdateQuickButtonsUI();
 
             // Model pill
             _lblModelPill = new Label
@@ -207,8 +269,8 @@ namespace RyzenQuietPro
                 ForeColor = Color.FromArgb(56, 189, 248),
                 BackColor = Color.FromArgb(30, 41, 59),
                 TextAlign = ContentAlignment.MiddleCenter,
-                Size = new Size(65, 22),
-                Location = new Point(w - 242, 9)
+                Size = new Size(68, 22),
+                Location = new Point(w - 338, 9)
             };
             _pnlHeader.Controls.Add(_lblModelPill);
 
@@ -335,6 +397,8 @@ namespace RyzenQuietPro
             };
             _toolTip.SetToolTip(_btnClose, Loc.Get("TipPopupClose"));
             _toolTip.SetToolTip(_cbTargetLang, Loc.Get("TipPopupTargetLang"));
+            _toolTip.SetToolTip(_btnQuickLang1, $"{Loc.Get("Translate_TargetLang")}: {_quickLangCode1.ToUpperInvariant()}");
+            _toolTip.SetToolTip(_btnQuickLang2, $"{Loc.Get("Translate_TargetLang")}: {_quickLangCode2.ToUpperInvariant()}");
             _toolTip.SetToolTip(_lblModelPill, Loc.Get("TipPopupModel"));
             _toolTip.SetToolTip(_btnReplace, Loc.Get("TipPopupReplace"));
             _toolTip.SetToolTip(_btnCopy, Loc.Get("TipPopupCopy"));
@@ -357,7 +421,9 @@ namespace RyzenQuietPro
             _pnlHeader.Width = w;
             if (_btnClose != null) _btnClose.Location = new Point(w - 32, 7);
             if (_cbTargetLang != null) _cbTargetLang.Location = new Point(w - 170, 8);
-            if (_lblModelPill != null) _lblModelPill.Location = new Point(w - 242, 9);
+            if (_btnQuickLang2 != null) _btnQuickLang2.Location = new Point(w - 214, 8);
+            if (_btnQuickLang1 != null) _btnQuickLang1.Location = new Point(w - 258, 8);
+            if (_lblModelPill != null) _lblModelPill.Location = new Point(w - 334, 9);
             if (_lblSourceSnippet != null) _lblSourceSnippet.Width = Math.Max(50, w - 28);
             if (_tbResult != null) _tbResult.Size = new Size(Math.Max(50, w - 28), Math.Max(50, h - 124));
             if (_lblLatency != null) _lblLatency.Location = new Point(14, h - 42);
@@ -371,6 +437,73 @@ namespace RyzenQuietPro
             this.Invalidate();
         }
 
+        public void UpdateInput(string? text, byte[]? imageBytes, bool isOcr, bool andTranslate, IntPtr targetWindow)
+        {
+            _originalText = text;
+            _imageBytes = imageBytes;
+            _isOcr = isOcr;
+            _andTranslate = andTranslate;
+            _targetWindow = targetWindow;
+
+            string title = _isOcr
+                ? (_andTranslate ? "📷 Распознавание и перевод" : "📷 Распознавание текста (OCR)")
+                : "🌐 Быстрый перевод";
+            if (_lblTitle != null) _lblTitle.Text = title;
+
+            if (!string.IsNullOrEmpty(_originalText))
+            {
+                string snip = _originalText.Replace("\r", " ").Replace("\n", " ").Trim();
+                if (snip.Length > 80) snip = snip.Substring(0, 80) + "...";
+                _lblSourceSnippet.Text = $"Исходный: {snip}";
+            }
+            else if (_isOcr)
+            {
+                _lblSourceSnippet.Text = "Источник: Снимок экрана";
+            }
+            else
+            {
+                _lblSourceSnippet.Text = "";
+            }
+
+            StartExecution();
+        }
+
+        private void SelectQuickLanguage(string langCode)
+        {
+            for (int i = 0; i < TranslationService.SupportedLanguages.Length; i++)
+            {
+                if (TranslationService.SupportedLanguages[i].Code.Equals(langCode, StringComparison.OrdinalIgnoreCase))
+                {
+                    _cbTargetLang.SelectedIndex = i + 1;
+                    return;
+                }
+            }
+        }
+
+        private void UpdateQuickButtonsUI()
+        {
+            if (_btnQuickLang1 == null || _btnQuickLang2 == null) return;
+            string current = GetSelectedTargetLang();
+            bool is1 = string.Equals(current, _quickLangCode1, StringComparison.OrdinalIgnoreCase);
+            bool is2 = string.Equals(current, _quickLangCode2, StringComparison.OrdinalIgnoreCase);
+
+            _btnQuickLang1.Text = _quickLangCode1.ToUpperInvariant();
+            _btnQuickLang1.BackColor = is1 ? Color.FromArgb(37, 99, 235) : Color.FromArgb(28, 32, 44);
+            _btnQuickLang1.ForeColor = is1 ? Color.White : Color.FromArgb(148, 163, 184);
+            _btnQuickLang1.FlatAppearance.BorderColor = is1 ? Color.FromArgb(96, 165, 250) : Color.FromArgb(51, 65, 85);
+
+            _btnQuickLang2.Text = _quickLangCode2.ToUpperInvariant();
+            _btnQuickLang2.BackColor = is2 ? Color.FromArgb(37, 99, 235) : Color.FromArgb(28, 32, 44);
+            _btnQuickLang2.ForeColor = is2 ? Color.White : Color.FromArgb(148, 163, 184);
+            _btnQuickLang2.FlatAppearance.BorderColor = is2 ? Color.FromArgb(96, 165, 250) : Color.FromArgb(51, 65, 85);
+
+            if (_toolTip != null)
+            {
+                _toolTip.SetToolTip(_btnQuickLang1, $"{Loc.Get("Translate_TargetLang")}: {_quickLangCode1.ToUpperInvariant()}");
+                _toolTip.SetToolTip(_btnQuickLang2, $"{Loc.Get("Translate_TargetLang")}: {_quickLangCode2.ToUpperInvariant()}");
+            }
+        }
+
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
             base.OnFormClosing(e);
@@ -380,6 +513,8 @@ namespace RyzenQuietPro
                 s.TranslatePopupWidth = this.Width;
                 s.TranslatePopupHeight = this.Height;
                 s.TranslateTargetLang = GetSelectedTargetLang();
+                s.TranslateRecentLang1 = _quickLangCode1;
+                s.TranslateRecentLang2 = _quickLangCode2;
                 s.Save();
             }
             catch { }
