@@ -147,6 +147,7 @@ namespace RyzenQuietPro
         private Label _lblTranslate = null!;
         private Label _lblTranslateSub = null!;
         private SmoothPanel _pnlTranslate = null!;
+        private Button _btnTranslatePopup = null!;
         private Button _btnTranslateOcr = null!;
         private Button _btnTranslateTrans = null!;
         private Button _btnTranslateFreeVram = null!;
@@ -535,6 +536,7 @@ namespace RyzenQuietPro
 
             if (_lblTranslate != null) _lblTranslate.Font = new Font("Segoe UI", (float)Math.Max(5.5, Math.Round(9.5f * scale, 1)), FontStyle.Bold);
             if (_lblTranslateSub != null) _lblTranslateSub.Font = new Font("Segoe UI", (float)Math.Max(4.8, Math.Round(8.0f * scale, 1)));
+            if (_btnTranslatePopup != null) _btnTranslatePopup.Font = new Font("Segoe UI", (float)Math.Max(5.0, Math.Round(8.5f * scale, 1)), FontStyle.Bold);
             if (_btnTranslateOcr != null) _btnTranslateOcr.Font = new Font("Segoe UI", (float)Math.Max(5.0, Math.Round(7.8f * scale, 1)), FontStyle.Bold);
             if (_btnTranslateTrans != null) _btnTranslateTrans.Font = new Font("Segoe UI", (float)Math.Max(5.0, Math.Round(7.8f * scale, 1)), FontStyle.Bold);
             if (_btnTranslateFreeVram != null) _btnTranslateFreeVram.Font = new Font("Segoe UI", (float)Math.Max(5.0, Math.Round(7.5f * scale, 1)), FontStyle.Bold);
@@ -970,6 +972,22 @@ namespace RyzenQuietPro
                 BackColor = Color.FromArgb(16, 16, 20)
             };
             _pnlTranslate.Paint += DrawTranslatePanel;
+
+            _btnTranslatePopup = new Button
+            {
+                Text = "🌐",
+                Font = new Font("Segoe UI", (float)Math.Max(5.0, Math.Round(8.5f * _currentUiScale, 1)), FontStyle.Bold),
+                ForeColor = Color.FromArgb(56, 189, 248),
+                BackColor = Color.FromArgb(30, 41, 59),
+                FlatStyle = FlatStyle.Flat,
+                Cursor = Cursors.Hand,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Padding = Padding.Empty,
+                UseMnemonic = false
+            };
+            _btnTranslatePopup.FlatAppearance.BorderColor = Color.FromArgb(51, 65, 85);
+            _btnTranslatePopup.Click += (s, e) => KeyboardLayoutService.ShowTranslationPopup(string.Empty, null, isOcr: false, andTranslate: false, IntPtr.Zero);
+            _pnlTranslate.Controls.Add(_btnTranslatePopup);
 
             _btnTranslateOcr = new Button
             {
@@ -1842,24 +1860,32 @@ namespace RyzenQuietPro
                     _pnlTranslate.Location = new Point(marginX, curY);
                     _pnlTranslate.Size = new Size(contentW, trPanelH);
 
-                    int trBtnCount = 4;
+                    int popupBtnW = (int)Math.Round(28 * scale);
                     int trBtnGap = (int)Math.Round(4 * scale);
-                    int trBtnW = (contentW - (trBtnGap * (trBtnCount - 1))) / trBtnCount;
+                    int remainW = contentW - popupBtnW - trBtnGap;
+                    int trBtnCount = 4;
+                    int trBtnW = (remainW - (trBtnGap * (trBtnCount - 1))) / trBtnCount;
                     int trBtnH = (int)Math.Round(30 * scale);
                     int trBtnY = (int)Math.Round(6 * scale);
 
-                    _btnTranslateOcr.Location = new Point(0, trBtnY);
+                    _btnTranslatePopup.Location = new Point(0, trBtnY);
+                    _btnTranslatePopup.Size = new Size(popupBtnW, trBtnH);
+
+                    int trBtnX = popupBtnW + trBtnGap;
+                    _btnTranslateOcr.Location = new Point(trBtnX, trBtnY);
                     _btnTranslateOcr.Size = new Size(trBtnW, trBtnH);
 
-                    _btnTranslateTrans.Location = new Point(trBtnW + trBtnGap, trBtnY);
+                    trBtnX += trBtnW + trBtnGap;
+                    _btnTranslateTrans.Location = new Point(trBtnX, trBtnY);
                     _btnTranslateTrans.Size = new Size(trBtnW, trBtnH);
 
-                    _btnTranslateFreeVram.Location = new Point((trBtnW + trBtnGap) * 2, trBtnY);
+                    trBtnX += trBtnW + trBtnGap;
+                    _btnTranslateFreeVram.Location = new Point(trBtnX, trBtnY);
                     _btnTranslateFreeVram.Size = new Size(trBtnW, trBtnH);
 
-                    int lastX = (trBtnW + trBtnGap) * 3;
-                    _btnTranslateFreeComfy.Location = new Point(lastX, trBtnY);
-                    _btnTranslateFreeComfy.Size = new Size(contentW - lastX, trBtnH);
+                    trBtnX += trBtnW + trBtnGap;
+                    _btnTranslateFreeComfy.Location = new Point(trBtnX, trBtnY);
+                    _btnTranslateFreeComfy.Size = new Size(contentW - trBtnX, trBtnH);
 
                     curY += trPanelH + (int)Math.Round(6 * scale);
                 }
@@ -3259,6 +3285,7 @@ namespace RyzenQuietPro
             if (_sepServerSync != null) _toolTip.SetToolTip(_sepServerSync, sectionTip);
             if (_lblTranslate != null) _toolTip.SetToolTip(_lblTranslate, sectionTip);
             if (_sepTranslate != null) _toolTip.SetToolTip(_sepTranslate, sectionTip);
+            if (_btnTranslatePopup != null) _toolTip.SetToolTip(_btnTranslatePopup, Loc.Get("TipTranslateOpenPopup"));
             if (_btnTranslateOcr != null) _toolTip.SetToolTip(_btnTranslateOcr, Loc.Get("TipTranslateOcr"));
             if (_btnTranslateTrans != null) _toolTip.SetToolTip(_btnTranslateTrans, Loc.Get("TipTranslateTrans"));
             if (_btnTranslateFreeVram != null) _toolTip.SetToolTip(_btnTranslateFreeVram, Loc.Get("TipTranslateFreeVram"));
