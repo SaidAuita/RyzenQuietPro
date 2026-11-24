@@ -184,6 +184,8 @@ namespace RyzenQuietPro
 
         private Button _btnSpecs = null!;
         private Button _btnTools = null!;
+        private Button _btnExpandAll = null!;
+        private Button _btnCollapseAll = null!;
         private Button _btnClose = null!;
 
         // ServerSync Card
@@ -413,7 +415,7 @@ namespace RyzenQuietPro
                 ForeColor = Color.FromArgb(200, 200, 215),
                 BackColor = Color.FromArgb(32, 32, 40),
                 FlatStyle = FlatStyle.Flat,
-                Size = new Size(95, 32),
+                Size = new Size(42, 32),
                 Location = new Point(cardX, 6),
                 TextAlign = ContentAlignment.MiddleCenter,
                 Padding = Padding.Empty,
@@ -431,8 +433,8 @@ namespace RyzenQuietPro
                 ForeColor = Color.FromArgb(160, 160, 180),
                 BackColor = Color.FromArgb(32, 32, 40),
                 FlatStyle = FlatStyle.Flat,
-                Size = new Size(95, 32),
-                Location = new Point(cardX + 101, 6),
+                Size = new Size(42, 32),
+                Location = new Point(cardX + 48, 6),
                 TextAlign = ContentAlignment.MiddleCenter,
                 Padding = Padding.Empty,
                 Cursor = Cursors.Hand
@@ -442,6 +444,43 @@ namespace RyzenQuietPro
             _btnTools.Click += (s, e) => OpenToolsUrl();
             pnlFooter.Controls.Add(_btnTools);
 
+            _btnExpandAll = new Button
+            {
+                Text = Loc.Get("Settings_ExpandAll"),
+                Font = new Font("Segoe UI", 8.5f),
+                ForeColor = Color.FromArgb(200, 200, 215),
+                BackColor = Color.FromArgb(32, 32, 40),
+                FlatStyle = FlatStyle.Flat,
+                Size = new Size(130, 32),
+                Location = new Point(cardX + 96, 6),
+                TextAlign = ContentAlignment.MiddleCenter,
+                Padding = Padding.Empty,
+                Cursor = Cursors.Hand
+            };
+            _btnExpandAll.FlatAppearance.BorderColor = Color.FromArgb(50, 50, 65);
+            _toolTip.SetToolTip(_btnExpandAll, Loc.Get("TipSettingsExpandAll"));
+            _btnExpandAll.Click += (s, e) => SetAllSectionsCollapsed(false);
+            pnlFooter.Controls.Add(_btnExpandAll);
+
+            _btnCollapseAll = new Button
+            {
+                Text = Loc.Get("Settings_CollapseAll"),
+                Font = new Font("Segoe UI", 8.5f),
+                ForeColor = Color.FromArgb(200, 200, 215),
+                BackColor = Color.FromArgb(32, 32, 40),
+                FlatStyle = FlatStyle.Flat,
+                Size = new Size(125, 32),
+                Location = new Point(cardX + 232, 6),
+                TextAlign = ContentAlignment.MiddleCenter,
+                Padding = Padding.Empty,
+                Cursor = Cursors.Hand
+            };
+            _btnCollapseAll.FlatAppearance.BorderColor = Color.FromArgb(50, 50, 65);
+            _toolTip.SetToolTip(_btnCollapseAll, Loc.Get("TipSettingsCollapseAll"));
+            _btnCollapseAll.Click += (s, e) => SetAllSectionsCollapsed(true);
+            pnlFooter.Controls.Add(_btnCollapseAll);
+
+            int closeW = 100;
             _btnClose = new Button
             {
                 Text = Loc.Get("InfoClose"),
@@ -449,8 +488,8 @@ namespace RyzenQuietPro
                 ForeColor = Color.White,
                 BackColor = Color.FromArgb(14, 165, 233), // Sky Blue Accent
                 FlatStyle = FlatStyle.Flat,
-                Size = new Size(Math.Max(120, cardW - 202), 32),
-                Location = new Point(cardX + 202, 6),
+                Size = new Size(closeW, 32),
+                Location = new Point(cardX + cardW - closeW, 6),
                 TextAlign = ContentAlignment.MiddleCenter,
                 Padding = Padding.Empty,
                 Cursor = Cursors.Hand
@@ -3384,10 +3423,33 @@ namespace RyzenQuietPro
                 if (_rowHk3 != null) _rowHk3.Width = cardW - 28;
             }
 
-            // Footer close button
+            // Footer buttons layout
+            int footerBtnX = cardMargin;
+            if (_btnSpecs != null)
+            {
+                _btnSpecs.Size = new Size(42, 32);
+                _btnSpecs.Location = new Point(footerBtnX, 6);
+            }
+            if (_btnTools != null)
+            {
+                _btnTools.Size = new Size(42, 32);
+                _btnTools.Location = new Point(footerBtnX + 48, 6);
+            }
+            if (_btnExpandAll != null)
+            {
+                _btnExpandAll.Size = new Size(130, 32);
+                _btnExpandAll.Location = new Point(footerBtnX + 96, 6);
+            }
+            if (_btnCollapseAll != null)
+            {
+                _btnCollapseAll.Size = new Size(125, 32);
+                _btnCollapseAll.Location = new Point(footerBtnX + 232, 6);
+            }
             if (_btnClose != null)
             {
-                _btnClose.Width = Math.Max(120, cardW - 202);
+                int closeW = 100;
+                _btnClose.Size = new Size(closeW, 32);
+                _btnClose.Location = new Point(footerBtnX + cardW - closeW, 6);
             }
 
             ReflowAllCardSections();
@@ -3547,6 +3609,16 @@ namespace RyzenQuietPro
                 _toolTip?.SetToolTip(_btnSpecs, Loc.Get("TipInfo"));
             }
             if (_btnTools != null) _toolTip?.SetToolTip(_btnTools, "https://ph-cu-s.com/tools");
+            if (_btnExpandAll != null)
+            {
+                _btnExpandAll.Text = Loc.Get("Settings_ExpandAll");
+                _toolTip?.SetToolTip(_btnExpandAll, Loc.Get("TipSettingsExpandAll"));
+            }
+            if (_btnCollapseAll != null)
+            {
+                _btnCollapseAll.Text = Loc.Get("Settings_CollapseAll");
+                _toolTip?.SetToolTip(_btnCollapseAll, Loc.Get("TipSettingsCollapseAll"));
+            }
             if (_btnClose != null) _btnClose.Text = Loc.Get("InfoClose");
 
             if (_lblSecServerSync != null) _lblSecServerSync.Text = Loc.Get("ServerSync_Module");
@@ -4098,6 +4170,22 @@ namespace RyzenQuietPro
                     c.Visible = !sec.IsCollapsed;
                 }
             }
+        }
+
+        private void SetAllSectionsCollapsed(bool collapsed)
+        {
+            if (_settings.SettingsCardsCollapsed == null)
+            {
+                _settings.SettingsCardsCollapsed = new();
+            }
+            foreach (var sec in _cardSections)
+            {
+                sec.IsCollapsed = collapsed;
+                _settings.SettingsCardsCollapsed[sec.Key] = collapsed;
+                ApplySectionState(sec);
+            }
+            _settings.Save();
+            ReflowAllCardSections();
         }
 
         private void ApplyInitialCollapseState()

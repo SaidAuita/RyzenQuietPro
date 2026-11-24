@@ -368,10 +368,10 @@ namespace RyzenQuietPro
             bool showCpu = _settings.ShowCpuGraph || _settings.ShowCpuCores || _settings.ShowTopProcesses;
             if (showCpu)
             {
-                totalH += (int)Math.Round(28 * scale);
+                totalH += (int)Math.Round(5 * scale) + (int)Math.Round(28 * scale);
                 if (!_settings.SectionCpuCollapsed)
                 {
-                    if (_settings.ShowCpuGraph) totalH += baseGraphH + (int)Math.Round(2 * scale);
+                    if (_settings.ShowCpuGraph) totalH += baseGraphH + (int)Math.Round(4 * scale);
                     if (_settings.ShowCpuCores) totalH += (int)Math.Round(26 * scale);
                     if (_settings.ShowTopProcesses) totalH += (int)Math.Round(96 * scale);
                 }
@@ -379,19 +379,19 @@ namespace RyzenQuietPro
 
             if (_settings.ShowRamGraph)
             {
-                totalH += (int)Math.Round(28 * scale);
+                totalH += (int)Math.Round(5 * scale) + (int)Math.Round(28 * scale);
                 if (!_settings.SectionRamCollapsed) totalH += baseGraphH + (int)Math.Round(6 * scale);
             }
 
             if (_settings.ShowGpuGraph)
             {
-                totalH += (int)Math.Round(28 * scale);
+                totalH += (int)Math.Round(5 * scale) + (int)Math.Round(28 * scale);
                 if (!_settings.SectionGpuCollapsed) totalH += baseGraphH + (int)Math.Round(6 * scale);
             }
 
             if (_settings.ShowVramGraph)
             {
-                totalH += (int)Math.Round(28 * scale);
+                totalH += (int)Math.Round(5 * scale) + (int)Math.Round(28 * scale);
                 if (!_settings.SectionVramCollapsed)
                 {
                     totalH += baseGraphH + (int)Math.Round(6 * scale);
@@ -401,7 +401,7 @@ namespace RyzenQuietPro
 
             if (_settings.ShowDiskGraph)
             {
-                totalH += (int)Math.Round(28 * scale);
+                totalH += (int)Math.Round(5 * scale) + (int)Math.Round(28 * scale);
                 if (!_settings.SectionDiskCollapsed)
                 {
                     totalH += baseGraphH + (int)Math.Round(6 * scale);
@@ -416,7 +416,7 @@ namespace RyzenQuietPro
 
             if (_settings.ShowFanGraph)
             {
-                totalH += (int)Math.Round(33 * scale);
+                totalH += (int)Math.Round(5 * scale) + (int)Math.Round(33 * scale);
                 if (!_settings.SectionFansCollapsed)
                 {
                     float fanScale = _settings.FanScale * scale;
@@ -445,11 +445,11 @@ namespace RyzenQuietPro
             {
                 if (!_settings.SectionServerSyncCollapsed)
                 {
-                    totalH += (int)Math.Round(28 * scale) + (int)Math.Round(72 * scale);
+                    totalH += (int)Math.Round(5 * scale) + (int)Math.Round(28 * scale) + (int)Math.Round(72 * scale);
                 }
                 else
                 {
-                    totalH += (int)Math.Round(24 * scale);
+                    totalH += (int)Math.Round(28 * scale) + (int)Math.Round(4 * scale);
                 }
             }
 
@@ -457,11 +457,11 @@ namespace RyzenQuietPro
             {
                 if (!_settings.SectionTranslateCollapsed)
                 {
-                    totalH += (int)Math.Round(28 * scale) + (int)Math.Round(74 * scale);
+                    totalH += (int)Math.Round(5 * scale) + (int)Math.Round(28 * scale) + (int)Math.Round(68 * scale) + (int)Math.Round(6 * scale);
                 }
                 else
                 {
-                    totalH += (int)Math.Round(24 * scale);
+                    totalH += (int)Math.Round(28 * scale) + (int)Math.Round(4 * scale);
                 }
             }
 
@@ -1425,6 +1425,12 @@ namespace RyzenQuietPro
                 int newH = Math.Min(totalNeededH, maxScreenH);
                 if (this.ClientSize.Height < newH)
                 {
+                    int diff = newH - this.ClientSize.Height;
+                    if (screen != null && this.Bottom + diff > screen.WorkingArea.Bottom)
+                    {
+                        int shiftUp = (this.Bottom + diff) - screen.WorkingArea.Bottom;
+                        this.Top = Math.Max(screen.WorkingArea.Top, this.Top - shiftUp);
+                    }
                     this.ClientSize = new Size(this.ClientSize.Width, newH);
                     _settings.WindowHeight = newH;
                     h = this.ClientSize.Height;
@@ -1857,6 +1863,28 @@ namespace RyzenQuietPro
                 if (!isTranslateCollapsed)
                 {
                     int trPanelH = (int)Math.Round(68 * scale);
+                    int trNeededH = curY + trPanelH + footerH + (int)Math.Round(4 * scale);
+                    if (this.ClientSize.Height < trNeededH)
+                    {
+                        var scr = Screen.FromControl(this) ?? Screen.PrimaryScreen;
+                        int maxScr = scr != null ? scr.WorkingArea.Height : trNeededH;
+                        int newH2 = Math.Min(trNeededH, maxScr);
+                        if (this.ClientSize.Height < newH2)
+                        {
+                            int diff2 = newH2 - this.ClientSize.Height;
+                            if (scr != null && this.Bottom + diff2 > scr.WorkingArea.Bottom)
+                            {
+                                int shiftUp2 = (this.Bottom + diff2) - scr.WorkingArea.Bottom;
+                                this.Top = Math.Max(scr.WorkingArea.Top, this.Top - shiftUp2);
+                            }
+                            this.ClientSize = new Size(this.ClientSize.Width, newH2);
+                            _settings.WindowHeight = newH2;
+                            h = this.ClientSize.Height;
+                            footerY = h - footerH;
+                            _footerPanel.Location = new Point(0, footerY);
+                        }
+                    }
+
                     _pnlTranslate.Location = new Point(marginX, curY);
                     _pnlTranslate.Size = new Size(contentW, trPanelH);
 

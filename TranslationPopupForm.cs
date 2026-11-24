@@ -113,8 +113,8 @@ namespace RyzenQuietPro
             _pnlHeader.MouseDown += Header_MouseDown;
 
             string title = _isOcr
-                ? (_andTranslate ? "📷 Распознавание и перевод" : "📷 Распознавание текста (OCR)")
-                : "🌐 Быстрый перевод";
+                ? (_andTranslate ? Loc.Get("Translate_TitleOcrTrans") : Loc.Get("Translate_TitleOcr"))
+                : Loc.Get("Translate_TitleQuick");
 
             _lblTitle = new Label
             {
@@ -159,7 +159,7 @@ namespace RyzenQuietPro
                 Cursor = Cursors.Hand
             };
 
-            _cbTargetLang.Items.Add("⚡ Автовыбор (auto)");
+            _cbTargetLang.Items.Add(Loc.Get("Translate_LangAuto"));
             foreach (var lang in TranslationService.SupportedLanguages)
             {
                 _cbTargetLang.Items.Add($"{lang.LocalName} ({lang.Code})");
@@ -282,11 +282,11 @@ namespace RyzenQuietPro
             {
                 string snip = _originalText.Replace("\r", " ").Replace("\n", " ").Trim();
                 if (snip.Length > 80) snip = snip.Substring(0, 80) + "...";
-                _lblSourceSnippet.Text = $"Исходный: {snip}";
+                _lblSourceSnippet.Text = $"{Loc.Get("Translate_SourceOriginal")}: {snip}";
             }
             else if (_isOcr)
             {
-                _lblSourceSnippet.Text = "Источник: Снимок экрана";
+                _lblSourceSnippet.Text = $"{Loc.Get("Translate_SourceOriginal")}: {Loc.Get("Translate_SourceScreenshot")}";
             }
             this.Controls.Add(_lblSourceSnippet);
 
@@ -311,13 +311,13 @@ namespace RyzenQuietPro
             contextMenu.ForeColor = Color.FromArgb(226, 232, 240);
             contextMenu.ShowImageMargin = false;
 
-            var mnuCut = new ToolStripMenuItem("✂️  Вырезать (Ctrl+X)", null, (s, e) => _tbResult.Cut());
-            var mnuCopy = new ToolStripMenuItem("📋  Копировать (Ctrl+C)", null, (s, e) => _tbResult.Copy());
-            var mnuPaste = new ToolStripMenuItem("📥  Вставить (Ctrl+V)", null, (s, e) => PasteClipboardToResult());
-            var mnuSelectAll = new ToolStripMenuItem("🔘  Выделить всё (Ctrl+A)", null, (s, e) => _tbResult.SelectAll());
-            var mnuClear = new ToolStripMenuItem("🧹  Очистить", null, (s, e) => _tbResult.Clear());
+            var mnuCut = new ToolStripMenuItem(Loc.Get("Translate_MenuCut"), null, (s, e) => _tbResult.Cut());
+            var mnuCopy = new ToolStripMenuItem(Loc.Get("Translate_MenuCopy"), null, (s, e) => _tbResult.Copy());
+            var mnuPaste = new ToolStripMenuItem(Loc.Get("Translate_MenuPaste"), null, (s, e) => PasteClipboardToResult());
+            var mnuSelectAll = new ToolStripMenuItem(Loc.Get("Translate_MenuSelectAll"), null, (s, e) => _tbResult.SelectAll());
+            var mnuClear = new ToolStripMenuItem(Loc.Get("Translate_MenuClear"), null, (s, e) => _tbResult.Clear());
             var mnuSep = new ToolStripSeparator();
-            var mnuTranslate = new ToolStripMenuItem("🌐  Перевести этот текст", null, (s, e) => StartExecution(forceFromTextBox: true));
+            var mnuTranslate = new ToolStripMenuItem(Loc.Get("Translate_MenuTranslateThis"), null, (s, e) => StartExecution(forceFromTextBox: true));
 
             contextMenu.Items.AddRange(new ToolStripItem[] {
                 mnuCut, mnuCopy, mnuPaste, mnuSelectAll, mnuClear, mnuSep, mnuTranslate
@@ -510,19 +510,19 @@ namespace RyzenQuietPro
             _targetWindow = targetWindow;
 
             string title = _isOcr
-                ? (_andTranslate ? "📷 Распознавание и перевод" : "📷 Распознавание текста (OCR)")
-                : "🌐 Быстрый перевод";
+                ? (_andTranslate ? Loc.Get("Translate_TitleOcrTrans") : Loc.Get("Translate_TitleOcr"))
+                : Loc.Get("Translate_TitleQuick");
             if (_lblTitle != null) _lblTitle.Text = title;
 
             if (!string.IsNullOrEmpty(_originalText))
             {
                 string snip = _originalText.Replace("\r", " ").Replace("\n", " ").Trim();
                 if (snip.Length > 80) snip = snip.Substring(0, 80) + "...";
-                _lblSourceSnippet.Text = $"Исходный: {snip}";
+                _lblSourceSnippet.Text = $"{Loc.Get("Translate_SourceOriginal")}: {snip}";
             }
             else if (_isOcr)
             {
-                _lblSourceSnippet.Text = "Источник: Снимок экрана";
+                _lblSourceSnippet.Text = $"{Loc.Get("Translate_SourceOriginal")}: {Loc.Get("Translate_SourceScreenshot")}";
             }
             else
             {
@@ -760,12 +760,12 @@ namespace RyzenQuietPro
                     _imageBytes = null;
                     _originalText = resultText;
 
-                    if (_lblTitle != null) _lblTitle.Text = "🌐 Быстрый перевод";
+                    if (_lblTitle != null) _lblTitle.Text = Loc.Get("Translate_TitleQuick");
                     if (_lblSourceSnippet != null && !_andTranslate)
                     {
                         string snip = resultText.Replace("\r", " ").Replace("\n", " ").Trim();
                         if (snip.Length > 80) snip = snip.Substring(0, 80) + "...";
-                        _lblSourceSnippet.Text = $"Распознано: {snip}";
+                        _lblSourceSnippet.Text = $"{Loc.Get("Translate_SourceRecognized")}: {snip}";
                     }
                 }
                 else
@@ -793,7 +793,7 @@ namespace RyzenQuietPro
                 if (settings.TranslateAutoCopy && !string.IsNullOrEmpty(resultText))
                 {
                     Clipboard.SetText(resultText);
-                    _btnCopy.Text = "Скопировано! ✓";
+                    _btnCopy.Text = Loc.Get("Translate_StatusCopied");
                 }
             }
             catch (Exception ex)
@@ -801,13 +801,13 @@ namespace RyzenQuietPro
                 if (this.IsDisposed) return;
                 if (!isOcrJob && !string.IsNullOrWhiteSpace(_tbResult.Text) && !_tbResult.Text.StartsWith("⏳"))
                 {
-                    _lblLatency.Text = "❌ Ошибка перевода";
+                    _lblLatency.Text = "❌ " + Loc.Get("Translate_Error");
                     _toolTip?.SetToolTip(_lblLatency, ex.Message);
                 }
                 else
                 {
-                    _tbResult.Text = $"❌ Ошибка:\n{ex.Message}";
-                    _lblLatency.Text = "Ошибка";
+                    _tbResult.Text = $"❌ {Loc.Get("Translate_Error")}:\n{ex.Message}";
+                    _lblLatency.Text = Loc.Get("Translate_Error");
                 }
             }
         }
@@ -820,7 +820,7 @@ namespace RyzenQuietPro
                 try
                 {
                     Clipboard.SetText(text);
-                    _btnCopy.Text = "Скопировано! ✓";
+                    _btnCopy.Text = Loc.Get("Translate_StatusCopied");
                     _btnCopy.BackColor = Color.FromArgb(16, 185, 129); // emerald feedback
                     Task.Delay(1500).ContinueWith(_ =>
                     {
